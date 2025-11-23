@@ -7,7 +7,6 @@ import { PIIToken } from '../types';
  */
 export class PIITokenizer {
   private tokenMap: Map<string, PIIToken> = new Map();
-  private reverseMap: Map<string, string> = new Map();
   private counters: Map<string, number> = new Map();
 
   /**
@@ -48,16 +47,16 @@ export class PIITokenizer {
   }
 
   /**
-   * Detokenize text (restore original values)
+   * @deprecated Removed for security compliance (GDPR/HIPAA/SOC2/PCI DSS).
+   * Tokenization is now one-way only to prevent plaintext PII storage in memory.
+   * @throws {Error} Always throws - detokenization no longer supported
    */
-  detokenize(text: string): string {
-    let detokenized = text;
-
-    for (const [token, value] of this.reverseMap.entries()) {
-      detokenized = detokenized.replace(new RegExp(token.replace(/[[\]]/g, '\\$&'), 'g'), value);
-    }
-
-    return detokenized;
+  detokenize(_text: string): string {
+    throw new Error(
+      'detokenize() has been removed for security compliance. ' +
+      'Plaintext PII storage violates GDPR Article 32, HIPAA §164.312, and other regulations. ' +
+      'Tokenization is now one-way only. See ISSUE-001-pii-storage-vulnerability.md for details.'
+    );
   }
 
   /**
@@ -81,7 +80,9 @@ export class PIITokenizer {
   private getOrCreateToken(value: string, type: PIIToken['type']): string {
     const hash = this.hash(value);
 
-    // Check if already tokenized
+    // Check if already tokenized (same PII value gets same token)
+    // Note: SHA-256 hash collisions are cryptographically infeasible,
+    // so we can safely use hash as a unique identifier
     if (this.tokenMap.has(hash)) {
       return this.tokenMap.get(hash)!.token;
     }
@@ -99,7 +100,6 @@ export class PIITokenizer {
     };
 
     this.tokenMap.set(hash, piiToken);
-    this.reverseMap.set(token, value);
 
     return token;
   }
@@ -153,7 +153,6 @@ export class PIITokenizer {
    */
   clear(): void {
     this.tokenMap.clear();
-    this.reverseMap.clear();
     this.counters.clear();
   }
 }
