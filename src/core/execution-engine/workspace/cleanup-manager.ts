@@ -1,133 +1,57 @@
-import { WorkspaceManager } from './workspace-manager';
-import { CacheManager } from './cache-manager';
-
-/**
- * Manages cleanup of workspaces and cache
- */
 export class CleanupManager {
-  private workspaceManager: WorkspaceManager;
-  private cacheManager: CacheManager;
-  private cleanupInterval: NodeJS.Timeout | null = null;
+  private cleanupHandlers: Map<string, Array<() => Promise<void> | void>>;
+  private autoCleanup: boolean;
 
-  constructor(workspaceManager: WorkspaceManager, cacheManager: CacheManager) {
-    this.workspaceManager = workspaceManager;
-    this.cacheManager = cacheManager;
+  constructor(options: { autoCleanup?: boolean } = {}) {
+    this.cleanupHandlers = new Map();
+    this.autoCleanup = options.autoCleanup ?? false;
+    if (this.autoCleanup) this.registerProcessHandlers();
   }
 
-  /**
-   * Start automatic cleanup
-   */
-  startAutoCleanup(intervalMinutes: number = 60): void {
-    if (this.cleanupInterval) {
-      this.stopAutoCleanup();
+  registerCleanup(resourceId: string, handler: () => Promise<void> | void): void {
+    if (!this.cleanupHandlers.has(resourceId)) {
+      this.cleanupHandlers.set(resourceId, []);
     }
-
-    this.cleanupInterval = setInterval(
-      () => this.performCleanup(),
-      intervalMinutes * 60 * 1000
-    );
-
-    console.log(`✓ Auto-cleanup started (every ${intervalMinutes} minutes)`);
+    this.cleanupHandlers.get(resourceId)!.push(handler);
   }
 
-  /**
-   * Stop automatic cleanup
-   */
-  stopAutoCleanup(): void {
-    if (this.cleanupInterval) {
-      clearInterval(this.cleanupInterval);
-      this.cleanupInterval = null;
-      console.log('✓ Auto-cleanup stopped');
+  hasCleanupHandler(resourceId: string): boolean {
+    return this.cleanupHandlers.has(resourceId) && 
+           this.cleanupHandlers.get(resourceId)!.length > 0;
+  }
+
+  removeCleanupHandler(resourceId: string): void {
+    this.cleanupHandlers.delete(resourceId);
+  }
+
+  async cleanupResource(resourceId: string): Promise<void> {
+    const handlers = this.cleanupHandlers.get(resourceId);
+    if (!handlers) return;
+    for (const handler of handlers) {
+      try {
+        await handler();
+      } catch (error) {
+        console.error(`Cleanup failed for ${resourceId}:`, error);
+      }
+    }
+    this.cleanupHandlers.delete(resourceId);
+  }
+
+  async cleanup(): Promise<void> {
+    const resourceIds = Array.from(this.cleanupHandlers.keys()).reverse();
+    for (const resourceId of resourceIds) {
+      await this.cleanupResource(resourceId);
     }
   }
 
-  /**
-   * Perform cleanup
-   */
-  async performCleanup(): Promise<CleanupResult> {
-    console.log('Running cleanup...');
-
-    const startTime = Date.now();
-
-    // Cleanup old workspaces (older than 24 hours)
-    const workspacesRemoved = await this.workspaceManager.cleanup(24);
-
-    // Cleanup expired cache entries
-    const cacheEntriesRemoved = this.cacheManager.cleanup();
-
-    const duration = Date.now() - startTime;
-
-    const result: CleanupResult = {
-      workspacesRemoved,
-      cacheEntriesRemoved,
-      duration,
-      timestamp: new Date()
+  private registerProcessHandlers(): void {
+    const cleanupAndExit = async (signal: string) => {
+      console.log(`\nReceived ${signal}, cleaning up...`);
+      await this.cleanup();
+      process.exit(0);
     };
-
-    console.log(`✓ Cleanup completed:`, result);
-
-    return result;
+    process.on('exit', () => console.log('Process exiting...'));
+    process.on('SIGINT', () => cleanupAndExit('SIGINT'));
+    process.on('SIGTERM', () => cleanupAndExit('SIGTERM'));
   }
-
-  /**
-   * Force cleanup of all resources
-   */
-  async forceCleanup(): Promise<CleanupResult> {
-    console.log('Running force cleanup...');
-
-    const startTime = Date.now();
-
-    // Get all workspaces
-    const allWorkspaces = this.workspaceManager.getAllWorkspaces();
-
-    // Delete all workspaces
-    let workspacesRemoved = 0;
-    for (const workspace of allWorkspaces) {
-      await this.workspaceManager.deleteWorkspace(workspace.id);
-      workspacesRemoved++;
-    }
-
-    // Clear all cache
-    this.cacheManager.clear();
-    const cacheEntriesRemoved = 0; // Already cleared
-
-    const duration = Date.now() - startTime;
-
-    const result: CleanupResult = {
-      workspacesRemoved,
-      cacheEntriesRemoved,
-      duration,
-      timestamp: new Date()
-    };
-
-    console.log(`✓ Force cleanup completed:`, result);
-
-    return result;
-  }
-
-  /**
-   * Get cleanup statistics
-   */
-  getStats(): {
-    autoCleanupEnabled: boolean;
-    lastCleanup?: Date;
-    workspaceStats: ReturnType<WorkspaceManager['getStats']>;
-    cacheStats: ReturnType<CacheManager['getStats']>;
-  } {
-    return {
-      autoCleanupEnabled: this.cleanupInterval !== null,
-      workspaceStats: this.workspaceManager.getStats(),
-      cacheStats: this.cacheManager.getStats()
-    };
-  }
-}
-
-/**
- * Cleanup result
- */
-export interface CleanupResult {
-  workspacesRemoved: number;
-  cacheEntriesRemoved: number;
-  duration: number;
-  timestamp: Date;
 }

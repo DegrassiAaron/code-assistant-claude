@@ -1,159 +1,73 @@
-import { WorkspaceState, ExecutionResult } from '../types';
-import { promises as fs } from 'fs';
-import path from 'path';
-import * as os from 'os';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
 /**
- * Manages execution workspaces
- * Each workspace is an isolated environment for code execution
+ * WorkspaceManager - Manages workspace directories and session isolation
  */
 export class WorkspaceManager {
-  private workspaces: Map<string, WorkspaceState> = new Map();
-  private baseDir: string;
+  private workspaceDir: string;
+  private sessions: Map<string, string>;
 
-  constructor(baseDir?: string) {
-    this.baseDir = baseDir || path.join(os.tmpdir(), 'mcp-workspaces');
+  constructor(workspaceDir: string = path.join(process.cwd(), '.workspace')) {
+    this.workspaceDir = workspaceDir;
+    this.sessions = new Map();
   }
 
-  /**
-   * Create new workspace
-   */
-  async createWorkspace(
-    code: string,
-    language: 'typescript' | 'python'
-  ): Promise<WorkspaceState> {
-    const id = this.generateWorkspaceId();
-    const workspaceDir = path.join(this.baseDir, id);
-
-    // Create workspace directory
-    await fs.mkdir(workspaceDir, { recursive: true });
-
-    const workspace: WorkspaceState = {
-      id,
-      createdAt: new Date(),
-      lastAccessedAt: new Date(),
-      code,
-      language,
-      status: 'pending'
-    };
-
-    this.workspaces.set(id, workspace);
-
-    return workspace;
-  }
-
-  /**
-   * Get workspace by ID
-   */
-  getWorkspace(id: string): WorkspaceState | undefined {
-    const workspace = this.workspaces.get(id);
-
-    if (workspace) {
-      workspace.lastAccessedAt = new Date();
-    }
-
-    return workspace;
-  }
-
-  /**
-   * Update workspace status
-   */
-  updateStatus(
-    id: string,
-    status: WorkspaceState['status'],
-    result?: ExecutionResult
-  ): void {
-    const workspace = this.workspaces.get(id);
-
-    if (workspace) {
-      workspace.status = status;
-      workspace.lastAccessedAt = new Date();
-      if (result) {
-        workspace.result = result;
-      }
-    }
-  }
-
-  /**
-   * Get workspace directory path
-   */
-  getWorkspaceDir(id: string): string {
-    return path.join(this.baseDir, id);
-  }
-
-  /**
-   * Delete workspace
-   */
-  async deleteWorkspace(id: string): Promise<void> {
-    const workspaceDir = this.getWorkspaceDir(id);
-
+  async initialize(): Promise<void> {
     try {
-      await fs.rm(workspaceDir, { recursive: true, force: true });
-      this.workspaces.delete(id);
-    } catch (error) {
-      console.error(`Failed to delete workspace ${id}:`, error);
+      await fs.access(this.workspaceDir);
+    } catch {
+      await fs.mkdir(this.workspaceDir, { recursive: true });
     }
   }
 
-  /**
-   * Cleanup old workspaces
-   */
-  async cleanup(olderThanHours: number = 24): Promise<number> {
-    const cutoff = new Date();
-    cutoff.setHours(cutoff.getHours() - olderThanHours);
+  async createSession(sessionId: string): Promise<string> {
+    const sessionPath = path.join(this.workspaceDir, sessionId);
+    try {
+      await fs.access(sessionPath);
+      throw new Error(`Session ${sessionId} already exists`);
+    } catch (error: any) {
+      if (error.message?.includes('already exists')) throw error;
+    }
+    await fs.mkdir(sessionPath, { recursive: true });
+    this.sessions.set(sessionId, sessionPath);
+    return sessionPath;
+  }
 
+  async cleanupSession(sessionId: string): Promise<void> {
+    const sessionPath = path.join(this.workspaceDir, sessionId);
+    try {
+      await fs.rm(sessionPath, { recursive: true, force: true });
+      this.sessions.delete(sessionId);
+    } catch (error) {}
+  }
+
+  getSessionPath(sessionId: string): string {
+    return path.join(this.workspaceDir, sessionId);
+  }
+
+  async listSessions(): Promise<string[]> {
+    try {
+      return await fs.readdir(this.workspaceDir);
+    } catch {
+      return [];
+    }
+  }
+
+  async cleanupOldSessions(maxAge: number): Promise<number> {
+    const sessions = await this.listSessions();
     let cleaned = 0;
-
-    for (const [id, workspace] of this.workspaces.entries()) {
-      if (workspace.lastAccessedAt < cutoff) {
-        await this.deleteWorkspace(id);
-        cleaned++;
-      }
+    for (const session of sessions) {
+      const sessionPath = path.join(this.workspaceDir, session);
+      try {
+        const stats = await fs.stat(sessionPath);
+        if (Date.now() - stats.mtimeMs > maxAge) {
+          await fs.rm(sessionPath, { recursive: true, force: true });
+          this.sessions.delete(session);
+          cleaned++;
+        }
+      } catch {}
     }
-
     return cleaned;
-  }
-
-  /**
-   * Get all workspaces
-   */
-  getAllWorkspaces(): WorkspaceState[] {
-    return Array.from(this.workspaces.values());
-  }
-
-  /**
-   * Get workspaces by status
-   */
-  getWorkspacesByStatus(status: WorkspaceState['status']): WorkspaceState[] {
-    return Array.from(this.workspaces.values())
-      .filter(w => w.status === status);
-  }
-
-  /**
-   * Generate unique workspace ID
-   */
-  private generateWorkspaceId(): string {
-    return `ws-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  }
-
-  /**
-   * Get workspace statistics
-   */
-  getStats(): {
-    total: number;
-    pending: number;
-    running: number;
-    completed: number;
-    failed: number;
-  } {
-    const workspaces = Array.from(this.workspaces.values());
-
-    return {
-      total: workspaces.length,
-      pending: workspaces.filter(w => w.status === 'pending').length,
-      running: workspaces.filter(w => w.status === 'running').length,
-      completed: workspaces.filter(w => w.status === 'completed').length,
-      failed: workspaces.filter(w => w.status === 'failed').length
-    };
   }
 }
