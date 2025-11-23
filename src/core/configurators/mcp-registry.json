@@ -1,0 +1,92 @@
+{
+  "serena": {
+    "command": "npx",
+    "args": ["-y", "@serena-ai/mcp-server"],
+    "description": "Project memory & symbol operations",
+    "requiredEnv": [],
+    "recommended": true,
+    "tags": ["core", "memory", "symbols"],
+    "priority": "high"
+  },
+  "sequential": {
+    "command": "npx",
+    "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"],
+    "description": "Multi-step reasoning engine",
+    "requiredEnv": [],
+    "recommended": true,
+    "tags": ["core", "reasoning", "analysis"],
+    "priority": "high"
+  },
+  "tavily": {
+    "command": "npx",
+    "args": ["-y", "@modelcontextprotocol/server-tavily"],
+    "description": "Web search & real-time information",
+    "requiredEnv": ["TAVILY_API_KEY"],
+    "recommended": true,
+    "tags": ["core", "research", "search"],
+    "priority": "high"
+  },
+  "magic": {
+    "command": "npx",
+    "args": ["-y", "@21st-dev/mcp-server-magic"],
+    "description": "UI components from 21st.dev",
+    "requiredEnv": [],
+    "recommended": false,
+    "tags": ["frontend", "ui", "react", "vue"],
+    "priority": "medium"
+  },
+  "playwright": {
+    "command": "npx",
+    "args": ["-y", "@modelcontextprotocol/server-playwright"],
+    "description": "Browser automation & E2E testing",
+    "requiredEnv": [],
+    "recommended": false,
+    "tags": ["testing", "e2e", "browser"],
+    "priority": "medium"
+  },
+  "context7": {
+    "command": "npx",
+    "args": ["-y", "@context7/mcp-server"],
+    "description": "Official documentation lookup",
+    "requiredEnv": [],
+    "recommended": false,
+    "tags": ["documentation", "reference"],
+    "priority": "medium"
+  },
+  "morphllm": {
+    "command": "npx",
+    "args": ["-y", "@morphllm/mcp-server-fast-apply"],
+    "description": "Pattern-based code transformations",
+    "requiredEnv": [],
+    "recommended": false,
+    "tags": ["editing", "refactoring", "bulk"],
+    "priority": "medium"
+  },
+  "chrome-devtools": {
+    "command": "npx",
+    "args": ["-y", "@modelcontextprotocol/server-chrome-devtools"],
+    "description": "Browser DevTools integration",
+    "requiredEnv": [],
+    "recommended": false,
+    "tags": ["debugging", "performance", "frontend"],
+    "priority": "low"
+  },
+  "figma": {
+    "command": "npx",
+    "args": ["-y", "@figma/mcp-server-figma"],
+    "description": "Design-to-code from Figma",
+    "requiredEnv": [],
+    "recommended": false,
+    "tags": ["design", "ui", "frontend"],
+    "priority": "low"
+  },
+  "github": {
+    "command": "npx",
+    "args": ["-y", "@modelcontextprotocol/server-github"],
+    "description": "GitHub repository operations",
+    "requiredEnv": ["GITHUB_TOKEN"],
+    "recommended": false,
+    "tags": ["git", "version-control"],
+    "priority": "low"
+  }
+}
