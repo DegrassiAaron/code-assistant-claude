@@ -1,0 +1,87 @@
+[
+  {
+    "name": "github_get_repo",
+    "description": "Get GitHub repository information",
+    "parameters": [
+      {
+        "name": "owner",
+        "type": "string",
+        "description": "Repository owner",
+        "required": true
+      },
+      {
+        "name": "repo",
+        "type": "string",
+        "description": "Repository name",
+        "required": true
+      }
+    ],
+    "returns": {
+      "type": "object",
+      "description": "Repository information"
+    },
+    "examples": [
+      {
+        "input": {
+          "owner": "facebook",
+          "repo": "react"
+        },
+        "output": {
+          "name": "react",
+          "stars": 200000,
+          "forks": 50000
+        },
+        "description": "Get React repository info"
+      }
+    ]
+  },
+  {
+    "name": "github_create_issue",
+    "description": "Create a GitHub issue",
+    "parameters": [
+      {
+        "name": "owner",
+        "type": "string",
+        "description": "Repository owner",
+        "required": true
+      },
+      {
+        "name": "repo",
+        "type": "string",
+        "description": "Repository name",
+        "required": true
+      },
+      {
+        "name": "title",
+        "type": "string",
+        "description": "Issue title",
+        "required": true
+      },
+      {
+        "name": "body",
+        "type": "string",
+        "description": "Issue body",
+        "required": false
+      }
+    ],
+    "returns": {
+      "type": "object",
+      "description": "Created issue"
+    },
+    "examples": [
+      {
+        "input": {
+          "owner": "myorg",
+          "repo": "myrepo",
+          "title": "Bug report",
+          "body": "Description of the bug"
+        },
+        "output": {
+          "number": 123,
+          "url": "https://github.com/myorg/myrepo/issues/123"
+        },
+        "description": "Create a new issue"
+      }
+    ]
+  }
+]

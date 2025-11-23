@@ -1,0 +1,70 @@
+[
+  {
+    "name": "eslint_check",
+    "description": "Run ESLint on JavaScript/TypeScript code",
+    "parameters": [
+      {
+        "name": "code",
+        "type": "string",
+        "description": "Code to lint",
+        "required": true
+      },
+      {
+        "name": "config",
+        "type": "object",
+        "description": "ESLint configuration",
+        "required": false
+      }
+    ],
+    "returns": {
+      "type": "object",
+      "description": "Linting results with errors and warnings"
+    },
+    "examples": [
+      {
+        "input": {
+          "code": "const x = 5;"
+        },
+        "output": {
+          "errors": 0,
+          "warnings": 0,
+          "issues": []
+        },
+        "description": "Lint valid code"
+      }
+    ]
+  },
+  {
+    "name": "prettier_format",
+    "description": "Format code using Prettier",
+    "parameters": [
+      {
+        "name": "code",
+        "type": "string",
+        "description": "Code to format",
+        "required": true
+      },
+      {
+        "name": "parser",
+        "type": "string",
+        "description": "Prettier parser (typescript, babel, etc.)",
+        "required": false,
+        "default": "typescript"
+      }
+    ],
+    "returns": {
+      "type": "string",
+      "description": "Formatted code"
+    },
+    "examples": [
+      {
+        "input": {
+          "code": "const x=5;",
+          "parser": "typescript"
+        },
+        "output": "const x = 5;\n",
+        "description": "Format TypeScript code"
+      }
+    ]
+  }
+]
