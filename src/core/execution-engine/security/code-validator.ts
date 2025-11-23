@@ -9,7 +9,8 @@ import path from 'path';
 export class CodeValidator {
   private dangerousPatterns: RegExp[] = [];
   private suspiciousPatterns: RegExp[] = [];
-  private initialized: boolean = false;
+  private initPromise: Promise<void> | null = null;
+  private readonly INIT_TIMEOUT_MS = 5000;
 
   constructor() {
     // Patterns will be loaded lazily
@@ -19,9 +20,7 @@ export class CodeValidator {
    * Validate code for security issues
    */
   async validate(code: string): Promise<SecurityValidation> {
-    if (!this.initialized) {
-      await this.loadPatterns();
-    }
+    await this.ensureInitialized();
 
     const issues: SecurityIssue[] = [];
 
@@ -40,6 +39,57 @@ export class CodeValidator {
       issues,
       requiresApproval: riskScore >= 70
     };
+  }
+
+  /**
+   * Ensures patterns are initialized exactly once, even with concurrent calls
+   * Uses Promise-based guard to prevent race conditions
+   */
+  private async ensureInitialized(): Promise<void> {
+    // If already initialized or initializing, await the existing promise
+    if (this.initPromise) {
+      return this.initPromise;
+    }
+
+    // Create and store the initialization promise
+    this.initPromise = this.initializeWithTimeout();
+
+    try {
+      await this.initPromise;
+    } catch (error) {
+      // On failure, reset so next call can retry
+      this.initPromise = null;
+      throw error;
+    }
+  }
+
+  /**
+   * Initialize patterns with timeout protection
+   */
+  private async initializeWithTimeout(): Promise<void> {
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        reject(new Error(`Pattern loading timed out after ${this.INIT_TIMEOUT_MS}ms`));
+      }, this.INIT_TIMEOUT_MS);
+    });
+
+    try {
+      await Promise.race([
+        this.loadPatterns(),
+        timeoutPromise
+      ]);
+    } catch (error) {
+      // On timeout or error, ensure we have fallback patterns loaded
+      if (this.dangerousPatterns.length === 0) {
+        this.loadDefaultDangerousPatterns();
+      }
+      if (this.suspiciousPatterns.length === 0) {
+        this.loadDefaultSuspiciousPatterns();
+      }
+
+      // Don't throw - we have fallback patterns and can continue
+      console.warn('Pattern loading failed, using hardcoded patterns:', error);
+    }
   }
 
   /**
@@ -68,8 +118,6 @@ export class CodeValidator {
       this.loadDefaultDangerousPatterns();
       this.loadDefaultSuspiciousPatterns();
     }
-
-    this.initialized = true;
   }
 
   /**

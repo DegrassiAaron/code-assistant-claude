@@ -58,4 +58,57 @@ describe('CodeValidator', () => {
 
     expect(validation.riskScore).toBeGreaterThan(50);
   });
+
+  it('should handle concurrent validations without race conditions', async () => {
+    const code1 = 'const x = 1;';
+    const code2 = 'eval("test");';
+    const code3 = 'const y = 2;';
+
+    // Create multiple concurrent validation requests
+    const promises = [
+      validator.validate(code1),
+      validator.validate(code2),
+      validator.validate(code3),
+      validator.validate(code1),
+      validator.validate(code2),
+    ];
+
+    // All should complete successfully
+    const results = await Promise.all(promises);
+
+    // Verify results are consistent
+    expect(results[0].isSecure).toBe(true);
+    expect(results[1].isSecure).toBe(false);
+    expect(results[2].isSecure).toBe(true);
+    expect(results[3].isSecure).toBe(true);
+    expect(results[4].isSecure).toBe(false);
+  });
+
+  it('should handle 100+ concurrent validations', async () => {
+    const safeCode = 'const x = 1;';
+    const dangerousCode = 'eval("test");';
+
+    // Create 100+ concurrent validation requests
+    const promises = [];
+    for (let i = 0; i < 120; i++) {
+      const code = i % 2 === 0 ? safeCode : dangerousCode;
+      promises.push(validator.validate(code));
+    }
+
+    // All should complete successfully
+    const results = await Promise.all(promises);
+
+    // Verify we got 120 results
+    expect(results.length).toBe(120);
+
+    // Verify even indices (safe code) are secure
+    for (let i = 0; i < 120; i += 2) {
+      expect(results[i].isSecure).toBe(true);
+    }
+
+    // Verify odd indices (dangerous code) are not secure
+    for (let i = 1; i < 120; i += 2) {
+      expect(results[i].isSecure).toBe(false);
+    }
+  });
 });
