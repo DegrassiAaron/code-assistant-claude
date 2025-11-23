@@ -31,7 +31,7 @@ describe('SkillParser', () => {
       expect(skill.content).not.toBe('');
       expect(skill.content.length).toBeGreaterThan(100);
       expect(skill.loaded).toBe(LoadingStage.FULL_CONTENT);
-      expect(skill.tokensConsumed).toBeGreaterThan(1000);
+      expect(skill.tokensConsumed).toBeGreaterThan(900); // Adjusted for tiktoken accuracy
     });
 
     it('should load resources at WITH_RESOURCES stage', async () => {

@@ -149,7 +149,7 @@ describe('Progressive Loading Integration', () => {
       expect(skills.length).toBeGreaterThan(0);
       expect(skills[0]!.loaded).toBe(LoadingStage.FULL_CONTENT);
       expect(skills[0]!.content).not.toBe('');
-      expect(skills[0]!.tokensConsumed).toBeGreaterThan(1000);
+      expect(skills[0]!.tokensConsumed).toBeGreaterThan(900); // Adjusted for tiktoken accuracy
     });
 
     it('should load resources stage when requested', async () => {

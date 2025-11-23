@@ -3,7 +3,10 @@ import path from 'path';
 import yaml from 'js-yaml';
 import { Skill, SkillMetadata, LoadingStage, SkillResource } from './types';
 import { Logger, ConsoleLogger } from './logger';
-import { CHARS_PER_TOKEN_ESTIMATE, VALID_CATEGORIES, RESOURCES_DIR_NAME } from './constants';
+import { VALID_CATEGORIES, RESOURCES_DIR_NAME } from './constants';
+import { TokenEstimator, defaultTokenEstimator } from './token-estimator';
+import { withRetry } from './retry-utils';
+import { SkillParseError, SkillValidationError } from './errors';
 
 /**
  * Parses skill files and extracts metadata and content
@@ -15,9 +18,19 @@ import { CHARS_PER_TOKEN_ESTIMATE, VALID_CATEGORIES, RESOURCES_DIR_NAME } from '
  */
 export class SkillParser {
   private logger: Logger;
+  private tokenEstimator: TokenEstimator;
 
-  constructor(logger: Logger = new ConsoleLogger('[SkillParser]')) {
+  /**
+   * Creates a new SkillParser
+   * @param logger - Logger instance for debugging
+   * @param tokenEstimator - Token estimator for accurate token counting
+   */
+  constructor(
+    logger: Logger = new ConsoleLogger('[SkillParser]'),
+    tokenEstimator: TokenEstimator = defaultTokenEstimator
+  ) {
     this.logger = logger;
+    this.tokenEstimator = tokenEstimator;
   }
   /**
    * Parse skill file and extract metadata + content
@@ -28,22 +41,30 @@ export class SkillParser {
     skillPath: string,
     stage: LoadingStage = LoadingStage.METADATA_ONLY
   ): Promise<Skill> {
-    const content = await fs.readFile(skillPath, 'utf-8');
+    const content = await withRetry(
+      () => fs.readFile(skillPath, 'utf-8'),
+      { logger: this.logger }
+    );
 
     // Extract YAML frontmatter
     const frontmatterMatch = content.match(/^---\n([\s\S]+?)\n---/);
     if (!frontmatterMatch) {
-      throw new Error(`Invalid skill file: missing frontmatter in ${skillPath}`);
+      throw SkillParseError.missingFrontmatter(skillPath);
     }
 
     const yamlContent = frontmatterMatch[1];
     if (!yamlContent) {
-      throw new Error(`Invalid skill file: empty frontmatter in ${skillPath}`);
+      throw SkillParseError.emptyFrontmatter(skillPath);
     }
 
-    const metadata = yaml.load(yamlContent) as SkillMetadata;
-    if (!metadata) {
-      throw new Error(`Invalid skill file: failed to parse frontmatter in ${skillPath}`);
+    let metadata: SkillMetadata;
+    try {
+      metadata = yaml.load(yamlContent) as SkillMetadata;
+      if (!metadata) {
+        throw SkillParseError.emptyFrontmatter(skillPath);
+      }
+    } catch (error) {
+      throw SkillParseError.invalidYaml(skillPath, error as Error);
     }
 
     // Validate metadata
@@ -97,17 +118,26 @@ export class SkillParser {
     const resourcesDir = path.join(skillDir, RESOURCES_DIR_NAME);
 
     try {
-      const files = await fs.readdir(resourcesDir);
+      const files = await withRetry(
+        () => fs.readdir(resourcesDir),
+        { logger: this.logger }
+      );
       const resources: SkillResource[] = [];
 
       for (const file of files) {
         if (file === '.gitkeep') continue;
 
         const resourcePath = path.join(resourcesDir, file);
-        const stat = await fs.stat(resourcePath);
+        const stat = await withRetry(
+          () => fs.stat(resourcePath),
+          { logger: this.logger }
+        );
 
         if (stat.isFile()) {
-          const content = await fs.readFile(resourcePath, 'utf-8');
+          const content = await withRetry(
+            () => fs.readFile(resourcePath, 'utf-8'),
+            { logger: this.logger }
+          );
           resources.push({
             name: file,
             type: this.detectResourceType(file),
@@ -139,35 +169,49 @@ export class SkillParser {
 
   /**
    * Validate skill metadata against schema
+   * @throws {SkillValidationError} If validation fails
    */
   private validateMetadata(metadata: SkillMetadata): void {
+    const name = metadata.name || 'unknown';
+
     // Required fields
-    if (!metadata.name) throw new Error('Skill metadata missing required field: name');
-    if (!metadata.description) throw new Error('Skill metadata missing required field: description');
-    if (!metadata.category) throw new Error('Skill metadata missing required field: category');
+    if (!metadata.name) {
+      throw SkillValidationError.missingField(name, 'name');
+    }
+    if (!metadata.description) {
+      throw SkillValidationError.missingField(name, 'description');
+    }
+    if (!metadata.category) {
+      throw SkillValidationError.missingField(name, 'category');
+    }
 
     // Validate category
     if (!VALID_CATEGORIES.includes(metadata.category)) {
-      throw new Error(`Invalid category: ${metadata.category}`);
+      throw SkillValidationError.invalidCategory(name, metadata.category);
     }
 
     // Validate triggers
     if (!metadata.triggers || Object.keys(metadata.triggers).length === 0) {
-      throw new Error('Skill must have at least one trigger');
+      throw SkillValidationError.noTriggers(name);
     }
 
     // Validate token costs
     if (!metadata.tokenCost) {
-      throw new Error('Skill metadata missing required field: tokenCost');
+      throw SkillValidationError.missingTokenCost(name);
     }
   }
 
   /**
-   * Estimate token count for text using simple heuristic
-   * (Will be replaced with tiktoken in production)
+   * Estimate token count for text using tiktoken
+   *
+   * Uses tiktoken for accurate counting when available, falls back to
+   * simple character-based estimation (~4 chars per token) otherwise.
+   *
+   * @param text - The text to estimate tokens for
+   * @returns Estimated token count
    */
   private estimateTokens(text: string): number {
-    return Math.ceil(text.length / CHARS_PER_TOKEN_ESTIMATE);
+    return this.tokenEstimator.estimateTokens(text);
   }
 
   /**

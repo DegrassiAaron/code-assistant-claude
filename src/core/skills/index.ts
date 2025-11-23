@@ -17,4 +17,7 @@ export { CacheManager } from './cache-manager';
 
 // Utilities
 export { Logger, ConsoleLogger, SilentLogger } from './logger';
+export { TokenEstimator, defaultTokenEstimator } from './token-estimator';
+export { withRetry, retryable, RetryOptions } from './retry-utils';
 export * from './constants';
+export * from './errors';

@@ -3,6 +3,7 @@ import { glob } from 'glob';
 import { SkillMetadata, SkillRegistryEntry, LoadingStage } from './types';
 import { SkillParser } from './skill-parser';
 import { Logger, ConsoleLogger } from './logger';
+import { withRetry } from './retry-utils';
 
 /**
  * Manages skill discovery and indexing
@@ -52,7 +53,10 @@ export class SkillRegistry {
       LoadingStage.METADATA_ONLY
     );
 
-    const stat = await fs.stat(skillPath);
+    const stat = await withRetry(
+      () => fs.stat(skillPath),
+      { logger: this.logger }
+    );
 
     this.entries.set(skill.metadata.name, {
       metadata: skill.metadata,

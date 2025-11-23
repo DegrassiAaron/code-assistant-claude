@@ -72,7 +72,7 @@
     "node-fetch": "^2.7.0",
     "ora": "^5.4.1",
     "p-limit": "^3.1.0",
-    "tiktoken": "^1.0.10"
+    "tiktoken": "^1.0.22"
   },
   "devDependencies": {
     "@types/async-lock": "^1.4.2",
