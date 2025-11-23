@@ -315,6 +315,14 @@ export class ExecutionOrchestrator {
   }
 
   /**
+   * Get audit logger instance (for testing only)
+   * @internal
+   */
+  getAuditLogger(): AuditLogger {
+    return this.auditLogger;
+  }
+
+  /**
    * Shutdown orchestrator
    */
   async shutdown(): Promise<void> {

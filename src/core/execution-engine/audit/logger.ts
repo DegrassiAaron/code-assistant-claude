@@ -173,4 +173,12 @@ export class AuditLogger {
       bySeverity
     };
   }
+
+  /**
+   * Get log file path (for testing only)
+   * @internal
+   */
+  getLogFilePath(): string {
+    return this.logFile;
+  }
 }
