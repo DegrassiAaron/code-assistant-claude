@@ -5,6 +5,22 @@ import { SandboxConfig, ExecutionResult } from '../types';
 import * as os from 'os';
 
 /**
+ * Safe environment variables that don't contain secrets
+ * These variables are passed to sandboxed processes if they exist
+ *
+ * Note: PATH, HOME, and TMPDIR are handled specially:
+ * - PATH: Uses host PATH or safe fallback
+ * - HOME: Set to sandbox temporary directory
+ * - TMPDIR: Set to sandbox temporary directory
+ */
+const SAFE_ENV_VARS = [
+  'USER',    // Username (generally safe, no secrets)
+  'LANG',    // Language/locale setting
+  'LC_ALL',  // Locale setting
+  'TZ'       // Timezone
+];
+
+/**
  * Process-based sandbox for isolated code execution
  * Provides lightweight process isolation with resource limits
  */
@@ -30,8 +46,8 @@ export class ProcessSandbox {
       const filePath = path.join(tmpDir, filename);
       await fs.writeFile(filePath, code);
 
-      // Execute in process
-      const result = await this.executeInProcess(filePath, language);
+      // Execute in process with isolated environment
+      const result = await this.executeInProcess(filePath, language, tmpDir);
 
       // Cleanup
       await fs.rm(tmpDir, { recursive: true, force: true });
@@ -69,25 +85,67 @@ export class ProcessSandbox {
    */
   private async executeInProcess(
     filePath: string,
-    language: string
+    language: string,
+    tmpDir: string
   ): Promise<{ success: boolean; output?: string; error?: string; memoryUsed?: string }> {
     return new Promise((resolve) => {
       const command = language === 'typescript' ? 'ts-node' : 'python3';
       const args = [filePath];
 
+      // ✅ Build safe environment - NO SECRETS
+      // Only include whitelisted safe variables to prevent credential leakage
+
+      // Validate custom allowed environment variables
+      const customAllowedVars = this.config.allowedEnvVars || [];
+      const dangerousPattern = /KEY|SECRET|TOKEN|PASSWORD|CREDENTIAL|AUTH/i;
+
+      for (const varName of customAllowedVars) {
+        if (dangerousPattern.test(varName)) {
+          throw new Error(
+            `Security Error: Refusing to expose potentially sensitive variable: ${varName}. ` +
+            `Variable names matching KEY, SECRET, TOKEN, PASSWORD, CREDENTIAL, or AUTH are not allowed.`
+          );
+        }
+      }
+
+      const safeEnv: Record<string, string> = {
+        NODE_ENV: 'sandbox',
+        // Use sandbox-specific directories to prevent path leakage
+        HOME: tmpDir,
+        TMPDIR: tmpDir,
+        // Ensure PATH is available with safe fallback
+        PATH: process.env.PATH || '/usr/local/bin:/usr/bin:/bin',
+        // Only include whitelisted variables that exist (type-safe)
+        ...Object.fromEntries(
+          SAFE_ENV_VARS
+            .map(key => [key, process.env[key]])
+            .filter(([_, value]) => value !== undefined) as [string, string][]
+        ),
+        // Include custom allowed variables if validated
+        ...Object.fromEntries(
+          customAllowedVars
+            .map(key => [key, process.env[key]])
+            .filter(([_, value]) => value !== undefined) as [string, string][]
+        )
+      };
+
       const child = spawn(command, args, {
         timeout: this.config.resourceLimits.timeout,
         maxBuffer: this.parseMemory(this.config.resourceLimits.memory),
-        env: {
-          ...process.env,
-          // Limit environment variables for security
-          NODE_ENV: 'sandbox',
-          PATH: process.env.PATH
-        }
+        env: safeEnv
       });
 
       let stdout = '';
       let stderr = '';
+      let resolved = false;
+
+      // Guard to prevent double-resolution of promise
+      const safeResolve = (result: { success: boolean; output?: string; error?: string; memoryUsed?: string }) => {
+        if (!resolved) {
+          resolved = true;
+          resolve(result);
+        }
+      };
 
       child.stdout?.on('data', (data) => {
         stdout += data.toString();
@@ -97,15 +155,21 @@ export class ProcessSandbox {
         stderr += data.toString();
       });
 
-      child.on('close', (code) => {
-        if (code === 0) {
-          resolve({
+      child.on('close', (code, signal) => {
+        // Check if process was killed by timeout
+        if (signal === 'SIGTERM' || code === null) {
+          safeResolve({
+            success: false,
+            error: 'Execution timeout'
+          });
+        } else if (code === 0) {
+          safeResolve({
             success: true,
             output: stdout,
             memoryUsed: this.formatMemory(process.memoryUsage().heapUsed)
           });
         } else {
-          resolve({
+          safeResolve({
             success: false,
             error: stderr || `Process exited with code ${code}`,
             output: stdout
@@ -114,20 +178,11 @@ export class ProcessSandbox {
       });
 
       child.on('error', (error) => {
-        resolve({
+        safeResolve({
           success: false,
           error: error.message
         });
       });
-
-      // Handle timeout
-      setTimeout(() => {
-        child.kill('SIGTERM');
-        resolve({
-          success: false,
-          error: 'Execution timeout'
-        });
-      }, this.config.resourceLimits.timeout);
     });
   }
 
