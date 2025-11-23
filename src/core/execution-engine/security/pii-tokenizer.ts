@@ -46,6 +46,18 @@ export class PIITokenizer {
     return tokenized;
   }
 
+  /**
+   * @deprecated Removed for security compliance (GDPR/HIPAA/SOC2/PCI DSS).
+   * Tokenization is now one-way only to prevent plaintext PII storage in memory.
+   * @throws {Error} Always throws - detokenization no longer supported
+   */
+  detokenize(_text: string): string {
+    throw new Error(
+      'detokenize() has been removed for security compliance. ' +
+      'Plaintext PII storage violates GDPR Article 32, HIPAA §164.312, and other regulations. ' +
+      'Tokenization is now one-way only. See ISSUE-001-pii-storage-vulnerability.md for details.'
+    );
+  }
 
   /**
    * Check if text contains PII
@@ -68,7 +80,9 @@ export class PIITokenizer {
   private getOrCreateToken(value: string, type: PIIToken['type']): string {
     const hash = this.hash(value);
 
-    // Check if already tokenized
+    // Check if already tokenized (same PII value gets same token)
+    // Note: SHA-256 hash collisions are cryptographically infeasible,
+    // so we can safely use hash as a unique identifier
     if (this.tokenMap.has(hash)) {
       return this.tokenMap.get(hash)!.token;
     }

@@ -63,6 +63,15 @@ describe('PIITokenizer', () => {
     expect(counts.phone).toBe(1);
   });
 
+  it('should throw error when attempting to detokenize', () => {
+    const text = 'Contact john@example.com';
+    const tokenized = tokenizer.tokenize(text);
+
+    expect(() => tokenizer.detokenize(tokenized)).toThrow('detokenize() has been removed for security compliance');
+    expect(() => tokenizer.detokenize(tokenized)).toThrow('GDPR');
+    expect(() => tokenizer.detokenize(tokenized)).toThrow('HIPAA');
+  });
+
   describe('Security: PII Storage Validation', () => {
     it('should not store plaintext PII in memory', () => {
       const sensitiveEmail = 'secret@example.com';
@@ -102,8 +111,33 @@ describe('PIITokenizer', () => {
       // Check that the tokenizer instance doesn't have a reverseMap property
       expect((tokenizer as any).reverseMap).toBeUndefined();
 
-      // Verify no detokenize method exists
-      expect((tokenizer as any).detokenize).toBeUndefined();
+      // Verify detokenize method throws error (not undefined - it exists but is safe)
+      expect(() => tokenizer.detokenize('test')).toThrow('security compliance');
+    });
+
+    it('should not store plaintext in Map internals', () => {
+      const sensitiveEmail = 'secret@example.com';
+      const sensitivePhone = '555-123-4567';
+      const sensitiveCC = '1234 5678 9012 3456';
+
+      tokenizer.tokenize(`Contact ${sensitiveEmail} at ${sensitivePhone}, card: ${sensitiveCC}`);
+
+      // Inspect the actual Map values directly
+      const tokenMap = (tokenizer as any).tokenMap as Map<string, any>;
+      const mapEntries = Array.from(tokenMap.values());
+      const mapInternalsString = JSON.stringify(mapEntries);
+
+      // Verify Map values contain only hashed data, not plaintext
+      expect(mapInternalsString).not.toContain(sensitiveEmail);
+      expect(mapInternalsString).not.toContain(sensitivePhone);
+      expect(mapInternalsString).not.toContain(sensitiveCC);
+
+      // Verify Map keys (hashes) don't contain plaintext
+      const mapKeys = Array.from(tokenMap.keys());
+      const keysString = mapKeys.join(',');
+      expect(keysString).not.toContain(sensitiveEmail);
+      expect(keysString).not.toContain(sensitivePhone);
+      expect(keysString).not.toContain(sensitiveCC);
     });
 
     it('should maintain tokenization without plaintext storage', () => {
