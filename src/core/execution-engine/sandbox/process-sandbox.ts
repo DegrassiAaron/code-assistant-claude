@@ -5,6 +5,20 @@ import { SandboxConfig, ExecutionResult } from '../types';
 import * as os from 'os';
 
 /**
+ * Safe environment variables that don't contain secrets
+ * Only these variables will be passed to sandboxed processes
+ */
+const SAFE_ENV_VARS = [
+  'PATH',
+  'HOME',
+  'USER',
+  'LANG',
+  'LC_ALL',
+  'TZ',
+  'TMPDIR'
+];
+
+/**
  * Process-based sandbox for isolated code execution
  * Provides lightweight process isolation with resource limits
  */
@@ -75,15 +89,22 @@ export class ProcessSandbox {
       const command = language === 'typescript' ? 'ts-node' : 'python3';
       const args = [filePath];
 
+      // ✅ Build safe environment - NO SECRETS
+      // Only include whitelisted safe variables to prevent credential leakage
+      const safeEnv: Record<string, string> = {
+        NODE_ENV: 'sandbox',
+        // Only include whitelisted variables that exist
+        ...Object.fromEntries(
+          SAFE_ENV_VARS
+            .filter(key => process.env[key])
+            .map(key => [key, process.env[key]!])
+        )
+      };
+
       const child = spawn(command, args, {
         timeout: this.config.resourceLimits.timeout,
         maxBuffer: this.parseMemory(this.config.resourceLimits.memory),
-        env: {
-          ...process.env,
-          // Limit environment variables for security
-          NODE_ENV: 'sandbox',
-          PATH: process.env.PATH
-        }
+        env: safeEnv
       });
 
       let stdout = '';
