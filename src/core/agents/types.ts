@@ -159,6 +159,41 @@ export interface AgentExecutionResult {
 export type CoordinationStrategy = 'sequential' | 'parallel' | 'hierarchical';
 
 /**
+ * Execution policy for error handling
+ */
+export interface ExecutionPolicy {
+  continueOnError: boolean;
+  maxFailures?: number;
+  timeout?: number;
+  maxConcurrent?: number;
+}
+
+/**
+ * Execution options
+ */
+export interface ExecutionOptions {
+  timeout?: number;
+  policy?: ExecutionPolicy;
+  enableCaching?: boolean;
+}
+
+/**
+ * Log level
+ */
+export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+
+/**
+ * Log entry
+ */
+export interface LogEntry {
+  level: LogLevel;
+  message: string;
+  timestamp: Date;
+  context?: string;
+  metadata?: Record<string, unknown>;
+}
+
+/**
  * Multi-agent execution plan
  */
 export interface MultiAgentPlan {
@@ -201,7 +236,11 @@ export interface IAgentOrchestrator {
   /**
    * Execute a single agent
    */
-  executeAgent(agent: Agent, context: AgentContext): Promise<AgentExecutionResult>;
+  executeAgent(
+    agent: Agent,
+    context: AgentContext,
+    options?: ExecutionOptions
+  ): Promise<AgentExecutionResult>;
 
   /**
    * Execute multiple agents with coordination
@@ -209,7 +248,8 @@ export interface IAgentOrchestrator {
   executeMultiAgent(
     agents: Agent[],
     context: AgentContext,
-    strategy: CoordinationStrategy
+    strategy: CoordinationStrategy,
+    options?: ExecutionOptions
   ): Promise<MultiAgentResult>;
 }
 
@@ -283,7 +323,8 @@ export interface IAgentCoordinator {
    */
   executePlan(
     plan: MultiAgentPlan,
-    context: AgentContext
+    context: AgentContext,
+    options?: ExecutionOptions
   ): Promise<MultiAgentResult>;
 
   /**
@@ -291,7 +332,8 @@ export interface IAgentCoordinator {
    */
   executeSequential(
     agents: Agent[],
-    context: AgentContext
+    context: AgentContext,
+    options?: ExecutionOptions
   ): Promise<AgentExecutionResult[]>;
 
   /**
@@ -299,6 +341,37 @@ export interface IAgentCoordinator {
    */
   executeParallel(
     agents: Agent[],
-    context: AgentContext
+    context: AgentContext,
+    options?: ExecutionOptions
   ): Promise<AgentExecutionResult[]>;
+}
+
+/**
+ * Logger interface
+ */
+export interface ILogger {
+  debug(message: string, metadata?: Record<string, unknown>): void;
+  info(message: string, metadata?: Record<string, unknown>): void;
+  warn(message: string, metadata?: Record<string, unknown>): void;
+  error(message: string, metadata?: Record<string, unknown>): void;
+}
+
+/**
+ * Agent loader interface
+ */
+export interface IAgentLoader {
+  /**
+   * Load agent from markdown file
+   */
+  loadAgent(path: string): Promise<Agent>;
+
+  /**
+   * Load all agents from directory
+   */
+  loadAgentsFromDirectory(directory: string): Promise<Agent[]>;
+
+  /**
+   * Parse agent frontmatter
+   */
+  parseFrontmatter(content: string): AgentMetadata;
 }

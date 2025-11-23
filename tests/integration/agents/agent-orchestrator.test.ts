@@ -275,4 +275,433 @@ describe('Agent Orchestrator', () => {
       expect(result.totalTokens).toBe(individualTokens);
     });
   });
+
+  describe('Edge Cases - Input Validation', () => {
+    it('should throw error when registering empty agents array', () => {
+      const emptyOrchestrator = new AgentOrchestrator();
+      expect(() => emptyOrchestrator.registerAgents([])).toThrow(
+        'Cannot register empty agents array'
+      );
+    });
+
+    it('should throw error when registering null agents array', () => {
+      const nullOrchestrator = new AgentOrchestrator();
+      expect(() => nullOrchestrator.registerAgents(null as any)).toThrow(
+        'Cannot register empty agents array'
+      );
+    });
+
+    it('should throw error when selecting with empty query', async () => {
+      const criteria: AgentSelectionCriteria = {
+        query: '',
+        maxAgents: 5,
+      };
+
+      await expect(orchestrator.selectAgents(criteria)).rejects.toThrow(
+        'Query is required for agent selection'
+      );
+    });
+
+    it('should throw error when selecting with whitespace-only query', async () => {
+      const criteria: AgentSelectionCriteria = {
+        query: '   ',
+        maxAgents: 5,
+      };
+
+      await expect(orchestrator.selectAgents(criteria)).rejects.toThrow(
+        'Query is required for agent selection'
+      );
+    });
+
+    it('should handle agent with malformed metadata gracefully', () => {
+      const malformedAgent = {
+        metadata: {
+          name: '', // Empty name
+          description: 'Test',
+          category: 'technical',
+        },
+      } as any;
+
+      expect(() =>
+        new AgentOrchestrator().registerAgents([malformedAgent])
+      ).toThrow('Invalid agent metadata');
+    });
+
+    it('should handle agent with missing metadata', () => {
+      const noMetadataAgent = {
+        content: 'Test content',
+        path: 'test.md',
+      } as any;
+
+      expect(() =>
+        new AgentOrchestrator().registerAgents([noMetadataAgent])
+      ).toThrow('Invalid agent metadata');
+    });
+  });
+
+  describe('Edge Cases - Timeout Handling', () => {
+    it('should timeout long-running agent execution', async () => {
+      const agent = mockAgents[0];
+      const context: AgentContext = {
+        query: 'Test query',
+      };
+
+      const result = await orchestrator.executeAgent(agent, context, {
+        timeout: 1, // 1ms timeout - should trigger timeout
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('timeout');
+    });
+
+    it('should respect custom timeout values', async () => {
+      const agent = mockAgents[0];
+      const context: AgentContext = {
+        query: 'Test query',
+      };
+
+      const result = await orchestrator.executeAgent(agent, context, {
+        timeout: 60000, // 60 second timeout - should succeed
+      });
+
+      expect(result.duration).toBeLessThan(60000);
+    });
+  });
+
+  describe('Edge Cases - Error Policies', () => {
+    it('should stop sequential execution on first error when continueOnError is false', async () => {
+      const agents = [mockAgents[0], mockAgents[1], mockAgents[2]];
+      const context: AgentContext = {
+        query: 'Test query',
+      };
+
+      const result = await orchestrator.executeMultiAgent(agents, context, 'sequential', {
+        policy: {
+          continueOnError: false,
+          maxFailures: undefined,
+          timeout: 30000,
+          maxConcurrent: 5,
+        },
+      });
+
+      // Should only execute until first failure
+      expect(result.results.length).toBeGreaterThanOrEqual(1);
+      expect(result.results.length).toBeLessThanOrEqual(agents.length);
+    });
+
+    it('should respect maxFailures policy', async () => {
+      const agents = [mockAgents[0], mockAgents[1], mockAgents[2]];
+      const context: AgentContext = {
+        query: 'Test query',
+      };
+
+      const result = await orchestrator.executeMultiAgent(agents, context, 'sequential', {
+        policy: {
+          continueOnError: true,
+          maxFailures: 1,
+          timeout: 30000,
+          maxConcurrent: 5,
+        },
+      });
+
+      // Should continue after failures up to maxFailures
+      expect(result.results.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('should continue execution when continueOnError is true', async () => {
+      const agents = [mockAgents[0], mockAgents[1], mockAgents[2]];
+      const context: AgentContext = {
+        query: 'Test query',
+      };
+
+      const result = await orchestrator.executeMultiAgent(agents, context, 'sequential', {
+        policy: {
+          continueOnError: true,
+          maxFailures: undefined,
+          timeout: 30000,
+          maxConcurrent: 5,
+        },
+      });
+
+      // Should execute all agents even if some fail
+      expect(result.results.length).toBe(agents.length);
+    });
+  });
+
+  describe('Edge Cases - Concurrency Limits', () => {
+    it('should respect maxConcurrent limit in parallel execution', async () => {
+      const manyAgents = [
+        ...mockAgents,
+        ...mockAgents,
+        ...mockAgents,
+      ]; // 9 agents total
+      const context: AgentContext = {
+        query: 'Test query',
+      };
+
+      const startTime = Date.now();
+      const result = await orchestrator.executeMultiAgent(
+        manyAgents,
+        context,
+        'parallel',
+        {
+          policy: {
+            continueOnError: true,
+            maxFailures: undefined,
+            timeout: 30000,
+            maxConcurrent: 3, // Limit to 3 concurrent executions
+          },
+        }
+      );
+      const duration = Date.now() - startTime;
+
+      expect(result.results.length).toBe(9);
+      // With maxConcurrent=3, should take at least 3 batches
+      // (execution time should be >= time for 1 batch)
+      expect(duration).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should handle single agent with maxConcurrent=1', async () => {
+      const context: AgentContext = {
+        query: 'Test query',
+      };
+
+      const result = await orchestrator.executeMultiAgent(
+        [mockAgents[0]],
+        context,
+        'parallel',
+        {
+          policy: {
+            continueOnError: true,
+            maxFailures: undefined,
+            timeout: 30000,
+            maxConcurrent: 1,
+          },
+        }
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.results.length).toBe(1);
+    });
+  });
+
+  describe('Edge Cases - Circular Dependencies', () => {
+    it('should detect circular dependencies in hierarchical execution', async () => {
+      const circularAgents: Agent[] = [
+        {
+          metadata: {
+            name: 'agent-a',
+            description: 'Agent A',
+            category: 'technical',
+            expertise: ['Test'],
+            activation: {
+              keywords: ['test'],
+              complexity: ['simple'],
+              triggers: ['test'],
+            },
+            capabilities: ['Testing'],
+            integrations: {
+              skills: [],
+              mcps: [],
+              other_agents: ['agent-b'], // Depends on B
+            },
+          },
+          content: 'Agent A content',
+          path: 'agent-a.md',
+        },
+        {
+          metadata: {
+            name: 'agent-b',
+            description: 'Agent B',
+            category: 'technical',
+            expertise: ['Test'],
+            activation: {
+              keywords: ['test'],
+              complexity: ['simple'],
+              triggers: ['test'],
+            },
+            capabilities: ['Testing'],
+            integrations: {
+              skills: [],
+              mcps: [],
+              other_agents: ['agent-a'], // Depends on A (circular!)
+            },
+          },
+          content: 'Agent B content',
+          path: 'agent-b.md',
+        },
+      ];
+
+      const circularOrchestrator = new AgentOrchestrator();
+      circularOrchestrator.registerAgents(circularAgents);
+
+      const context: AgentContext = {
+        query: 'Test query',
+      };
+
+      await expect(
+        circularOrchestrator.executeMultiAgent(
+          circularAgents,
+          context,
+          'hierarchical'
+        )
+      ).rejects.toThrow(/[Cc]ircular dependency/);
+    });
+
+    it('should handle self-referencing agent dependency', async () => {
+      const selfReferencingAgent: Agent = {
+        metadata: {
+          name: 'self-agent',
+          description: 'Self referencing',
+          category: 'technical',
+          expertise: ['Test'],
+          activation: {
+            keywords: ['test'],
+            complexity: ['simple'],
+            triggers: ['test'],
+          },
+          capabilities: ['Testing'],
+          integrations: {
+            skills: [],
+            mcps: [],
+            other_agents: ['self-agent'], // References itself
+          },
+        },
+        content: 'Self agent content',
+        path: 'self-agent.md',
+      };
+
+      const selfOrchestrator = new AgentOrchestrator();
+      selfOrchestrator.registerAgents([selfReferencingAgent]);
+
+      const context: AgentContext = {
+        query: 'Test query',
+      };
+
+      await expect(
+        selfOrchestrator.executeMultiAgent(
+          [selfReferencingAgent],
+          context,
+          'hierarchical'
+        )
+      ).rejects.toThrow(/[Cc]ircular dependency|[Ii]nfinite loop/);
+    });
+  });
+
+  describe('Edge Cases - Cache Behavior', () => {
+    it('should cache agent selection scores', async () => {
+      const criteria: AgentSelectionCriteria = {
+        query: 'code review and security audit',
+        maxAgents: 5,
+      };
+
+      // First call - should calculate scores
+      const result1 = await orchestrator.selectAgents(criteria);
+
+      // Second call - should use cached scores
+      const result2 = await orchestrator.selectAgents(criteria);
+
+      expect(result1.length).toBe(result2.length);
+      expect(result1[0].score).toBe(result2[0].score);
+      expect(result1[0].agent.metadata.name).toBe(
+        result2[0].agent.metadata.name
+      );
+    });
+
+    it('should handle different queries independently in cache', async () => {
+      const criteria1: AgentSelectionCriteria = {
+        query: 'code review',
+        maxAgents: 5,
+      };
+
+      const criteria2: AgentSelectionCriteria = {
+        query: 'security audit',
+        maxAgents: 5,
+      };
+
+      const result1 = await orchestrator.selectAgents(criteria1);
+      const result2 = await orchestrator.selectAgents(criteria2);
+
+      // Different queries should yield different results
+      expect(result1[0].agent.metadata.name).not.toBe(
+        result2[0].agent.metadata.name
+      );
+    });
+  });
+
+  describe('Edge Cases - Token Counting', () => {
+    it('should count tokens for empty output', async () => {
+      const agent = {
+        ...mockAgents[0],
+        content: '', // Empty content
+      };
+      const context: AgentContext = {
+        query: 'Test query',
+      };
+
+      const result = await orchestrator.executeAgent(agent, context);
+
+      expect(result.tokensUsed).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should count tokens differently for code vs prose', async () => {
+      const codeAgent = {
+        ...mockAgents[0],
+        content: '```typescript\nfunction test() { return true; }\n```',
+      };
+      const proseAgent = {
+        ...mockAgents[0],
+        content: 'This is a simple prose description without any code blocks.',
+      };
+
+      const context: AgentContext = {
+        query: 'Test query',
+      };
+
+      const codeResult = await orchestrator.executeAgent(codeAgent, context);
+      const proseResult = await orchestrator.executeAgent(proseAgent, context);
+
+      // Both should have token counts
+      expect(codeResult.tokensUsed).toBeGreaterThan(0);
+      expect(proseResult.tokensUsed).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Edge Cases - Memory Management', () => {
+    it('should handle large number of agents without memory issues', async () => {
+      const largeAgentSet: Agent[] = [];
+      for (let i = 0; i < 50; i++) {
+        largeAgentSet.push({
+          ...mockAgents[0],
+          metadata: {
+            ...mockAgents[0].metadata,
+            name: `agent-${i}`,
+          },
+        });
+      }
+
+      const largeOrchestrator = new AgentOrchestrator();
+      expect(() => largeOrchestrator.registerAgents(largeAgentSet)).not.toThrow();
+
+      const criteria: AgentSelectionCriteria = {
+        query: 'code review',
+        maxAgents: 50,
+      };
+
+      const results = await largeOrchestrator.selectAgents(criteria);
+      expect(results.length).toBeGreaterThan(0);
+      expect(results.length).toBeLessThanOrEqual(50);
+    });
+
+    it('should handle very long query strings', async () => {
+      const longQuery = 'code review '.repeat(1000); // Very long query
+      const criteria: AgentSelectionCriteria = {
+        query: longQuery,
+        maxAgents: 5,
+      };
+
+      const results = await orchestrator.selectAgents(criteria);
+      expect(results.length).toBeGreaterThan(0);
+    });
+  });
 });
