@@ -9,7 +9,8 @@ import path from 'path';
 export class CodeValidator {
   private dangerousPatterns: RegExp[] = [];
   private suspiciousPatterns: RegExp[] = [];
-  private initialized: boolean = false;
+  private initPromise: Promise<void> | null = null;
+  private readonly INIT_TIMEOUT_MS = 5000;
 
   constructor() {
     // Patterns will be loaded lazily
@@ -17,11 +18,26 @@ export class CodeValidator {
 
   /**
    * Validate code for security issues
+   *
+   * Performs pattern-based analysis to detect dangerous and suspicious code patterns.
+   * On first call, patterns are loaded lazily with automatic fallback to hardcoded defaults.
+   * Thread-safe: handles concurrent validation requests correctly during initialization.
+   *
+   * @param code - The code string to validate
+   * @returns Promise resolving to validation result with security assessment
+   *
+   * @example
+   * ```typescript
+   * const validator = new CodeValidator();
+   * const result = await validator.validate('eval("code")');
+   * if (!result.isSecure) {
+   *   console.log(`Risk score: ${result.riskScore}`);
+   *   console.log(`Issues found: ${result.issues.length}`);
+   * }
+   * ```
    */
   async validate(code: string): Promise<SecurityValidation> {
-    if (!this.initialized) {
-      await this.loadPatterns();
-    }
+    await this.ensureInitialized();
 
     const issues: SecurityIssue[] = [];
 
@@ -40,6 +56,65 @@ export class CodeValidator {
       issues,
       requiresApproval: riskScore >= 70
     };
+  }
+
+  /**
+   * Ensures patterns are initialized exactly once, even with concurrent calls
+   * Uses Promise-based guard to prevent race conditions
+   */
+  private async ensureInitialized(): Promise<void> {
+    // If already initialized or initializing, await the existing promise
+    if (this.initPromise) {
+      return this.initPromise;
+    }
+
+    // Create and store the initialization promise
+    this.initPromise = this.initializeWithTimeout();
+
+    try {
+      await this.initPromise;
+    } catch (error) {
+      // Defensive programming: Currently initializeWithTimeout() never throws (catches all errors),
+      // but this ensures we can retry initialization if future modifications change that behavior
+      this.initPromise = null;
+      throw error;
+    }
+  }
+
+  /**
+   * Initialize patterns with timeout protection
+   */
+  private async initializeWithTimeout(): Promise<void> {
+    let timeoutId: NodeJS.Timeout;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => {
+        reject(new Error(`Pattern loading timed out after ${this.INIT_TIMEOUT_MS}ms`));
+      }, this.INIT_TIMEOUT_MS);
+    });
+
+    try {
+      await Promise.race([
+        this.loadPatterns(),
+        timeoutPromise
+      ]);
+      // Clean up timeout on successful completion
+      clearTimeout(timeoutId!);
+    } catch (error) {
+      // Clean up timeout on error/timeout
+      clearTimeout(timeoutId!);
+
+      // On timeout or error, ensure we have fallback patterns loaded
+      if (this.dangerousPatterns.length === 0) {
+        this.loadDefaultDangerousPatterns();
+      }
+      if (this.suspiciousPatterns.length === 0) {
+        this.loadDefaultSuspiciousPatterns();
+      }
+
+      // Intentionally using console.warn for critical security initialization failures
+      // This ensures visibility in all environments before logging infrastructure is ready
+      console.warn('Pattern loading failed, using hardcoded patterns:', error);
+    }
   }
 
   /**
@@ -68,8 +143,6 @@ export class CodeValidator {
       this.loadDefaultDangerousPatterns();
       this.loadDefaultSuspiciousPatterns();
     }
-
-    this.initialized = true;
   }
 
   /**
