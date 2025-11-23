@@ -18,6 +18,23 @@ export class CodeValidator {
 
   /**
    * Validate code for security issues
+   *
+   * Performs pattern-based analysis to detect dangerous and suspicious code patterns.
+   * On first call, patterns are loaded lazily with automatic fallback to hardcoded defaults.
+   * Thread-safe: handles concurrent validation requests correctly during initialization.
+   *
+   * @param code - The code string to validate
+   * @returns Promise resolving to validation result with security assessment
+   *
+   * @example
+   * ```typescript
+   * const validator = new CodeValidator();
+   * const result = await validator.validate('eval("code")');
+   * if (!result.isSecure) {
+   *   console.log(`Risk score: ${result.riskScore}`);
+   *   console.log(`Issues found: ${result.issues.length}`);
+   * }
+   * ```
    */
   async validate(code: string): Promise<SecurityValidation> {
     await this.ensureInitialized();
@@ -57,7 +74,8 @@ export class CodeValidator {
     try {
       await this.initPromise;
     } catch (error) {
-      // On failure, reset so next call can retry
+      // Defensive programming: Currently initializeWithTimeout() never throws (catches all errors),
+      // but this ensures we can retry initialization if future modifications change that behavior
       this.initPromise = null;
       throw error;
     }
@@ -67,8 +85,9 @@ export class CodeValidator {
    * Initialize patterns with timeout protection
    */
   private async initializeWithTimeout(): Promise<void> {
+    let timeoutId: NodeJS.Timeout;
     const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => {
+      timeoutId = setTimeout(() => {
         reject(new Error(`Pattern loading timed out after ${this.INIT_TIMEOUT_MS}ms`));
       }, this.INIT_TIMEOUT_MS);
     });
@@ -78,7 +97,12 @@ export class CodeValidator {
         this.loadPatterns(),
         timeoutPromise
       ]);
+      // Clean up timeout on successful completion
+      clearTimeout(timeoutId!);
     } catch (error) {
+      // Clean up timeout on error/timeout
+      clearTimeout(timeoutId!);
+
       // On timeout or error, ensure we have fallback patterns loaded
       if (this.dangerousPatterns.length === 0) {
         this.loadDefaultDangerousPatterns();
@@ -87,7 +111,8 @@ export class CodeValidator {
         this.loadDefaultSuspiciousPatterns();
       }
 
-      // Don't throw - we have fallback patterns and can continue
+      // Intentionally using console.warn for critical security initialization failures
+      // This ensures visibility in all environments before logging infrastructure is ready
       console.warn('Pattern loading failed, using hardcoded patterns:', error);
     }
   }
