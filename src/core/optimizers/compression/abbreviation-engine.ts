@@ -1,7 +1,14 @@
 /**
  * Abbreviation Engine
  * Smart abbreviation system for technical and business terms
+ *
+ * Performance Optimizations:
+ * - Regex caching
+ * - Pre-sorted rules
+ * - Duplicate prevention
  */
+
+import { escapeRegex, createWordBoundaryPattern } from '../../utils/regex';
 
 export interface AbbreviationRule {
   full: string;
@@ -17,10 +24,16 @@ export interface AbbreviationResult {
   tokensReduced: number;
 }
 
+export interface AbbreviationOptions {
+  aggressive?: boolean;
+}
+
 /**
  * Smart Abbreviation Engine
  */
 export class AbbreviationEngine {
+  private static readonly CHARS_PER_TOKEN = 4;
+
   private rules: AbbreviationRule[] = [
     // Technical abbreviations
     { full: 'application', abbreviation: 'app', category: 'technical' },
@@ -77,24 +90,85 @@ export class AbbreviationEngine {
     { full: 'with regard to', abbreviation: 'w.r.t.', category: 'general' }
   ];
 
-  private customRules: Map<string, string> = new Map();
+  // PERFORMANCE FIX: Cached regex patterns
+  private regexCache: Map<string, RegExp> = new Map();
+  private reverseRegexCache: Map<string, RegExp> = new Map();
+
+  // PERFORMANCE FIX: Pre-sorted rules
+  private sortedRules: AbbreviationRule[] = [];
+
+  // Custom rules tracking
+  private customRules: Set<string> = new Set();
+
+  constructor() {
+    this.initializeCache();
+  }
+
+  /**
+   * Initialize regex cache and sort rules
+   */
+  private initializeCache(): void {
+    // Sort rules by length (longest first) to avoid partial matches
+    this.sortRules();
+
+    // Pre-compile regex patterns
+    this.compilePatterns();
+  }
+
+  /**
+   * Sort rules by full text length (longest first)
+   */
+  private sortRules(): void {
+    this.sortedRules = [...this.rules].sort((a, b) => b.full.length - a.full.length);
+  }
+
+  /**
+   * Compile all regex patterns
+   */
+  private compilePatterns(): void {
+    // Clear existing cache
+    this.regexCache.clear();
+    this.reverseRegexCache.clear();
+
+    // Compile abbreviation patterns
+    for (const rule of this.rules) {
+      const pattern = createWordBoundaryPattern(rule.full, 'gi');
+      this.regexCache.set(rule.full, pattern);
+
+      // Compile reverse pattern for expansion
+      const reversePattern = createWordBoundaryPattern(rule.abbreviation, 'g');
+      this.reverseRegexCache.set(rule.abbreviation, reversePattern);
+    }
+  }
 
   /**
    * Apply abbreviations to text
    */
-  abbreviate(text: string, options: { aggressive?: boolean } = {}): AbbreviationResult {
+  abbreviate(text: string, options: AbbreviationOptions = {}): AbbreviationResult {
+    if (text.length === 0) {
+      return {
+        original: text,
+        abbreviated: text,
+        abbreviationsApplied: [],
+        tokensReduced: 0
+      };
+    }
+
     const originalLength = text.length;
     let abbreviated = text;
     const abbreviationsApplied: Array<{ from: string; to: string }> = [];
 
-    // Sort rules by length (longest first) to avoid partial matches
-    const sortedRules = [...this.rules].sort((a, b) => b.full.length - a.full.length);
+    // PERFORMANCE FIX: Use pre-sorted rules instead of sorting every time
+    for (const rule of this.sortedRules) {
+      // PERFORMANCE FIX: Use cached regex
+      const pattern = this.regexCache.get(rule.full);
+      if (!pattern) continue;
 
-    for (const rule of sortedRules) {
-      const pattern = new RegExp(`\\b${this.escapeRegex(rule.full)}\\b`, 'gi');
+      pattern.lastIndex = 0;
       const matches = abbreviated.match(pattern);
 
       if (matches) {
+        pattern.lastIndex = 0;
         abbreviated = abbreviated.replace(pattern, rule.abbreviation);
         abbreviationsApplied.push({
           from: rule.full,
@@ -103,14 +177,10 @@ export class AbbreviationEngine {
       }
     }
 
-    // Apply custom rules
-    for (const [full, abbrev] of this.customRules.entries()) {
-      const pattern = new RegExp(`\\b${this.escapeRegex(full)}\\b`, 'gi');
-      abbreviated = abbreviated.replace(pattern, abbrev);
-    }
-
     const abbreviatedLength = abbreviated.length;
-    const tokensReduced = Math.floor((originalLength - abbreviatedLength) / 4);
+    const tokensReduced = Math.floor(
+      (originalLength - abbreviatedLength) / AbbreviationEngine.CHARS_PER_TOKEN
+    );
 
     return {
       original: text,
@@ -124,18 +194,17 @@ export class AbbreviationEngine {
    * Expand abbreviations back to full form
    */
   expand(text: string): string {
+    if (text.length === 0) return text;
+
     let expanded = text;
 
-    // Reverse the rules
+    // Use cached reverse patterns
     for (const rule of this.rules) {
-      const pattern = new RegExp(`\\b${this.escapeRegex(rule.abbreviation)}\\b`, 'g');
-      expanded = expanded.replace(pattern, rule.full);
-    }
+      const pattern = this.reverseRegexCache.get(rule.abbreviation);
+      if (!pattern) continue;
 
-    // Reverse custom rules
-    for (const [full, abbrev] of this.customRules.entries()) {
-      const pattern = new RegExp(`\\b${this.escapeRegex(abbrev)}\\b`, 'g');
-      expanded = expanded.replace(pattern, full);
+      pattern.lastIndex = 0;
+      expanded = expanded.replace(pattern, rule.full);
     }
 
     return expanded;
@@ -143,18 +212,35 @@ export class AbbreviationEngine {
 
   /**
    * Add custom abbreviation rule
+   * BUG FIX: Prevent duplicates and invalidate cache
    */
   addCustomRule(full: string, abbreviation: string, category: AbbreviationRule['category']): void {
-    this.customRules.set(full, abbreviation);
+    // Remove existing rule if present
+    this.removeCustomRule(full);
+
+    // Add new rule
     this.rules.push({ full, abbreviation, category });
+    this.customRules.add(full);
+
+    // Invalidate and rebuild cache
+    this.initializeCache();
   }
 
   /**
    * Remove custom abbreviation rule
+   * BUG FIX: Ensure complete removal from all structures
    */
   removeCustomRule(full: string): void {
-    this.customRules.delete(full);
+    if (!this.customRules.has(full)) {
+      return; // Not a custom rule, don't remove
+    }
+
+    // Remove from rules array (remove all instances)
     this.rules = this.rules.filter(r => r.full !== full);
+    this.customRules.delete(full);
+
+    // Invalidate and rebuild cache
+    this.initializeCache();
   }
 
   /**
@@ -164,7 +250,7 @@ export class AbbreviationEngine {
     if (category) {
       return this.rules.filter(r => r.category === category);
     }
-    return this.rules;
+    return [...this.rules];
   }
 
   /**
@@ -174,7 +260,10 @@ export class AbbreviationEngine {
     const suggestions: Array<{ word: string; suggestion: string }> = [];
 
     for (const rule of this.rules) {
-      const pattern = new RegExp(`\\b${this.escapeRegex(rule.full)}\\b`, 'gi');
+      const pattern = this.regexCache.get(rule.full);
+      if (!pattern) continue;
+
+      pattern.lastIndex = 0;
       if (pattern.test(text)) {
         suggestions.push({
           word: rule.full,
@@ -210,10 +299,17 @@ export class AbbreviationEngine {
   }
 
   /**
-   * Escape special regex characters
+   * Check if a rule exists
    */
-  private escapeRegex(str: string): string {
-    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  hasRule(full: string): boolean {
+    return this.rules.some(r => r.full === full);
+  }
+
+  /**
+   * Get a specific rule
+   */
+  getRule(full: string): AbbreviationRule | null {
+    return this.rules.find(r => r.full === full) || null;
   }
 }
 
@@ -221,3 +317,10 @@ export class AbbreviationEngine {
  * Default abbreviation engine instance
  */
 export const abbreviationEngine = new AbbreviationEngine();
+
+/**
+ * Factory function for creating new instances (useful for testing)
+ */
+export function createAbbreviationEngine(): AbbreviationEngine {
+  return new AbbreviationEngine();
+}
