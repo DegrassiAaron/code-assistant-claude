@@ -1,10 +1,13 @@
 /**
  * Phase 3: Command System - Command Parser
- * Parses slash command syntax and extracts command name and arguments
+ * Parses slash command syntax and extracts command name and arguments with security validations
  */
 
-import { ParsedCommand } from './types';
+import { ParsedCommand, ParameterValue } from './types';
 import { ParameterParser } from './parameter-parser';
+
+const MAX_INPUT_LENGTH = 10000;
+const MAX_COMMAND_NAME_LENGTH = 100;
 
 export class CommandParser {
   private parameterParser: ParameterParser;
@@ -22,8 +25,14 @@ export class CommandParser {
    *   /business-panel @doc.pdf --mode discussion
    *
    * Returns null if input is not a command
+   * Throws error if input exceeds security limits
    */
   parse(input: string): ParsedCommand | null {
+    // Security: Validate input length
+    if (input.length > MAX_INPUT_LENGTH) {
+      throw new Error(`Command input too long (max ${MAX_INPUT_LENGTH} characters)`);
+    }
+
     const trimmed = input.trim();
 
     // Check if it starts with a slash (command trigger)
@@ -52,6 +61,11 @@ export class CommandParser {
       commandName = commandName.substring(3);
     }
 
+    // Security: Validate command name length
+    if (commandName.length > MAX_COMMAND_NAME_LENGTH) {
+      throw new Error(`Command name too long (max ${MAX_COMMAND_NAME_LENGTH} characters)`);
+    }
+
     // Parse parameters and flags
     const { parameters, flags } = this.parameterParser.parseParameters(argsPart);
 
@@ -74,29 +88,29 @@ export class CommandParser {
     keywords?: string[]
   ): boolean {
     const parsed = this.parse(input);
-    if (!parsed) {
-      return false;
-    }
 
-    const commandName = parsed.commandName.toLowerCase();
+    // If it's a command (starts with /), check exact trigger and aliases
+    if (parsed) {
+      const commandName = parsed.commandName.toLowerCase();
 
-    // Check exact trigger (remove /sc: prefix)
-    const exactName = exactTrigger.replace(/^\/sc:/, '').toLowerCase();
-    if (commandName === exactName) {
-      return true;
-    }
+      // Check exact trigger (remove /sc: prefix)
+      const exactName = exactTrigger.replace(/^\/sc:/, '').toLowerCase();
+      if (commandName === exactName) {
+        return true;
+      }
 
-    // Check aliases
-    if (aliases) {
-      for (const alias of aliases) {
-        const aliasName = alias.replace(/^\//, '').toLowerCase();
-        if (commandName === aliasName) {
-          return true;
+      // Check aliases
+      if (aliases) {
+        for (const alias of aliases) {
+          const aliasName = alias.replace(/^\//, '').toLowerCase();
+          if (commandName === aliasName) {
+            return true;
+          }
         }
       }
     }
 
-    // Check keywords (partial match in raw input)
+    // Check keywords (partial match in raw input) - works for both commands and natural language
     if (keywords) {
       const lowerInput = input.toLowerCase();
       for (const keyword of keywords) {
@@ -127,7 +141,7 @@ export class CommandParser {
   /**
    * Formats a command for display
    */
-  formatCommand(command: string, parameters?: Record<string, any>): string {
+  formatCommand(command: string, parameters?: Record<string, ParameterValue>): string {
     let formatted = `/${command}`;
 
     if (parameters) {

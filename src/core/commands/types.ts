@@ -3,6 +3,9 @@
  * Provides TypeScript interfaces for the intelligent command system
  */
 
+export type ParameterValue = string | number | boolean | string[];
+export type ProjectContext = Record<string, unknown>;
+
 export interface CommandMetadata {
   name: string;
   description: string;
@@ -33,7 +36,7 @@ export interface CommandParameter {
   type: 'string' | 'number' | 'boolean' | 'array';
   required: boolean;
   description: string;
-  default?: any;
+  default?: ParameterValue;
   options?: string[];        // For enum-like parameters
 }
 
@@ -45,9 +48,9 @@ export interface Command {
 
 export interface CommandExecutionContext {
   command: string;
-  parameters: Record<string, any>;
+  parameters: Record<string, ParameterValue>;
   userMessage: string;
-  projectContext?: any;
+  projectContext?: ProjectContext;
 }
 
 export interface CommandExecutionResult {
@@ -64,8 +67,8 @@ export interface CommandExecutionResult {
 export interface ParsedCommand {
   commandName: string;
   rawInput: string;
-  parameters: Record<string, any>;
-  flags: Record<string, boolean | string>;
+  parameters: Record<string, ParameterValue>;
+  flags: Record<string, boolean | string | ParameterValue>;
 }
 
 export interface ValidationResult {
@@ -82,4 +85,9 @@ export interface CommandLoadResult {
   success: boolean;
   command?: Command;
   error?: string;
+}
+
+export interface CommandCache {
+  command: Command;
+  mtime: number;
 }

@@ -70,6 +70,29 @@ describe('CommandParser', () => {
       expect(result).not.toBeNull();
       expect(result?.commandName).toBe('implement');
     });
+
+    it('should throw on excessively long input', () => {
+      const longInput = '/' + 'x'.repeat(15000);
+
+      expect(() => {
+        parser.parse(longInput);
+      }).toThrow('Command input too long');
+    });
+
+    it('should throw on excessively long command name', () => {
+      const longName = '/' + 'a'.repeat(150);
+
+      expect(() => {
+        parser.parse(longName);
+      }).toThrow('Command name too long');
+    });
+
+    it('should handle escaped characters in arguments', () => {
+      const result = parser.parse('/test "say \\"hello\\""');
+
+      expect(result).not.toBeNull();
+      expect(result?.parameters.param0).toBe('say "hello"');
+    });
   });
 
   describe('matchesCommand', () => {
@@ -141,6 +164,37 @@ describe('CommandParser', () => {
       const formatted = parser.formatCommand('implement');
 
       expect(formatted).toBe('/implement');
+    });
+
+    it('should handle boolean false values', () => {
+      const formatted = parser.formatCommand('implement', {
+        withTests: false
+      });
+
+      // False boolean flags should not appear
+      expect(formatted).toBe('/implement');
+    });
+
+    it('should handle numeric values', () => {
+      const formatted = parser.formatCommand('test', {
+        count: 42
+      });
+
+      expect(formatted).toContain('--count=42');
+    });
+  });
+
+  describe('extractCommandName', () => {
+    it('should extract command name from valid command', () => {
+      const name = parser.extractCommandName('/sc:implement "feature"');
+
+      expect(name).toBe('implement');
+    });
+
+    it('should return null for non-command', () => {
+      const name = parser.extractCommandName('regular text');
+
+      expect(name).toBeNull();
     });
   });
 });

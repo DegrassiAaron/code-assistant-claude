@@ -1,9 +1,12 @@
 /**
  * Phase 3: Command System - Parameter Parser
- * Parses command-line style parameters and flags
+ * Parses command-line style parameters and flags with security hardening
  */
 
-import { CommandParameter } from './types';
+import { CommandParameter, ParameterValue } from './types';
+
+const MAX_JSON_SIZE = 10000;
+const MAX_JSON_DEPTH = 10;
 
 export class ParameterParser {
   /**
@@ -17,9 +20,9 @@ export class ParameterParser {
   parseParameters(
     input: string,
     parameterDefs?: CommandParameter[]
-  ): { parameters: Record<string, any>; flags: Record<string, boolean | string> } {
-    const parameters: Record<string, any> = {};
-    const flags: Record<string, boolean | string> = {};
+  ): { parameters: Record<string, ParameterValue>; flags: Record<string, boolean | string | ParameterValue> } {
+    const parameters: Record<string, ParameterValue> = {};
+    const flags: Record<string, boolean | string | ParameterValue> = {};
 
     // Split input respecting quotes
     const tokens = this.tokenize(input);
@@ -75,34 +78,54 @@ export class ParameterParser {
   }
 
   /**
-   * Tokenizes input string, respecting quotes
+   * Tokenizes input string, respecting quotes and escaped characters
    */
   private tokenize(input: string): string[] {
     const tokens: string[] = [];
     let current = '';
     let inQuotes = false;
     let quoteChar = '';
+    let escaped = false;
+    let wasQuoted = false;
 
     for (let i = 0; i < input.length; i++) {
       const char = input[i];
 
+      if (escaped) {
+        // Add escaped character literally
+        current += char;
+        escaped = false;
+        continue;
+      }
+
+      if (char === '\\') {
+        // Next character is escaped
+        escaped = true;
+        continue;
+      }
+
       if ((char === '"' || char === "'") && !inQuotes) {
         inQuotes = true;
         quoteChar = char;
+        wasQuoted = true;
       } else if (char === quoteChar && inQuotes) {
         inQuotes = false;
         quoteChar = '';
+        // Keep wasQuoted true - we'll check it when adding token
       } else if (char === ' ' && !inQuotes) {
-        if (current) {
+        // Add token if it has content OR if it was a quoted empty string
+        if (current || wasQuoted) {
           tokens.push(current);
           current = '';
+          wasQuoted = false;
         }
       } else {
         current += char;
       }
     }
 
-    if (current) {
+    // Add final token if it has content OR if it was quoted
+    if (current || wasQuoted) {
       tokens.push(current);
     }
 
@@ -110,27 +133,48 @@ export class ParameterParser {
   }
 
   /**
-   * Parses a value string into the appropriate type
+   * Parses a value string into the appropriate type with security checks
    */
-  private parseValue(value: string, expectedType?: string): any {
+  private parseValue(value: string, expectedType?: string): ParameterValue {
     // Remove quotes if present
     if ((value.startsWith('"') && value.endsWith('"')) ||
         (value.startsWith("'") && value.endsWith("'"))) {
       value = value.slice(1, -1);
     }
 
-    // Try to parse as JSON array or object
+    // Security: Check size before parsing JSON
     if (value.startsWith('[') || value.startsWith('{')) {
+      if (value.length > MAX_JSON_SIZE) {
+        throw new Error(`JSON value too large (max ${MAX_JSON_SIZE} characters)`);
+      }
+
       try {
-        return JSON.parse(value);
-      } catch {
+        const parsed = JSON.parse(value);
+
+        // Security: Validate depth
+        const depth = this.getObjectDepth(parsed);
+        if (depth > MAX_JSON_DEPTH) {
+          throw new Error(`JSON structure too deep (max depth ${MAX_JSON_DEPTH})`);
+        }
+
+        return parsed as ParameterValue;
+      } catch (error) {
+        // If JSON parsing fails, return as string
+        if (error instanceof Error && error.message.includes('JSON')) {
+          throw error; // Re-throw our security errors
+        }
         return value;
       }
     }
 
     // Type-specific parsing
-    if (expectedType === 'number' || (!expectedType && !isNaN(Number(value)))) {
-      return Number(value);
+    // Fix: Check for empty/whitespace strings before parsing as number
+    if (expectedType === 'number' || (!expectedType && value.trim() && !isNaN(Number(value)))) {
+      const num = Number(value);
+      // Additional check: ensure it's a valid number
+      if (!isNaN(num) && isFinite(num)) {
+        return num;
+      }
     }
 
     if (expectedType === 'boolean' || value === 'true' || value === 'false') {
@@ -146,11 +190,39 @@ export class ParameterParser {
   }
 
   /**
+   * Calculates the depth of a nested object/array
+   */
+  private getObjectDepth(obj: unknown, currentDepth: number = 0): number {
+    // Security: Prevent stack overflow
+    if (currentDepth > MAX_JSON_DEPTH) {
+      return currentDepth;
+    }
+
+    if (typeof obj !== 'object' || obj === null) {
+      return currentDepth;
+    }
+
+    if (Array.isArray(obj)) {
+      if (obj.length === 0) {
+        return currentDepth + 1;
+      }
+      return 1 + Math.max(...obj.map(item => this.getObjectDepth(item, currentDepth + 1)));
+    }
+
+    const values = Object.values(obj);
+    if (values.length === 0) {
+      return currentDepth + 1;
+    }
+
+    return 1 + Math.max(...values.map(value => this.getObjectDepth(value, currentDepth + 1)));
+  }
+
+  /**
    * Validates parameters against definitions
    */
   validateParameters(
-    parameters: Record<string, any>,
-    flags: Record<string, boolean | string>,
+    parameters: Record<string, ParameterValue>,
+    flags: Record<string, boolean | string | ParameterValue>,
     parameterDefs?: CommandParameter[]
   ): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
@@ -169,11 +241,14 @@ export class ParameterParser {
       }
 
       if (value !== undefined) {
-        // Type validation
+        // Type validation - Fixed logic
         const actualType = Array.isArray(value) ? 'array' : typeof value;
         const expectedType = paramDef.type;
 
-        if (actualType !== expectedType && !(expectedType === 'number' && actualType === 'number')) {
+        const isValidType = actualType === expectedType ||
+                           (expectedType === 'number' && typeof value === 'number' && !isNaN(value));
+
+        if (!isValidType) {
           errors.push(
             `Parameter ${paramDef.name} has wrong type: expected ${expectedType}, got ${actualType}`
           );

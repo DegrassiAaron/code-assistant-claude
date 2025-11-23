@@ -1,6 +1,6 @@
 /**
  * Phase 3: Command System - Command Executor
- * Executes commands and manages skill/MCP activation
+ * Executes commands and manages skill/MCP activation with comprehensive security and error handling
  */
 
 import * as fs from 'fs/promises';
@@ -12,35 +12,66 @@ import {
   CommandLoadResult,
   CommandMetadata,
   CommandRegistry,
+  CommandCache,
+  ParameterValue,
 } from './types';
 import { CommandParser } from './command-parser';
 import { CommandValidator } from './command-validator';
+import { Logger, ConsoleLogger } from './logger';
 
 export class CommandExecutor {
+  private static readonly DEFAULT_CATEGORIES = ['workflow', 'superclaude', 'optimization', 'git'] as const;
+
   private commandParser: CommandParser;
   private commandValidator: CommandValidator;
   private commandRegistry: CommandRegistry = {};
+  private commandCache: Map<string, CommandCache> = new Map();
   private templatesPath: string;
+  private logger: Logger;
+  private categories: readonly string[];
 
-  constructor(templatesPath: string = 'templates/commands') {
+  constructor(
+    templatesPath: string = 'templates/commands',
+    logger?: Logger,
+    categories?: readonly string[]
+  ) {
     this.commandParser = new CommandParser();
     this.commandValidator = new CommandValidator();
     this.templatesPath = templatesPath;
+    this.logger = logger || new ConsoleLogger();
+    this.categories = categories || CommandExecutor.DEFAULT_CATEGORIES;
   }
 
   /**
-   * Loads a command from a markdown file
+   * Loads a command from a markdown file with caching
    */
-  async loadCommand(commandPath: string): Promise<CommandLoadResult> {
+  async loadCommand(commandPath: string, useCache: boolean = true): Promise<CommandLoadResult> {
+    this.logger.info('Loading command', { path: commandPath });
+
     try {
+      // Check cache if enabled
+      if (useCache) {
+        const cached = this.commandCache.get(commandPath);
+        if (cached) {
+          const stats = await fs.stat(commandPath);
+          if (stats.mtimeMs === cached.mtime) {
+            this.logger.debug('Using cached command', { path: commandPath });
+            return { success: true, command: cached.command };
+          }
+        }
+      }
+
       const content = await fs.readFile(commandPath, 'utf-8');
+      const stats = await fs.stat(commandPath);
 
       // Extract metadata from frontmatter
       const metadata = this.parseCommandMetadata(content);
       if (!metadata) {
+        const error = 'Failed to parse command metadata';
+        this.logger.error(error, undefined, { path: commandPath });
         return {
           success: false,
-          error: 'Failed to parse command metadata',
+          error,
         };
       }
 
@@ -53,23 +84,45 @@ export class CommandExecutor {
       // Validate command
       const validation = this.commandValidator.validateCommandDefinition(command);
       if (!validation.valid) {
+        const error = `Invalid command: ${validation.errors.join(', ')}`;
+        this.logger.error(error, undefined, {
+          path: commandPath,
+          errors: validation.errors.join('; '),
+        });
         return {
           success: false,
-          error: `Invalid command: ${validation.errors.join(', ')}`,
+          error,
         };
       }
 
-      // Register command
+      // Register command and update cache
       this.commandRegistry[metadata.name] = command;
+      this.commandCache.set(commandPath, {
+        command,
+        mtime: stats.mtimeMs,
+      });
+
+      this.logger.info('Command loaded successfully', {
+        name: metadata.name,
+        path: commandPath,
+      });
 
       return {
         success: true,
         command,
       };
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+
+      this.logger.error('Failed to load command', error instanceof Error ? error : undefined, {
+        path: commandPath,
+        message: errorMessage,
+      });
+
       return {
         success: false,
-        error: `Failed to load command: ${error}`,
+        error: `Failed to load command: ${errorMessage}`,
       };
     }
   }
@@ -81,9 +134,7 @@ export class CommandExecutor {
     let loaded = 0;
     const failed: string[] = [];
 
-    const categories = ['workflow', 'superclaude', 'optimization', 'git'];
-
-    for (const category of categories) {
+    for (const category of this.categories) {
       const categoryPath = path.join(this.templatesPath, category);
 
       try {
@@ -97,15 +148,22 @@ export class CommandExecutor {
             if (result.success) {
               loaded++;
             } else {
-              failed.push(`${category}/${file}: ${result.error}`);
+              const errorMsg = `${category}/${file}: ${result.error}`;
+              failed.push(errorMsg);
+              this.logger.warn('Failed to load command file', { error: errorMsg });
             }
           }
         }
       } catch (error) {
         // Category directory might not exist yet
+        this.logger.warn(`Failed to load category ${category}`, {
+          error: error instanceof Error ? error.message : String(error),
+        });
         continue;
       }
     }
+
+    this.logger.info('Commands loaded', { loaded, failed: failed.length });
 
     return { loaded, failed };
   }
@@ -117,6 +175,8 @@ export class CommandExecutor {
     const startTime = Date.now();
 
     try {
+      this.logger.info('Executing command', { command: context.command });
+
       // Parse command
       const parsed = this.commandParser.parse(context.command);
       if (!parsed) {
@@ -134,9 +194,11 @@ export class CommandExecutor {
       // Find command in registry
       const command = this.findCommand(parsed.commandName);
       if (!command) {
+        const error = `Command not found: ${parsed.commandName}`;
+        this.logger.warn(error);
         return {
           success: false,
-          error: `Command not found: ${parsed.commandName}`,
+          error,
           activatedSkills: [],
           activatedMCPs: [],
           activatedAgents: [],
@@ -152,9 +214,11 @@ export class CommandExecutor {
       );
 
       if (!validation.valid) {
+        const error = `Validation failed: ${validation.errors.join(', ')}`;
+        this.logger.warn(error, { command: command.metadata.name });
         return {
           success: false,
-          error: `Validation failed: ${validation.errors.join(', ')}`,
+          error,
           activatedSkills: [],
           activatedMCPs: [],
           activatedAgents: [],
@@ -166,6 +230,13 @@ export class CommandExecutor {
       // Prepare execution output
       const output = this.prepareCommandOutput(command, parsed, context);
 
+      const executionTime = Date.now() - startTime;
+
+      this.logger.info('Command executed successfully', {
+        command: command.metadata.name,
+        executionTime,
+      });
+
       return {
         success: true,
         output,
@@ -173,12 +244,20 @@ export class CommandExecutor {
         activatedMCPs: command.metadata.requires?.mcps || [],
         activatedAgents: command.metadata.requires?.agents || [],
         tokensUsed: command.metadata.tokenEstimate,
-        executionTime: Date.now() - startTime,
+        executionTime,
       };
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+
+      this.logger.error(
+        'Command execution failed',
+        error instanceof Error ? error : undefined,
+        { command: context.command }
+      );
+
       return {
         success: false,
-        error: `Execution failed: ${error}`,
+        error: `Execution failed: ${errorMessage}`,
         activatedSkills: [],
         activatedMCPs: [],
         activatedAgents: [],
@@ -209,72 +288,103 @@ export class CommandExecutor {
 
   /**
    * Parses command metadata from markdown frontmatter
+   * Uses a safe subset of YAML parsing with runtime validation
    */
   private parseCommandMetadata(content: string): CommandMetadata | null {
     const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
     if (!frontmatterMatch) {
+      this.logger.warn('No frontmatter found in command file');
       return null;
     }
 
     try {
-      // Parse YAML-like frontmatter
+      // Parse YAML-like frontmatter (safe subset)
       const frontmatter = frontmatterMatch[1];
-      const metadata: any = {};
+      const metadata = this.parseYAMLSubset(frontmatter);
 
-      const lines = frontmatter.split('\n');
-      let currentKey = '';
-      let currentObject: any = metadata;
-      let indent = 0;
-
-      for (const line of lines) {
-        if (line.trim() === '') continue;
-
-        const lineIndent = line.search(/\S/);
-        const trimmed = line.trim();
-
-        if (trimmed.startsWith('-')) {
-          // Array item
-          const value = trimmed.substring(1).trim();
-          if (!Array.isArray(currentObject[currentKey])) {
-            currentObject[currentKey] = [];
-          }
-          currentObject[currentKey].push(this.parseValue(value));
-        } else if (trimmed.includes(':')) {
-          const [key, ...valueParts] = trimmed.split(':');
-          const value = valueParts.join(':').trim();
-
-          if (lineIndent > indent) {
-            // Nested object
-            currentObject = currentObject[currentKey];
-          } else if (lineIndent < indent) {
-            // Back to parent
-            currentObject = metadata;
-          }
-
-          currentKey = key.trim();
-          if (value) {
-            currentObject[currentKey] = this.parseValue(value);
-          } else {
-            currentObject[currentKey] = {};
-          }
-
-          indent = lineIndent;
-        }
+      // Runtime validation
+      if (!this.validateMetadata(metadata)) {
+        this.logger.error('Metadata validation failed', undefined, { metadata });
+        return null;
       }
 
       return metadata as CommandMetadata;
     } catch (error) {
+      this.logger.error(
+        'Failed to parse command metadata',
+        error instanceof Error ? error : undefined
+      );
       return null;
     }
   }
 
   /**
-   * Parses a value from YAML-like format
+   * Safe YAML subset parser (only handles simple key-value, arrays, and nested objects)
    */
-  private parseValue(value: string): any {
+  private parseYAMLSubset(yaml: string): Record<string, unknown> {
+    const result: Record<string, unknown> = {};
+    const lines = yaml.split('\n');
+    const stack: Array<{ obj: Record<string, unknown>; indent: number }> = [
+      { obj: result, indent: -1 },
+    ];
+
+    let currentKey = '';
+    let currentArray: unknown[] | null = null;
+
+    for (const line of lines) {
+      if (line.trim() === '' || line.trim().startsWith('#')) {
+        continue;
+      }
+
+      const indent = line.search(/\S/);
+      const trimmed = line.trim();
+
+      // Pop stack if we've decreased indentation
+      while (stack.length > 1 && indent <= stack[stack.length - 1].indent) {
+        stack.pop();
+        currentArray = null;
+      }
+
+      const current = stack[stack.length - 1].obj;
+
+      if (trimmed.startsWith('-')) {
+        // Array item
+        const value = trimmed.substring(1).trim();
+        if (!currentArray) {
+          currentArray = [];
+          current[currentKey] = currentArray;
+        }
+        currentArray.push(this.parseYAMLValue(value));
+      } else if (trimmed.includes(':')) {
+        currentArray = null;
+        const colonIndex = trimmed.indexOf(':');
+        const key = trimmed.substring(0, colonIndex).trim();
+        const value = trimmed.substring(colonIndex + 1).trim();
+
+        currentKey = key;
+
+        if (value) {
+          current[key] = this.parseYAMLValue(value);
+        } else {
+          // Nested object
+          const nested: Record<string, unknown> = {};
+          current[key] = nested;
+          stack.push({ obj: nested, indent });
+        }
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Parse a YAML value
+   */
+  private parseYAMLValue(value: string): unknown {
     if (value === 'true') return true;
     if (value === 'false') return false;
-    if (!isNaN(Number(value))) return Number(value);
+    if (value === 'null') return null;
+    if (!isNaN(Number(value)) && value.trim()) return Number(value);
     if (value.startsWith('"') && value.endsWith('"')) {
       return value.slice(1, -1);
     }
@@ -289,11 +399,41 @@ export class CommandExecutor {
   }
 
   /**
-   * Prepares the command output for execution
+   * Runtime validation of metadata structure
+   */
+  private validateMetadata(metadata: unknown): metadata is CommandMetadata {
+    if (typeof metadata !== 'object' || metadata === null) {
+      return false;
+    }
+
+    const m = metadata as Record<string, unknown>;
+
+    return (
+      typeof m.name === 'string' &&
+      typeof m.description === 'string' &&
+      typeof m.category === 'string' &&
+      ['workflow', 'superclaude', 'optimization', 'git'].includes(m.category as string) &&
+      typeof m.version === 'string' &&
+      typeof m.triggers === 'object' &&
+      typeof m.autoExecute === 'boolean' &&
+      typeof m.tokenEstimate === 'number' &&
+      typeof m.executionTime === 'string'
+    );
+  }
+
+  /**
+   * Escapes special regex characters
+   */
+  private escapeRegex(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  /**
+   * Prepares the command output for execution with safe regex replacement
    */
   private prepareCommandOutput(
     command: Command,
-    parsed: any,
+    parsed: { parameters: Record<string, ParameterValue>; flags: Record<string, boolean | string | ParameterValue> },
     context: CommandExecutionContext
   ): string {
     let output = command.content;
@@ -301,13 +441,15 @@ export class CommandExecutor {
     // Remove frontmatter
     output = output.replace(/^---\n[\s\S]*?\n---\n/, '');
 
-    // Replace parameter placeholders
+    // Replace parameter placeholders - FIX: Escape regex special characters
     for (const [key, value] of Object.entries(parsed.parameters)) {
-      output = output.replace(new RegExp(`\\{${key}\\}`, 'g'), String(value));
+      const escapedKey = this.escapeRegex(key);
+      output = output.replace(new RegExp(`\\{${escapedKey}\\}`, 'g'), String(value));
     }
 
     for (const [key, value] of Object.entries(parsed.flags)) {
-      output = output.replace(new RegExp(`\\{${key}\\}`, 'g'), String(value));
+      const escapedKey = this.escapeRegex(key);
+      output = output.replace(new RegExp(`\\{${escapedKey}\\}`, 'g'), String(value));
     }
 
     // Add execution context
@@ -334,6 +476,37 @@ export class CommandExecutor {
   }
 
   /**
+   * Unloads a command from registry and cache
+   */
+  unloadCommand(name: string): boolean {
+    if (this.commandRegistry[name]) {
+      delete this.commandRegistry[name];
+      this.logger.info('Command unloaded', { name });
+
+      // Also remove from cache
+      for (const [path, cached] of this.commandCache.entries()) {
+        if (cached.command.metadata.name === name) {
+          this.commandCache.delete(path);
+          break;
+        }
+      }
+
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Clears all loaded commands and cache
+   */
+  clearRegistry(): void {
+    const count = Object.keys(this.commandRegistry).length;
+    this.commandRegistry = {};
+    this.commandCache.clear();
+    this.logger.info('Registry cleared', { commandsCleared: count });
+  }
+
+  /**
    * Gets all registered commands
    */
   getCommands(): CommandRegistry {
@@ -351,17 +524,29 @@ export class CommandExecutor {
    * Lists all available commands by category
    */
   listCommands(): Record<string, string[]> {
-    const byCategory: Record<string, string[]> = {
-      workflow: [],
-      superclaude: [],
-      optimization: [],
-      git: [],
-    };
+    const byCategory: Record<string, string[]> = {};
+
+    // Initialize all categories
+    for (const cat of this.categories) {
+      byCategory[cat] = [];
+    }
 
     for (const command of Object.values(this.commandRegistry)) {
-      byCategory[command.metadata.category].push(command.metadata.name);
+      if (byCategory[command.metadata.category]) {
+        byCategory[command.metadata.category].push(command.metadata.name);
+      }
     }
 
     return byCategory;
+  }
+
+  /**
+   * Gets cache statistics
+   */
+  getCacheStats(): { size: number; commands: string[] } {
+    return {
+      size: this.commandCache.size,
+      commands: Array.from(this.commandCache.values()).map(c => c.command.metadata.name),
+    };
   }
 }
