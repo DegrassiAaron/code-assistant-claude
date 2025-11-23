@@ -287,7 +287,7 @@ export class ExecutionOrchestrator {
     console.log(`  Code Wrapper:   ~${codeTokens} tokens`);
     console.log(`  Result Summary: ~${result.metrics.tokensInSummary} tokens`);
     console.log(`  Total:          ~${codeTokens + result.metrics.tokensInSummary + 2000} tokens`);
-    console.log('\n  Traditional:    ~200,000 tokens`);
+    console.log('\n  Traditional:    ~200,000 tokens');
     console.log(`  Reduction:      ${this.calculateReduction(codeTokens + result.metrics.tokensInSummary)} 🎉\n`);
     console.log('═'.repeat(60) + '\n');
   }
@@ -312,6 +312,14 @@ export class ExecutionOrchestrator {
       tools: this.toolIndexer.getStats(),
       anomaly: this.anomalyDetector.getStats()
     };
+  }
+
+  /**
+   * Get audit logger instance (for testing only)
+   * @internal
+   */
+  getAuditLogger(): AuditLogger {
+    return this.auditLogger;
   }
 
   /**
