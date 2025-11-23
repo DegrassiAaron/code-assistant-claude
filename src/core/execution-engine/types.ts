@@ -53,16 +53,22 @@ export interface SandboxConfig {
   image?: string;              // Docker image
   vmId?: string;               // VM identifier
   resourceLimits: {
-    cpu: number;               // CPU cores
+    cpu: number | string;      // CPU cores
     memory: string;            // e.g., "512M"
-    disk: string;              // e.g., "1G"
+    disk?: string;             // e.g., "1G"
     timeout: number;           // milliseconds
   };
-  networkPolicy: {
+  networkPolicy?: {
     mode: 'none' | 'whitelist' | 'blacklist';
     allowed?: string[];
     blocked?: string[];
   };
+  /**
+   * Additional safe environment variables to pass to sandbox
+   * These variables will be validated to ensure they don't contain secrets
+   * Variables matching dangerous patterns (KEY, SECRET, TOKEN, PASSWORD, etc.) will be rejected
+   */
+  allowedEnvVars?: string[];
 }
 
 /**

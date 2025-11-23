@@ -261,4 +261,121 @@ print(json.dumps({
     expect(parsed.hasPath).toBe(true);
     expect(parsed.pathIsDefined).toBe(true);
   });
+
+  it('should use sandbox-specific HOME and TMPDIR directories', async () => {
+    const code = `
+import os
+import json
+
+home = os.environ.get('HOME', '')
+tmpdir = os.environ.get('TMPDIR', '')
+
+print(json.dumps({
+    'home': home,
+    'tmpdir': tmpdir,
+    'homeSame': home == tmpdir,
+    'homeIsTmp': home.startswith('/tmp/'),
+    'tmpdirIsTmp': tmpdir.startswith('/tmp/')
+}))
+`;
+
+    const result = await sandbox.execute(code, 'python');
+
+    expect(result.success).toBe(true);
+    const parsed = JSON.parse(result.output!.trim());
+
+    // Both HOME and TMPDIR should point to the sandbox temp directory
+    expect(parsed.homeSame).toBe(true);
+    expect(parsed.homeIsTmp).toBe(true);
+    expect(parsed.tmpdirIsTmp).toBe(true);
+  });
+
+  it('should allow custom safe environment variables', async () => {
+    process.env.CUSTOM_SAFE_VAR = 'test_value_123';
+    process.env.MY_CONFIG = 'config_value';
+
+    const customConfig: SandboxConfig = {
+      ...defaultConfig,
+      allowedEnvVars: ['CUSTOM_SAFE_VAR', 'MY_CONFIG']
+    };
+
+    const customSandbox = new ProcessSandbox(customConfig);
+
+    const code = `
+import os
+import json
+
+print(json.dumps({
+    'hasCustomVar': 'CUSTOM_SAFE_VAR' in os.environ,
+    'customVarValue': os.environ.get('CUSTOM_SAFE_VAR'),
+    'hasMyConfig': 'MY_CONFIG' in os.environ,
+    'myConfigValue': os.environ.get('MY_CONFIG')
+}))
+`;
+
+    const result = await customSandbox.execute(code, 'python');
+
+    expect(result.success).toBe(true);
+    const parsed = JSON.parse(result.output!.trim());
+
+    // Custom allowed variables should be accessible
+    expect(parsed.hasCustomVar).toBe(true);
+    expect(parsed.customVarValue).toBe('test_value_123');
+    expect(parsed.hasMyConfig).toBe(true);
+    expect(parsed.myConfigValue).toBe('config_value');
+
+    // Cleanup
+    delete process.env.CUSTOM_SAFE_VAR;
+    delete process.env.MY_CONFIG;
+  });
+
+  it('should reject dangerous custom environment variables', async () => {
+    const dangerousConfigs = [
+      { allowedEnvVars: ['MY_API_KEY'] },
+      { allowedEnvVars: ['DATABASE_SECRET'] },
+      { allowedEnvVars: ['AUTH_TOKEN'] },
+      { allowedEnvVars: ['MY_PASSWORD'] },
+      { allowedEnvVars: ['SERVICE_CREDENTIAL'] }
+    ];
+
+    for (const config of dangerousConfigs) {
+      const dangerousSandbox = new ProcessSandbox({
+        ...defaultConfig,
+        ...config
+      });
+
+      const code = `print("test")`;
+
+      const result = await dangerousSandbox.execute(code, 'python');
+
+      // Execution should fail with security error
+      expect(result.success).toBe(false);
+      expect(result.error).toMatch(/Security Error: Refusing to expose potentially sensitive variable/);
+    }
+  });
+
+  it('should not leak host HOME directory path', async () => {
+    const hostHome = process.env.HOME || '/home/user';
+
+    const code = `
+import os
+import json
+
+sandbox_home = os.environ.get('HOME', '')
+
+print(json.dumps({
+    'sandboxHome': sandbox_home,
+    'isHostHome': sandbox_home == '${hostHome}',
+    'containsUser': 'user' in sandbox_home.lower() if sandbox_home else False
+}))
+`;
+
+    const result = await sandbox.execute(code, 'python');
+
+    expect(result.success).toBe(true);
+    const parsed = JSON.parse(result.output!.trim());
+
+    // Sandbox HOME should NOT be the host HOME directory
+    expect(parsed.isHostHome).toBe(false);
+  });
 });
