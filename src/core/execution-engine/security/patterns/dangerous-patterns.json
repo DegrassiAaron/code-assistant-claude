@@ -1,0 +1,55 @@
+{
+  "version": "1.0.0",
+  "description": "Dangerous code patterns that should be blocked",
+  "patterns": [
+    "eval\\(",
+    "Function\\(",
+    "require\\(['\"]child_process['\"]\\)",
+    "exec\\(",
+    "execSync\\(",
+    "spawn\\(",
+    "document\\.cookie",
+    "localStorage",
+    "sessionStorage",
+    "\\.innerHTML\\s*=",
+    "on(click|load|error|mouseover)\\s*=",
+    "\\.outerHTML\\s*=",
+    "dangerouslySetInnerHTML",
+    "__proto__",
+    "constructor\\[",
+    "process\\.binding",
+    "process\\.mainModule",
+    "\\.constructor\\.constructor",
+    "new\\s+Function",
+    "vm\\.runInNewContext",
+    "vm\\.runInThisContext"
+  ],
+  "categories": {
+    "code_execution": [
+      "eval\\(",
+      "Function\\(",
+      "new\\s+Function"
+    ],
+    "shell_execution": [
+      "exec\\(",
+      "execSync\\(",
+      "spawn\\(",
+      "require\\(['\"]child_process['\"]\\)"
+    ],
+    "dom_manipulation": [
+      "\\.innerHTML\\s*=",
+      "\\.outerHTML\\s*=",
+      "dangerouslySetInnerHTML"
+    ],
+    "prototype_pollution": [
+      "__proto__",
+      "constructor\\[",
+      "\\.constructor\\.constructor"
+    ],
+    "data_access": [
+      "document\\.cookie",
+      "localStorage",
+      "sessionStorage"
+    ]
+  }
+}

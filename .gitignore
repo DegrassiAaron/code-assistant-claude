@@ -89,6 +89,7 @@ temp/
 # code-assistant-claude specific
 .claude-backups/
 workspace/
+!src/**/workspace/
 mcp-api/
 *.sqlite
 *.db
