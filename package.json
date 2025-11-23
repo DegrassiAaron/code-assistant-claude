@@ -54,9 +54,9 @@
     "audit:production": "npm audit --production --audit-level=high",
     "check:deps": "npm outdated",
     "check:licenses": "license-checker --summary",
-    "benchmark": "node dist/benchmarks/index.js",
-    "benchmark:token-reduction": "node dist/benchmarks/token-reduction.js",
-    "benchmark:execution-engine": "node dist/benchmarks/execution-engine.js",
+    "benchmark": "vitest run tests/performance --reporter=verbose",
+    "benchmark:token-reduction": "vitest run tests/performance/token-reduction.bench.ts --reporter=verbose",
+    "benchmark:performance": "vitest run tests/performance/benchmarks.test.ts --reporter=verbose",
     "prepublishOnly": "npm run lint && npm run typecheck && npm test && npm run build",
     "prepare": "husky install"
   },
