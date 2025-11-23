@@ -1,0 +1,64 @@
+{
+  "version": "1.0.0",
+  "description": "Safe code patterns that are allowed",
+  "patterns": [
+    "console\\.log",
+    "console\\.error",
+    "console\\.warn",
+    "console\\.info",
+    "JSON\\.parse",
+    "JSON\\.stringify",
+    "Array\\.",
+    "Object\\.",
+    "String\\.",
+    "Number\\.",
+    "Math\\.",
+    "Date\\.",
+    "Promise\\.",
+    "async\\s+function",
+    "await\\s+",
+    "import\\s+.+\\s+from",
+    "export\\s+",
+    "const\\s+",
+    "let\\s+",
+    "var\\s+",
+    "function\\s+\\w+",
+    "class\\s+\\w+",
+    "interface\\s+\\w+",
+    "type\\s+\\w+"
+  ],
+  "categories": {
+    "logging": [
+      "console\\.log",
+      "console\\.error",
+      "console\\.warn",
+      "console\\.info"
+    ],
+    "data_processing": [
+      "JSON\\.parse",
+      "JSON\\.stringify",
+      "Array\\.",
+      "Object\\.",
+      "String\\.",
+      "Number\\.": [
+    ],
+    "async_operations": [
+      "async\\s+function",
+      "await\\s+",
+      "Promise\\."
+    ],
+    "declarations": [
+      "const\\s+",
+      "let\\s+",
+      "var\\s+",
+      "function\\s+\\w+",
+      "class\\s+\\w+",
+      "interface\\s+\\w+",
+      "type\\s+\\w+"
+    ],
+    "modules": [
+      "import\\s+.+\\s+from",
+      "export\\s+"
+    ]
+  }
+}
