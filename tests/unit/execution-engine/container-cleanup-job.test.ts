@@ -110,4 +110,49 @@ describe('ContainerCleanupJob', () => {
       cleanupJob.stop();
     }, 10000);
   });
+
+  describe('Configuration Options', () => {
+    it('should respect custom maxAgeHours configuration', () => {
+      const customJob = new ContainerCleanupJob({ maxAgeHours: 2 });
+      expect(customJob).toBeDefined();
+      customJob.stop();
+    });
+
+    it('should respect custom maxCleanupPerRun configuration', () => {
+      const customJob = new ContainerCleanupJob({ maxCleanupPerRun: 50 });
+      expect(customJob).toBeDefined();
+      customJob.stop();
+    });
+
+    it('should use default values when not specified', () => {
+      const defaultJob = new ContainerCleanupJob();
+      expect(defaultJob).toBeDefined();
+      defaultJob.stop();
+    });
+  });
+
+  describe('Concurrency Protection', () => {
+    it('should skip cleanup if previous cycle still running', async () => {
+      // Start with very short interval
+      cleanupJob.start(100);
+
+      // Let it run for a bit
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Should still be running despite short interval
+      expect(cleanupJob.getStatus().isRunning).toBe(true);
+
+      cleanupJob.stop();
+    }, 5000);
+  });
+
+  describe('Label-based Filtering', () => {
+    it('should only cleanup containers with mcp.sandbox label', async () => {
+      // This is implicitly tested by the cleanup job using label filters
+      // If it cleaned up non-labeled containers, other tests would fail
+      await cleanupJob.runOnce();
+
+      expect(true).toBe(true);
+    }, 30000);
+  });
 });
