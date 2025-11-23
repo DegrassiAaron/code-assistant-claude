@@ -7,7 +7,6 @@ import { PIIToken } from '../types';
  */
 export class PIITokenizer {
   private tokenMap: Map<string, PIIToken> = new Map();
-  private reverseMap: Map<string, string> = new Map();
   private counters: Map<string, number> = new Map();
 
   /**
@@ -47,18 +46,6 @@ export class PIITokenizer {
     return tokenized;
   }
 
-  /**
-   * Detokenize text (restore original values)
-   */
-  detokenize(text: string): string {
-    let detokenized = text;
-
-    for (const [token, value] of this.reverseMap.entries()) {
-      detokenized = detokenized.replace(new RegExp(token.replace(/[[\]]/g, '\\$&'), 'g'), value);
-    }
-
-    return detokenized;
-  }
 
   /**
    * Check if text contains PII
@@ -99,7 +86,6 @@ export class PIITokenizer {
     };
 
     this.tokenMap.set(hash, piiToken);
-    this.reverseMap.set(token, value);
 
     return token;
   }
@@ -153,7 +139,6 @@ export class PIITokenizer {
    */
   clear(): void {
     this.tokenMap.clear();
-    this.reverseMap.clear();
     this.counters.clear();
   }
 }
