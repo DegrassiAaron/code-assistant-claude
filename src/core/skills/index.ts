@@ -14,3 +14,7 @@ export { SkillRegistry } from './skill-registry';
 export { SkillLoader } from './skill-loader';
 export { TokenTracker } from './token-tracker';
 export { CacheManager } from './cache-manager';
+
+// Utilities
+export { Logger, ConsoleLogger, SilentLogger } from './logger';
+export * from './constants';

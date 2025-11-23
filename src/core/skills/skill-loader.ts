@@ -3,6 +3,8 @@ import { SkillRegistry } from './skill-registry';
 import { SkillParser } from './skill-parser';
 import { TokenTracker } from './token-tracker';
 import { CacheManager } from './cache-manager';
+import { Logger, ConsoleLogger } from './logger';
+import { DEFAULT_CACHE_SIZE, DEFAULT_CACHE_TTL_MS, PRIORITY_VALUES } from './constants';
 
 /**
  * Manages progressive skill loading with caching and token tracking
@@ -18,15 +20,25 @@ export class SkillLoader {
   private parser: SkillParser;
   private tokenTracker: TokenTracker;
   private cache: CacheManager;
+  private logger: Logger;
 
   // Currently loaded skills
   private loadedSkills: Map<string, Skill> = new Map();
 
-  constructor(skillsDir: string, cacheSize: number = 50, cacheTTL: number = 1000 * 60 * 30) {
-    this.registry = new SkillRegistry(skillsDir);
-    this.parser = new SkillParser();
+  // Pre-compiled regex patterns for performance
+  private compiledPatterns: Map<string, RegExp[]> = new Map();
+
+  constructor(
+    skillsDir: string,
+    cacheSize: number = DEFAULT_CACHE_SIZE,
+    cacheTTL: number = DEFAULT_CACHE_TTL_MS,
+    logger: Logger = new ConsoleLogger('[SkillLoader]')
+  ) {
+    this.registry = new SkillRegistry(skillsDir, logger);
+    this.parser = new SkillParser(logger);
     this.tokenTracker = new TokenTracker();
     this.cache = new CacheManager(cacheSize, cacheTTL);
+    this.logger = logger;
   }
 
   /**
@@ -99,7 +111,7 @@ export class SkillLoader {
     // Load from file system
     const entry = this.registry.get(skillName);
     if (!entry) {
-      console.warn(`Skill not found: ${skillName}`);
+      this.logger.warn(`Skill not found: ${skillName}`);
       return null;
     }
 
@@ -119,11 +131,29 @@ export class SkillLoader {
       // Store in loaded skills
       this.loadedSkills.set(skillName, skill);
 
+      this.logger.debug?.(`Loaded skill: ${skillName} at stage: ${stage}`);
+
       return skill;
     } catch (error) {
-      console.error(`Failed to load skill: ${skillName}`, error);
+      this.logger.error(`Failed to load skill: ${skillName}`, error);
       return null;
     }
+  }
+
+  /**
+   * Get pre-compiled regex patterns for a skill
+   * @param skillName - Skill name
+   * @param patterns - Regex pattern strings
+   * @returns Compiled RegExp array
+   */
+  private getCompiledPatterns(skillName: string, patterns: string[]): RegExp[] {
+    if (!this.compiledPatterns.has(skillName)) {
+      this.compiledPatterns.set(
+        skillName,
+        patterns.map(p => new RegExp(p, 'i'))
+      );
+    }
+    return this.compiledPatterns.get(skillName)!;
   }
 
   /**
@@ -144,9 +174,10 @@ export class SkillLoader {
       }
     }
 
-    // Check patterns (regex)
-    if (triggers.patterns) {
-      if (triggers.patterns.some(p => new RegExp(p, 'i').test(userMessage))) {
+    // Check patterns (regex) - using pre-compiled patterns for performance
+    if (triggers.patterns && triggers.patterns.length > 0) {
+      const patterns = this.getCompiledPatterns(metadata.name, triggers.patterns);
+      if (patterns.some(p => p.test(userMessage))) {
         return true;
       }
     }
@@ -179,20 +210,14 @@ export class SkillLoader {
    * Sort skill names by priority
    */
   private sortByPriority(skillNames: string[]): string[] {
-    const priorityMap: Record<string, number> = {
-      high: 3,
-      medium: 2,
-      low: 1
-    };
-
     return skillNames.sort((a, b) => {
       const entryA = this.registry.get(a);
       const entryB = this.registry.get(b);
 
       if (!entryA || !entryB) return 0;
 
-      const priorityA = priorityMap[entryA.metadata.priority] ?? 0;
-      const priorityB = priorityMap[entryB.metadata.priority] ?? 0;
+      const priorityA = PRIORITY_VALUES[entryA.metadata.priority] ?? 0;
+      const priorityB = PRIORITY_VALUES[entryB.metadata.priority] ?? 0;
 
       return priorityB - priorityA; // Higher priority first
     });

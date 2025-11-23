@@ -2,6 +2,8 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import yaml from 'js-yaml';
 import { Skill, SkillMetadata, LoadingStage, SkillResource } from './types';
+import { Logger, ConsoleLogger } from './logger';
+import { CHARS_PER_TOKEN_ESTIMATE, VALID_CATEGORIES, RESOURCES_DIR_NAME } from './constants';
 
 /**
  * Parses skill files and extracts metadata and content
@@ -12,6 +14,11 @@ import { Skill, SkillMetadata, LoadingStage, SkillResource } from './types';
  * - WITH_RESOURCES: Load all resources (~500-2000 additional tokens)
  */
 export class SkillParser {
+  private logger: Logger;
+
+  constructor(logger: Logger = new ConsoleLogger('[SkillParser]')) {
+    this.logger = logger;
+  }
   /**
    * Parse skill file and extract metadata + content
    * @param skillPath - Absolute path to SKILL.md file
@@ -45,6 +52,8 @@ export class SkillParser {
     // Calculate tokens for metadata
     const metadataTokens = this.estimateTokens(frontmatterMatch[0]);
 
+    this.logger.debug?.(`Parsed metadata for skill: ${metadata.name}`);
+
     // Return based on loading stage
     if (stage === LoadingStage.METADATA_ONLY) {
       return {
@@ -74,6 +83,7 @@ export class SkillParser {
       skill.resources = resources;
       skill.loaded = LoadingStage.WITH_RESOURCES;
       skill.tokensConsumed = fullTokens + this.calculateResourceTokens(resources);
+      this.logger.debug?.(`Loaded ${resources.length} resources for skill: ${metadata.name}`);
     }
 
     return skill;
@@ -84,7 +94,7 @@ export class SkillParser {
    */
   private async loadResources(skillPath: string): Promise<SkillResource[]> {
     const skillDir = path.dirname(skillPath);
-    const resourcesDir = path.join(skillDir, 'resources');
+    const resourcesDir = path.join(skillDir, RESOURCES_DIR_NAME);
 
     try {
       const files = await fs.readdir(resourcesDir);
@@ -137,8 +147,7 @@ export class SkillParser {
     if (!metadata.category) throw new Error('Skill metadata missing required field: category');
 
     // Validate category
-    const validCategories = ['core', 'domain', 'superclaude', 'meta'];
-    if (!validCategories.includes(metadata.category)) {
+    if (!VALID_CATEGORIES.includes(metadata.category)) {
       throw new Error(`Invalid category: ${metadata.category}`);
     }
 
@@ -158,8 +167,7 @@ export class SkillParser {
    * (Will be replaced with tiktoken in production)
    */
   private estimateTokens(text: string): number {
-    // Simple estimation: ~4 characters per token
-    return Math.ceil(text.length / 4);
+    return Math.ceil(text.length / CHARS_PER_TOKEN_ESTIMATE);
   }
 
   /**

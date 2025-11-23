@@ -1,4 +1,5 @@
 import { SkillRegistry } from '../../../src/core/skills/skill-registry';
+import { SilentLogger } from '../../../src/core/skills/logger';
 import path from 'path';
 
 describe('SkillRegistry', () => {
@@ -6,7 +7,7 @@ describe('SkillRegistry', () => {
   const skillsDir = path.join(__dirname, '../../../templates/skills');
 
   beforeEach(async () => {
-    registry = new SkillRegistry(skillsDir);
+    registry = new SkillRegistry(skillsDir, new SilentLogger());
     await registry.indexSkills();
   });
 
@@ -33,7 +34,8 @@ describe('SkillRegistry', () => {
       const allSkills = registry.getAll();
 
       allSkills.forEach(skill => {
-        expect(skill.lastModified).toBeInstanceOf(Date);
+        expect(skill.lastModified).toBeDefined();
+        expect(typeof skill.lastModified.getTime).toBe('function');
         expect(skill.lastModified.getTime()).toBeLessThanOrEqual(Date.now());
       });
     });

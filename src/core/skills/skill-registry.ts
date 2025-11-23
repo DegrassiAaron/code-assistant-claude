@@ -2,6 +2,7 @@ import { promises as fs } from 'fs';
 import { glob } from 'glob';
 import { SkillMetadata, SkillRegistryEntry, LoadingStage } from './types';
 import { SkillParser } from './skill-parser';
+import { Logger, ConsoleLogger } from './logger';
 
 /**
  * Manages skill discovery and indexing
@@ -13,10 +14,12 @@ export class SkillRegistry {
   private entries: Map<string, SkillRegistryEntry> = new Map();
   private parser: SkillParser;
   private skillsDir: string;
+  private logger: Logger;
 
-  constructor(skillsDir: string) {
+  constructor(skillsDir: string, logger: Logger = new ConsoleLogger('[SkillRegistry]')) {
     this.skillsDir = skillsDir;
-    this.parser = new SkillParser();
+    this.logger = logger;
+    this.parser = new SkillParser(logger);
   }
 
   /**
@@ -32,11 +35,11 @@ export class SkillRegistry {
       try {
         await this.indexSkill(skillPath);
       } catch (error) {
-        console.warn(`Failed to index skill: ${skillPath}`, error);
+        this.logger.warn(`Failed to index skill: ${skillPath}`, error);
       }
     }
 
-    console.log(`Indexed ${this.entries.size} skills`);
+    this.logger.info(`Indexed ${this.entries.size} skills`);
   }
 
   /**
