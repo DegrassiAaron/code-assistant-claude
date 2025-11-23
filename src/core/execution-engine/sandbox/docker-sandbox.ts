@@ -9,6 +9,7 @@ import * as tar from 'tar-stream';
 export class DockerSandbox {
   private docker: Docker;
   private config: SandboxConfig;
+  private static activeContainers: Set<string> = new Set();
 
   constructor(config: SandboxConfig) {
     this.docker = new Docker();
@@ -20,10 +21,16 @@ export class DockerSandbox {
    */
   async execute(code: string, language: 'typescript' | 'python'): Promise<ExecutionResult> {
     const startTime = Date.now();
+    let container: Docker.Container | null = null;
+    let containerId: string | null = null;
 
     try {
       // Create container
-      const container = await this.createContainer(language);
+      container = await this.createContainer(language);
+      containerId = container.id;
+
+      // Track active container
+      DockerSandbox.activeContainers.add(containerId);
 
       // Copy code to container
       await this.copyCodeToContainer(container, code, language);
@@ -36,10 +43,6 @@ export class DockerSandbox {
 
       // Get metrics
       const stats = await container.stats({ stream: false });
-
-      // Cleanup
-      await container.stop();
-      await container.remove();
 
       return {
         success: true,
@@ -65,6 +68,31 @@ export class DockerSandbox {
         },
         piiTokenized: false
       };
+
+    } finally {
+      // GUARANTEED cleanup - runs whether try or catch executes
+      if (container) {
+        try {
+          // Force stop with 0 second timeout
+          await container.stop({ t: 0 });
+        } catch (stopError) {
+          // Log but don't fail - container might already be stopped
+          console.error('Failed to stop container:', stopError);
+        }
+
+        try {
+          // Force remove even if container is running
+          await container.remove({ force: true, v: true });
+        } catch (removeError) {
+          // Log but don't fail - critical that we tried
+          console.error('Failed to remove container:', removeError);
+        }
+
+        // Remove from tracking
+        if (containerId) {
+          DockerSandbox.activeContainers.delete(containerId);
+        }
+      }
     }
   }
 
@@ -197,5 +225,40 @@ export class DockerSandbox {
    */
   private estimateTokens(text: string): number {
     return Math.ceil(text.length / 4);
+  }
+
+  /**
+   * Emergency cleanup - kills all tracked containers
+   * Should be called on process shutdown or when system is in bad state
+   */
+  static async emergencyCleanup(): Promise<void> {
+    const docker = new Docker();
+    const failedCleanups: string[] = [];
+
+    for (const containerId of this.activeContainers) {
+      try {
+        const container = docker.getContainer(containerId);
+        await container.stop({ t: 0 });
+        await container.remove({ force: true });
+        console.log(`Emergency cleanup: removed container ${containerId}`);
+      } catch (error) {
+        console.error(`Failed to clean up container ${containerId}:`, error);
+        failedCleanups.push(containerId);
+      }
+    }
+
+    // Clear the set
+    this.activeContainers.clear();
+
+    if (failedCleanups.length > 0) {
+      console.error(`Failed to cleanup ${failedCleanups.length} containers:`, failedCleanups);
+    }
+  }
+
+  /**
+   * Get count of currently tracked active containers
+   */
+  static getActiveContainerCount(): number {
+    return this.activeContainers.size;
   }
 }
