@@ -227,73 +227,133 @@ git push
 
 ---
 
-## Examples
+## Template Examples
 
-### Example 1: Minimal Agency Design
+We have **9 pre-built templates** you can use as starting points:
 
+### 1. Minimal Agency 🎯
+**Best For:** SaaS, Agencies, Modern apps
 ```yaml
 name: "minimal-agency"
 feeling: "Clean, professional, sophisticated"
 inspiration: "Apple, Linear, Stripe"
-fonts:
-  heading: "Space Grotesk"
-  body: "Inter"
-colors:
-  primary: "#000000"
-  secondary: "#FFFFFF"
-  accent: "#3B82F6"
-  background: "#FAFAFA"
+fonts: { heading: "Inter", body: "Inter" }
+colors: { primary: "#000000", accent: "#3B82F6", background: "#FFFFFF" }
 animation: "minimal"
-backgrounds: "solid colors with subtle gradients"
-components:
-  borderRadius: "slight (8px)"
-  shadows: "subtle"
-  spacing: "spacious"
 ```
 
-### Example 2: Bold Startup Design
-
+### 2. Bold Startup 🚀
+**Best For:** Startups, Consumer apps
 ```yaml
 name: "bold-startup"
-feeling: "Energetic, modern, confident"
+feeling: "Energetic, vibrant, confident"
 inspiration: "Spotify, Figma, Notion"
-fonts:
-  heading: "Inter"
-  body: "Inter"
-colors:
-  primary: "#8B5CF6"
-  secondary: "#EC4899"
-  accent: "#F59E0B"
-  background: "Dark gradient from-slate-900 to-purple-900"
+fonts: { heading: "Inter", body: "Inter" }
+colors: { primary: "#8B5CF6", secondary: "#EC4899", accent: "#F59E0B" }
 animation: "high-impact with spring physics"
-backgrounds: "layered with gradient mesh"
-components:
-  borderRadius: "rounded (16px)"
-  shadows: "strong with glow effects"
-  spacing: "normal"
+backgrounds: "dark with gradient mesh"
 ```
 
-### Example 3: Nature-Inspired Design
-
+### 3. E-commerce 🛒
+**Best For:** Online stores, Product catalogs
 ```yaml
-name: "nature-inspired"
-feeling: "Warm, organic, calming"
-inspiration: "Natural materials, earth tones"
-fonts:
-  heading: "Crimson Pro"
-  body: "Source Serif Pro"
-colors:
-  primary: "#F59E0B" (amber)
-  secondary: "#78716C" (stone)
-  accent: "#84CC16" (lime)
-  background: "#FFFBEB" (warm cream)
-animation: "smooth with organic easing"
-backgrounds: "warm gradients with subtle textures"
-components:
-  borderRadius: "very rounded (20px+)"
-  shadows: "soft, warm shadows"
-  spacing: "spacious"
+name: "ecommerce"
+feeling: "Product-focused, trustworthy"
+inspiration: "Shopify, Nike.com"
+fonts: { heading: "Poppins", body: "Inter" }
+colors: { primary: "#2563EB", success: "#10B981", background: "#FFFFFF" }
+animation: "smooth transitions"
 ```
+
+### 4. Corporate Professional 💼
+**Best For:** Banking, B2B, Enterprise
+```yaml
+name: "corporate-professional"
+feeling: "Trustworthy, formal, established"
+inspiration: "JP Morgan, McKinsey"
+fonts: { heading: "Merriweather", body: "Inter" }
+colors: { primary: "#1E3A8A", secondary: "#64748B", background: "#F8FAFC" }
+animation: "subtle, conservative"
+```
+
+### 5. Creative Portfolio 🎨
+**Best For:** Designers, Artists, Agencies
+```yaml
+name: "creative-portfolio"
+feeling: "Experimental, artistic, bold"
+inspiration: "Awwwards winners"
+fonts: { display: "Archivo Black", body: "Work Sans" }
+colors: { background: "#0A0A0A", accent1: "#FF6B35", accent2: "#00D9FF" }
+animation: "experimental, cursor effects"
+```
+
+### 6. Nature Organic 🌿
+**Best For:** Wellness, Eco, Sustainable
+```yaml
+name: "nature-organic"
+feeling: "Warm, natural, calming"
+inspiration: "Patagonia, Headspace"
+fonts: { heading: "Lora", body: "Inter" }
+colors: { primary: "#F59E0B", secondary: "#84CC16", background: "#FFFBEB" }
+animation: "gentle, flowing"
+```
+
+### 7. Editorial 📰
+**Best For:** Publishing, Blogs, Content
+```yaml
+name: "editorial"
+feeling: "Sophisticated, readable"
+inspiration: "The New Yorker, Medium"
+fonts: { heading: "Playfair Display", body: "Crimson Pro" }
+colors: { primary: "#DC2626", background: "#FFFBF5" }
+```
+
+### 8. Technical ⚙️
+**Best For:** Dev tools, Dashboards
+```yaml
+name: "technical"
+feeling: "Precise, developer-focused"
+inspiration: "VS Code, GitHub"
+fonts: { mono: "IBM Plex Mono", sans: "Inter" }
+colors: { primary: "#06B6D4", accent: "#A855F7", background: "#0F172A" }
+```
+
+### 9. RPG Fantasy ⚔️
+**Best For:** Games, Medieval themes
+```yaml
+name: "rpg"
+feeling: "Mystical, immersive, ornate"
+inspiration: "World of Warcraft"
+fonts: { display: "Cinzel Decorative", body: "Crimson Pro" }
+colors: { primary: "#6B21A8", accent: "#F59E0B", background: "#FEF3C7" }
+```
+
+---
+
+## Quick Start with Templates
+
+### Option A: Use Exact Template
+
+```bash
+# Copy a template directly
+cp -r templates/skills/frontend/examples/minimal-agency ~/.claude/skills/
+
+# Activate and use
+/skill minimal-agency
+"Create a hero section"
+```
+
+### Option B: Customize a Template
+
+```
+"Start with bold-startup template but use serif fonts"
+"Use minimal-agency but make it darker"
+"Combine corporate-professional with nature-organic colors"
+```
+
+### Option C: Build from Scratch
+
+Answer the questions above step-by-step to create a completely custom skill
 
 ---
 
