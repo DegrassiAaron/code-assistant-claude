@@ -279,7 +279,7 @@ export class ExecutionOrchestrator {
    */
   private createErrorResult(
     error: string,
-    metadata?: Record<string, any>,
+    metadata?: Record<string, unknown>,
   ): ExecutionResult {
     return {
       success: false,

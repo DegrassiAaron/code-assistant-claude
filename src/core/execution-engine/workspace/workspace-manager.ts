@@ -26,8 +26,9 @@ export class WorkspaceManager {
     try {
       await fs.access(sessionPath);
       throw new Error(`Session ${sessionId} already exists`);
-    } catch (error: any) {
-      if (error.message?.includes("already exists")) throw error;
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message?.includes("already exists"))
+        throw error;
     }
     await fs.mkdir(sessionPath, { recursive: true });
     this.sessions.set(sessionId, sessionPath);

@@ -4,8 +4,8 @@ export class CleanupManager {
   private autoCleanupInterval?: NodeJS.Timeout;
 
   constructor(
-    _workspaceManager?: any,
-    _cacheManager?: any,
+    _workspaceManager?: unknown,
+    _cacheManager?: unknown,
     options: { autoCleanup?: boolean } = {},
   ) {
     this.cleanupHandlers = new Map();

@@ -22,7 +22,7 @@ export interface MCPParameter {
   type: string;
   description: string;
   required: boolean;
-  default?: any;
+  default?: unknown;
 }
 
 export interface MCPReturnType {
@@ -31,8 +31,8 @@ export interface MCPReturnType {
 }
 
 export interface MCPExample {
-  input: Record<string, any>;
-  output: any;
+  input: Record<string, unknown>;
+  output: unknown;
   description: string;
 }
 
@@ -77,7 +77,7 @@ export interface SandboxConfig {
  */
 export interface ExecutionResult {
   success: boolean;
-  output?: any;
+  output?: unknown;
   summary: string; // Always <500 tokens
   error?: string;
   metrics: {
@@ -146,7 +146,7 @@ export interface AuditLogEntry {
   type: "execution" | "security" | "discovery" | "error";
   severity: "info" | "warning" | "error" | "critical";
   message: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**

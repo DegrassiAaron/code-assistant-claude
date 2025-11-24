@@ -8,7 +8,7 @@ export interface UsageEvent {
   tokens: number;
   category: string;
   operation: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface UsageStats {
@@ -42,7 +42,7 @@ export class UsageMonitor {
     tokens: number,
     category: string,
     operation: string,
-    metadata?: Record<string, any>,
+    metadata?: Record<string, unknown>,
   ): void {
     const event: UsageEvent = {
       timestamp: Date.now(),

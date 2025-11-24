@@ -78,12 +78,12 @@ export class VMSandbox {
   /**
    * Create sandbox context with limited globals
    */
-  private createSandboxContext(): Record<string, any> {
+  private createSandboxContext(): Record<string, unknown> {
     return {
       console: {
-        log: (...args: any[]) => console.log("[Sandbox]", ...args),
-        error: (...args: any[]) => console.error("[Sandbox]", ...args),
-        warn: (...args: any[]) => console.warn("[Sandbox]", ...args),
+        log: (...args: unknown[]) => console.log("[Sandbox]", ...args),
+        error: (...args: unknown[]) => console.error("[Sandbox]", ...args),
+        warn: (...args: unknown[]) => console.warn("[Sandbox]", ...args),
       },
       setTimeout: undefined, // Disable timers
       setInterval: undefined,
@@ -95,7 +95,7 @@ export class VMSandbox {
   /**
    * Summarize output to <500 tokens
    */
-  private summarizeOutput(output: any): string {
+  private summarizeOutput(output: unknown): string {
     const str = typeof output === "string" ? output : JSON.stringify(output);
 
     if (str.length < 2000) {

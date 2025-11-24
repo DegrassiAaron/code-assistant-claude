@@ -30,7 +30,7 @@ export class SchemaParser {
   /**
    * Parse MCP schema from object
    */
-  parseFromObject(obj: any): MCPToolSchema {
+  parseFromObject(obj: unknown): MCPToolSchema {
     return this.normalizeSchema(obj);
   }
 
@@ -56,7 +56,7 @@ export class SchemaParser {
   /**
    * Normalize parameters array
    */
-  private normalizeParameters(params: any): MCPParameter[] {
+  private normalizeParameters(params: unknown): MCPParameter[] {
     if (!Array.isArray(params)) {
       // Handle object-style parameters
       if (typeof params === "object" && params !== null) {

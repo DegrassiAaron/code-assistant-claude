@@ -1,4 +1,4 @@
-import { AuditLogEntry } from "../types";
+import { AuditLogEntry, ExecutionResult } from "../types";
 import { promises as fs } from "fs";
 import path from "path";
 
@@ -22,7 +22,7 @@ export class AuditLogger {
     type: AuditLogEntry["type"],
     severity: AuditLogEntry["severity"],
     message: string,
-    metadata?: Record<string, any>,
+    metadata?: Record<string, unknown>,
   ): Promise<void> {
     const entry: AuditLogEntry = {
       timestamp: new Date(),
@@ -49,8 +49,8 @@ export class AuditLogger {
   async logExecution(
     workspaceId: string,
     code: string,
-    result: any,
-    metadata?: Record<string, any>,
+    result: ExecutionResult,
+    metadata?: Record<string, unknown>,
   ): Promise<void> {
     await this.log("execution", "info", "Code execution completed", {
       workspaceId,
@@ -67,7 +67,7 @@ export class AuditLogger {
   async logSecurity(
     severity: AuditLogEntry["severity"],
     message: string,
-    metadata?: Record<string, any>,
+    metadata?: Record<string, unknown>,
   ): Promise<void> {
     await this.log("security", severity, message, metadata);
   }
@@ -78,7 +78,7 @@ export class AuditLogger {
   async logDiscovery(
     query: string,
     toolsFound: number,
-    metadata?: Record<string, any>,
+    metadata?: Record<string, unknown>,
   ): Promise<void> {
     await this.log("discovery", "info", "Tool discovery completed", {
       query,
@@ -93,7 +93,7 @@ export class AuditLogger {
   async logError(
     error: Error,
     context?: string,
-    metadata?: Record<string, any>,
+    metadata?: Record<string, unknown>,
   ): Promise<void> {
     await this.log("error", "error", error.message, {
       stack: error.stack,

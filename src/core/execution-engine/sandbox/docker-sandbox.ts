@@ -271,7 +271,7 @@ export class DockerSandbox {
   /**
    * Summarize output to <500 tokens
    */
-  private summarizeOutput(output: any): string {
+  private summarizeOutput(output: unknown): string {
     const str = typeof output === "string" ? output : JSON.stringify(output);
 
     if (str.length < 2000) {

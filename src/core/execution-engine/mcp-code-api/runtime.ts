@@ -11,8 +11,8 @@ export class MCPCodeRuntime {
    */
   async execute(
     wrapper: CodeWrapper,
-    context?: Record<string, any>,
-  ): Promise<any> {
+    context?: Record<string, unknown>,
+  ): Promise<unknown> {
     // Set up execution context
     if (context) {
       for (const [key, value] of Object.entries(context)) {
@@ -33,7 +33,7 @@ export class MCPCodeRuntime {
    * Execute TypeScript code
    * Note: In production, this would run in a sandbox
    */
-  private async executeTypeScript(code: string): Promise<any> {
+  private async executeTypeScript(code: string): Promise<unknown> {
     // This is a simplified version
     // In production, use a proper sandbox like VM2 or docker
 
@@ -56,7 +56,7 @@ export class MCPCodeRuntime {
    * Execute Python code
    * Note: In production, this would run in a sandbox
    */
-  private async executePython(code: string): Promise<any> {
+  private async executePython(code: string): Promise<unknown> {
     // This is a simplified version
     // In production, use a proper sandbox like docker with python runtime
 
@@ -85,14 +85,14 @@ export class MCPCodeRuntime {
   /**
    * Get value from execution environment
    */
-  getEnvironmentValue(key: string): any {
+  getEnvironmentValue(key: string): unknown {
     return this.executionEnvironment.get(key);
   }
 
   /**
    * Set value in execution environment
    */
-  setEnvironmentValue(key: string, value: any): void {
+  setEnvironmentValue(key: string, value: unknown): void {
     this.executionEnvironment.set(key, value);
   }
 }

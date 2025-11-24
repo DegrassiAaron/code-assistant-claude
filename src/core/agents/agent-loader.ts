@@ -102,7 +102,7 @@ export class AgentLoader implements IAgentLoader {
     // Validate required fields
     this.validateMetadata(metadata);
 
-    return metadata as AgentMetadata;
+    return metadata as unknown as AgentMetadata;
   }
 
   /**
@@ -141,14 +141,14 @@ export class AgentLoader implements IAgentLoader {
    * Simple YAML parser for frontmatter
    * For production, use a proper YAML library like 'yaml' or 'js-yaml'
    */
-  private parseYAML(yaml: string): Record<string, any> {
-    const result: Record<string, any> = {};
+  private parseYAML(yaml: string): Record<string, unknown> {
+    const result: Record<string, unknown> = {};
     const lines = yaml.split("\n");
     let currentKey: string | null = null;
-    let currentArray: any[] = [];
+    let currentArray: unknown[] = [];
     let inArray = false;
     let inObject = false;
-    let currentObject: Record<string, any> = {};
+    let currentObject: Record<string, unknown> = {};
 
     for (const line of lines) {
       const trimmed = line.trim();
@@ -228,7 +228,7 @@ export class AgentLoader implements IAgentLoader {
   /**
    * Parse a YAML value
    */
-  private parseValue(value: string): any {
+  private parseValue(value: string): unknown {
     const trimmed = value.trim();
 
     // Remove quotes
@@ -263,7 +263,12 @@ export class AgentLoader implements IAgentLoader {
   /**
    * Validate agent metadata
    */
-  private validateMetadata(metadata: any): void {
+  private validateMetadata(metadata: unknown): void {
+    if (typeof metadata !== "object" || metadata === null) {
+      throw new Error("Metadata must be an object");
+    }
+
+    const meta = metadata as Record<string, unknown>;
     const required = [
       "name",
       "description",
@@ -274,35 +279,28 @@ export class AgentLoader implements IAgentLoader {
     ];
 
     for (const field of required) {
-      if (!(field in metadata)) {
+      if (!(field in meta)) {
         throw new Error(`Missing required field in frontmatter: ${field}`);
       }
     }
 
+    const activation = meta.activation as Record<string, unknown>;
+
     // Validate activation
-    if (
-      !metadata.activation.keywords ||
-      !Array.isArray(metadata.activation.keywords)
-    ) {
+    if (!activation.keywords || !Array.isArray(activation.keywords)) {
       throw new Error("activation.keywords must be an array");
     }
 
-    if (
-      !metadata.activation.complexity ||
-      !Array.isArray(metadata.activation.complexity)
-    ) {
+    if (!activation.complexity || !Array.isArray(activation.complexity)) {
       throw new Error("activation.complexity must be an array");
     }
 
-    if (
-      !metadata.activation.triggers ||
-      !Array.isArray(metadata.activation.triggers)
-    ) {
+    if (!activation.triggers || !Array.isArray(activation.triggers)) {
       throw new Error("activation.triggers must be an array");
     }
 
     // Validate category
-    if (metadata.category !== "technical" && metadata.category !== "business") {
+    if (meta.category !== "technical" && meta.category !== "business") {
       throw new Error('category must be either "technical" or "business"');
     }
   }

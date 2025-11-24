@@ -6,8 +6,8 @@
 export interface Template {
   name: string;
   structure: string;
-  variables: Record<string, any>;
-  metadata?: Record<string, any>;
+  variables: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface OptimizedTemplate {
@@ -111,7 +111,7 @@ export class TemplateOptimizer {
    */
   private injectVariables(
     template: string,
-    variables: Record<string, any>,
+    variables: Record<string, unknown>,
   ): string {
     let result = template;
 

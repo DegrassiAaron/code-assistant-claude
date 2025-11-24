@@ -14,8 +14,8 @@ interface SandboxExecutionOptions {
 
 interface SandboxResult {
   success: boolean;
-  result?: any;
-  output?: any;
+  result?: unknown;
+  output?: unknown;
   error?: string;
   summary?: string;
   metrics?: {
@@ -27,7 +27,7 @@ interface SandboxResult {
 }
 
 export class SandboxManager {
-  private activeSandboxes: Map<string, any>;
+  private activeSandboxes: Map<string, unknown>;
 
   constructor(_config?: SandboxConfig) {
     this.activeSandboxes = new Map();
@@ -66,8 +66,11 @@ export class SandboxManager {
             error: `Unknown sandbox level: ${options.level}`,
           };
       }
-    } catch (error: any) {
-      return { success: false, error: error.message };
+    } catch (error: unknown) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
   }
 
@@ -89,9 +92,12 @@ export class SandboxManager {
         const result = vm.run(code);
         clearTimeout(timer);
         resolve({ success: true, result });
-      } catch (error: any) {
+      } catch (error: unknown) {
         clearTimeout(timer);
-        resolve({ success: false, error: error.message });
+        resolve({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
     });
   }
@@ -109,9 +115,12 @@ export class SandboxManager {
         const result = fn();
         clearTimeout(timer);
         resolve({ success: true, result });
-      } catch (error: any) {
+      } catch (error: unknown) {
         clearTimeout(timer);
-        resolve({ success: false, error: error.message });
+        resolve({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
     });
   }
@@ -127,7 +136,7 @@ export class SandboxManager {
   async execute(
     _code: string,
     _language?: string,
-    _config?: any,
+    _config?: SandboxConfig,
   ): Promise<SandboxResult> {
     const options: SandboxExecutionOptions = {
       level: "process",

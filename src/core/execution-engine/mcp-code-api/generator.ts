@@ -135,7 +135,7 @@ export class CodeAPIGenerator {
       number: "number",
       boolean: "boolean",
       array: "any[]",
-      object: "Record<string, any>",
+      object: "Record<string, unknown>",
       null: "null",
       undefined: "undefined",
     };

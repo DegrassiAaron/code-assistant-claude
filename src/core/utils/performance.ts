@@ -7,7 +7,7 @@ export interface PerformanceMetrics {
   operationName: string;
   durationMs: number;
   timestamp: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export class PerformanceTracker {
@@ -20,7 +20,7 @@ export class PerformanceTracker {
   async measure<T>(
     operationName: string,
     fn: () => T | Promise<T>,
-    metadata?: Record<string, any>,
+    metadata?: Record<string, unknown>,
   ): Promise<{ result: T; durationMs: number }> {
     const start = performance.now();
     const result = await fn();
@@ -42,7 +42,7 @@ export class PerformanceTracker {
   measureSync<T>(
     operationName: string,
     fn: () => T,
-    metadata?: Record<string, any>,
+    metadata?: Record<string, unknown>,
   ): { result: T; durationMs: number } {
     const start = performance.now();
     const result = fn();
