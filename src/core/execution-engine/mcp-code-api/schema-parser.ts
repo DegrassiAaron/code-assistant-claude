@@ -130,22 +130,24 @@ export class SchemaParser {
     }
 
     // Validate parameters
-    for (const param of schema.parameters) {
-      if (!param.name) {
-        errors.push("Parameter name is required");
+    if (schema.parameters) {
+      for (const param of schema.parameters) {
+        if (!param.name) {
+          errors.push("Parameter name is required");
+        }
+        if (!param.type) {
+          errors.push(`Parameter "${param.name}" must have a type`);
+        }
       }
-      if (!param.type) {
-        errors.push(`Parameter "${param.name}" must have a type`);
-      }
-    }
 
-    // Check for duplicate parameter names
-    const paramNames = schema.parameters.map((p) => p.name);
-    const duplicates = paramNames.filter(
-      (name, index) => paramNames.indexOf(name) !== index,
-    );
-    if (duplicates.length > 0) {
-      errors.push(`Duplicate parameter names: ${duplicates.join(", ")}`);
+      // Check for duplicate parameter names
+      const paramNames = schema.parameters.map((p) => p.name);
+      const duplicates = paramNames.filter(
+        (name, index) => paramNames.indexOf(name) !== index,
+      );
+      if (duplicates.length > 0) {
+        errors.push(`Duplicate parameter names: ${duplicates.join(", ")}`);
+      }
     }
 
     return {

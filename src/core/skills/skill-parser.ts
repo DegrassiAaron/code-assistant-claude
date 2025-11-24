@@ -149,7 +149,7 @@ export class SkillParser {
       }
 
       return resources;
-    } catch (error) {
+    } catch (_error) {
       // Resources directory doesn't exist or is empty
       return [];
     }
