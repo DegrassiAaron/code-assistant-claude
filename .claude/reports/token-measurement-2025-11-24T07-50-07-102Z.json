@@ -1,0 +1,39 @@
+{
+  "mcp": {
+    "traditionalTokens": 177,
+    "mcpTokens": 14,
+    "saved": 163,
+    "reduction": 92.1
+  },
+  "skills": {
+    "alwaysLoadedTotal": 2080,
+    "progressiveTotal": 456,
+    "saved": 1624,
+    "reduction": 78.1
+  },
+  "symbols": {
+    "verboseTokens": 26,
+    "compressedTokens": 9,
+    "saved": 17,
+    "reduction": 65.4
+  },
+  "session": {
+    "baseline": {
+      "systemPrompt": 10000,
+      "skills": 95000,
+      "mcpTools": 30000,
+      "working": 50000,
+      "total": 185000
+    },
+    "optimized": {
+      "systemPrompt": 2000,
+      "skills": 5200,
+      "mcpExecution": 1500,
+      "working": 15000,
+      "total": 23700
+    },
+    "saved": 161300,
+    "reduction": 87.2,
+    "costSaved": 0.48389999999999994
+  }
+}
