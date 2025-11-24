@@ -159,7 +159,7 @@ export class DockerSandbox {
     return this.docker.createContainer({
       Image: image,
       Tty: false,
-      NetworkDisabled: this.config.networkPolicy.mode === "none",
+      NetworkDisabled: this.config.networkPolicy?.mode === "none",
       WorkingDir: "/workspace",
       Labels: {
         "mcp.sandbox": "true",
@@ -167,9 +167,9 @@ export class DockerSandbox {
         "mcp.sandbox.created": new Date().toISOString(),
       },
       HostConfig: {
-        Memory: this.parseMemory(this.config.resourceLimits.memory),
-        NanoCpus: this.config.resourceLimits.cpu * 1e9,
-        DiskQuota: this.parseDisk(this.config.resourceLimits.disk),
+        Memory: this.parseMemory(this.config.resourceLimits?.memory || "512M"),
+        NanoCpus: Number(this.config.resourceLimits?.cpu || 1) * 1e9,
+        DiskQuota: this.parseDisk(this.config.resourceLimits?.disk || "1G"),
       },
     });
   }
@@ -252,18 +252,19 @@ export class DockerSandbox {
       });
 
       // Timeout handling - cleanup will stop the stream, container cleanup in finally block handles the rest
+      const timeout = this.config.resourceLimits?.timeout || 30000;
       timeoutHandle = setTimeout(() => {
         if (!completed) {
           this.logger.warn(
             "Execution timeout - container will be force-stopped",
             {
-              timeout: this.config.resourceLimits.timeout,
+              timeout,
             },
           );
           cleanup();
           reject(new Error("Execution timeout"));
         }
-      }, this.config.resourceLimits.timeout);
+      }, timeout);
     });
   }
 
@@ -291,7 +292,7 @@ export class DockerSandbox {
     const [, amount, unit] = match;
     const multipliers = { K: 1024, M: 1024 ** 2, G: 1024 ** 3 };
 
-    return parseInt(amount) * multipliers[unit as keyof typeof multipliers];
+    return parseInt(amount || "512") * multipliers[unit as keyof typeof multipliers];
   }
 
   /**

@@ -9,7 +9,6 @@ import { WorkspaceManager } from "./workspace/workspace-manager";
 import { CacheManager } from "./workspace/cache-manager";
 import { CleanupManager } from "./workspace/cleanup-manager";
 import { AuditLogger } from "./audit/logger";
-import { ComplianceManager } from "./audit/compliance";
 import { AnomalyDetector } from "./audit/anomaly-detector";
 import { ExecutionResult, SandboxConfig } from "./types";
 
@@ -29,7 +28,6 @@ export class ExecutionOrchestrator {
   private cacheManager: CacheManager;
   private cleanupManager: CleanupManager;
   private auditLogger: AuditLogger;
-  private _complianceManager: ComplianceManager;
   private anomalyDetector: AnomalyDetector;
 
   constructor(_toolsDir?: string) {
@@ -44,7 +42,6 @@ export class ExecutionOrchestrator {
     this.workspaceManager = new WorkspaceManager();
     this.cacheManager = new CacheManager();
     this.auditLogger = new AuditLogger();
-    this._complianceManager = new ComplianceManager(this.auditLogger);
     this.anomalyDetector = new AnomalyDetector();
 
     // Initialize cleanup manager
@@ -164,11 +161,23 @@ export class ExecutionOrchestrator {
       this.workspaceManager.updateStatus(workspace.id, "running");
 
       const sandboxConfig = this.getDefaultSandboxConfig();
-      const result = await this.sandboxManager.execute(
+      const sandboxResult = await this.sandboxManager.execute(
         wrapper.code,
         language,
         sandboxConfig,
       );
+
+      // Convert SandboxResult to ExecutionResult with required fields
+      const result: ExecutionResult = {
+        ...sandboxResult,
+        summary: sandboxResult.summary || (sandboxResult.success ? "Execution completed successfully" : "Execution failed"),
+        metrics: sandboxResult.metrics || {
+          executionTime: 0,
+          memoryUsed: "0M",
+          tokensInSummary: 0,
+        },
+        piiTokenized: sandboxResult.piiTokenized ?? false,
+      };
 
       this.workspaceManager.updateStatus(
         workspace.id,
@@ -189,15 +198,20 @@ export class ExecutionOrchestrator {
         this.tokenizer.containsPII(JSON.stringify(result.output))
       ) {
         result.output = this.tokenizer.tokenize(JSON.stringify(result.output));
-        result.summary = this.tokenizer.tokenize(result.summary);
+        if (result.summary) {
+          result.summary = this.tokenizer.tokenize(result.summary);
+        }
         result.piiTokenized = true;
         console.log("✓ PII tokenized in results\n");
       }
 
       // Detect anomalies
-      const memoryBytes = this.parseMemory(result.metrics.memoryUsed);
+      const memoryBytes = result.metrics
+        ? this.parseMemory(result.metrics.memoryUsed)
+        : 0;
+      const executionTime = result.metrics?.executionTime ?? 0;
       const anomalyDetection = this.anomalyDetector.analyze(
-        result.metrics.executionTime,
+        executionTime,
         memoryBytes / (1024 * 1024), // Convert to MB
         this.auditLogger.getRecentLogs(10),
       );

@@ -103,7 +103,7 @@ export class ProcessSandbox {
       // Only include whitelisted safe variables to prevent credential leakage
 
       // Validate custom allowed environment variables
-      const customAllowedVars = this.config.allowedEnvVars || [];
+      const customAllowedVars = (this.config as any).allowedEnvVars || [];
       const dangerousPattern = /KEY|SECRET|TOKEN|PASSWORD|CREDENTIAL|AUTH/i;
 
       for (const varName of customAllowedVars) {
@@ -124,21 +124,19 @@ export class ProcessSandbox {
         PATH: process.env.PATH || "/usr/local/bin:/usr/bin:/bin",
         // Only include whitelisted variables that exist (type-safe)
         ...Object.fromEntries(
-          SAFE_ENV_VARS.map((key) => [key, process.env[key]]).filter(
-            ([_, value]) => value !== undefined,
-          ) as [string, string][],
+          (SAFE_ENV_VARS.map((key: string) => [key, process.env[key]]) as Array<[string, string | undefined]>)
+            .filter((entry): entry is [string, string] => entry[1] !== undefined),
         ),
         // Include custom allowed variables if validated
         ...Object.fromEntries(
-          customAllowedVars
-            .map((key) => [key, process.env[key]])
-            .filter(([_, value]) => value !== undefined) as [string, string][],
+          (customAllowedVars
+            .map((key: string) => [key, process.env[key]]) as Array<[string, string | undefined]>)
+            .filter((entry): entry is [string, string] => entry[1] !== undefined),
         ),
       };
 
       const child = spawn(command, args, {
-        timeout: this.config.resourceLimits.timeout,
-        maxBuffer: this.parseMemory(this.config.resourceLimits.memory),
+        timeout: this.config.resourceLimits?.timeout || 30000,
         env: safeEnv,
       });
 
@@ -159,15 +157,15 @@ export class ProcessSandbox {
         }
       };
 
-      child.stdout?.on("data", (data) => {
+      child.stdout?.on("data", (data: Buffer) => {
         stdout += data.toString();
       });
 
-      child.stderr?.on("data", (data) => {
+      child.stderr?.on("data", (data: Buffer) => {
         stderr += data.toString();
       });
 
-      child.on("close", (code, signal) => {
+      child.on("close", (code: number | null, signal: string | null) => {
         // Check if process was killed by timeout
         if (signal === "SIGTERM" || code === null) {
           safeResolve({
@@ -189,10 +187,10 @@ export class ProcessSandbox {
         }
       });
 
-      child.on("error", (error: Error) => {
+      child.on("error", (error: unknown) => {
         safeResolve({
           success: false,
-          error: error.message,
+          error: error instanceof Error ? error.message : String(error),
         });
       });
     });
@@ -209,19 +207,6 @@ export class ProcessSandbox {
     }
 
     return `${str.substring(0, 1800)}...\n\n[Output truncated. Total length: ${str.length} characters]`;
-  }
-
-  /**
-   * Parse memory string to bytes
-   */
-  private parseMemory(memory: string): number {
-    const match = memory.match(/^(\d+)([KMG])$/);
-    if (!match) return 512 * 1024 * 1024; // Default 512M
-
-    const [, amount, unit] = match;
-    const multipliers = { K: 1024, M: 1024 ** 2, G: 1024 ** 3 };
-
-    return parseInt(amount || "0") * multipliers[unit as keyof typeof multipliers];
   }
 
   /**
