@@ -371,7 +371,7 @@ export class MultiAgentCoordinator implements IAgentCoordinator {
       const deps: string[] = [];
 
       // Check if this agent depends on other agents
-      const otherAgents = agent.metadata.integrations.other_agents || [];
+      const otherAgents = agent?.metadata?.integrations?.other_agents || [];
 
       for (const depAgentName of otherAgents) {
         // Find if dependency is in our agent list
@@ -385,9 +385,12 @@ export class MultiAgentCoordinator implements IAgentCoordinator {
       if (
         deps.length === 0 &&
         i > 0 &&
-        agent.metadata.category === "technical"
+        agent?.metadata?.category === "technical"
       ) {
-        deps.push(agents[i - 1].metadata.name);
+        const prevAgent = agents[i - 1];
+        if (prevAgent) {
+          deps.push(prevAgent.metadata.name);
+        }
       }
 
       dependencies.set(agent.metadata.name, deps);

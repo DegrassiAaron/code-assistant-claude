@@ -226,7 +226,7 @@ ${metadata.capabilities
    * In production, this would call the LLM
    */
   private simulateAgentExecution(
-    prompt: string,
+    _prompt: string,
     agentName: string,
     context: AgentContext,
   ): string {

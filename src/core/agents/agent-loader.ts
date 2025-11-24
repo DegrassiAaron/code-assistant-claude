@@ -92,7 +92,7 @@ export class AgentLoader implements IAgentLoader {
   parseFrontmatter(content: string): AgentMetadata {
     const frontmatterMatch = content.match(/^---\s*\n([\s\S]*?)\n---/);
 
-    if (!frontmatterMatch) {
+    if (!frontmatterMatch || !frontmatterMatch[1]) {
       throw new Error("No frontmatter found in agent file");
     }
 
@@ -172,8 +172,10 @@ export class AgentLoader implements IAgentLoader {
       // Handle object properties
       if (trimmed.match(/^\w+:/) && inObject) {
         const [key, ...valueParts] = trimmed.split(":");
-        const value = valueParts.join(":").trim();
-        currentObject[key.trim()] = this.parseValue(value);
+        if (key) {
+          const value = valueParts.join(":").trim();
+          currentObject[key.trim()] = this.parseValue(value);
+        }
         continue;
       }
 
@@ -196,6 +198,8 @@ export class AgentLoader implements IAgentLoader {
       const match = trimmed.match(/^(\w+):\s*(.*)$/);
       if (match) {
         const [, key, value] = match;
+
+        if (!key) continue;
 
         if (!value) {
           // Object or array follows

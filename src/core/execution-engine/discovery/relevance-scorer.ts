@@ -1,12 +1,12 @@
-import type { Tool } from "../types";
+import type { MCPToolSchema } from "../types";
 
 interface ScoredTool {
-  tool: Tool;
+  tool: MCPToolSchema;
   score: number;
 }
 
 export class RelevanceScorer {
-  scoreTools(tools: Tool[], query: string): ScoredTool[] {
+  scoreTools(tools: MCPToolSchema[], query: string): ScoredTool[] {
     const scoredTools = tools.map((tool) => ({
       tool,
       score: this.scoreTool(tool, query),
@@ -14,13 +14,17 @@ export class RelevanceScorer {
     return scoredTools.sort((a, b) => b.score - a.score);
   }
 
-  getTopNTools(tools: Tool[], query: string, n: number): Tool[] {
+  getTopNTools(
+    tools: MCPToolSchema[],
+    query: string,
+    n: number,
+  ): MCPToolSchema[] {
     if (n <= 0) return [];
     const scored = this.scoreTools(tools, query);
     return scored.slice(0, Math.min(n, scored.length)).map((s) => s.tool);
   }
 
-  scoreTool(tool: Tool, query: string): number {
+  scoreTool(tool: MCPToolSchema, query: string): number {
     const lowerQuery = query.toLowerCase();
     const lowerName = tool.name.toLowerCase();
     const lowerDesc = (tool.description || "").toLowerCase();

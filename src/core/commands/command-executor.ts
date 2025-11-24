@@ -123,7 +123,6 @@ export class CommandExecutor {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      const _errorStack = error instanceof Error ? error.stack : undefined;
 
       this.logger.error(
         "Failed to load command",
@@ -311,7 +310,7 @@ export class CommandExecutor {
    */
   private parseCommandMetadata(content: string): CommandMetadata | null {
     const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
-    if (!frontmatterMatch) {
+    if (!frontmatterMatch || !frontmatterMatch[1]) {
       this.logger.warn("No frontmatter found in command file");
       return null;
     }
@@ -323,9 +322,7 @@ export class CommandExecutor {
 
       // Runtime validation
       if (!this.validateMetadata(metadata)) {
-        this.logger.error("Metadata validation failed", undefined, {
-          metadata,
-        });
+        this.logger.error("Metadata validation failed");
         return null;
       }
 
@@ -366,16 +363,21 @@ export class CommandExecutor {
         currentArray = null;
       }
 
-      const current = stack[stack.length - 1].obj;
+      const stackTop = stack[stack.length - 1];
+      if (!stackTop) continue;
+
+      const current = stackTop.obj;
 
       if (trimmed.startsWith("-")) {
         // Array item
         const value = trimmed.substring(1).trim();
-        if (!currentArray) {
+        if (!currentArray && currentKey) {
           currentArray = [];
           current[currentKey] = currentArray;
         }
-        currentArray.push(this.parseYAMLValue(value));
+        if (currentArray) {
+          currentArray.push(this.parseYAMLValue(value));
+        }
       } else if (trimmed.includes(":")) {
         currentArray = null;
         const colonIndex = trimmed.indexOf(":");
@@ -564,8 +566,9 @@ export class CommandExecutor {
     }
 
     for (const command of Object.values(this.commandRegistry)) {
-      if (byCategory[command.metadata.category]) {
-        byCategory[command.metadata.category].push(command.metadata.name);
+      const category = command.metadata.category;
+      if (category && byCategory[category]) {
+        byCategory[category]?.push(command.metadata.name);
       }
     }
 

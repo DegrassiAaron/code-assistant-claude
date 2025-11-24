@@ -1,7 +1,7 @@
-import type { Tool } from "../types";
+import type { MCPToolSchema } from "../types";
 
 export class ToolIndexer {
-  private tools: Map<string, Tool>;
+  private tools: Map<string, MCPToolSchema>;
   private categoryIndex: Map<string, Set<string>>;
 
   constructor() {
@@ -9,7 +9,7 @@ export class ToolIndexer {
     this.categoryIndex = new Map();
   }
 
-  indexTools(tools: Tool[]): void {
+  indexTools(tools: MCPToolSchema[]): void {
     for (const tool of tools) {
       this.tools.set(tool.name, tool);
       if (tool.category) {

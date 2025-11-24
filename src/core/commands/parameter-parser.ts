@@ -34,6 +34,7 @@ export class ParameterParser {
 
     for (let i = 0; i < tokens.length; i++) {
       const token = tokens[i];
+      if (!token) continue;
 
       if (token.startsWith("--")) {
         // Handle flags: --flag or --key=value
@@ -41,11 +42,14 @@ export class ParameterParser {
 
         if (flagName.includes("=")) {
           const [key, value] = flagName.split("=", 2);
-          flags[key] = this.parseValue(value);
+          if (key && value !== undefined) {
+            flags[key] = this.parseValue(value);
+          }
         } else {
           // Boolean flag or flag with next token as value
-          if (i + 1 < tokens.length && !tokens[i + 1].startsWith("--")) {
-            flags[flagName] = this.parseValue(tokens[i + 1]);
+          const nextToken = tokens[i + 1];
+          if (i + 1 < tokens.length && nextToken && !nextToken.startsWith("--")) {
+            flags[flagName] = this.parseValue(nextToken);
             i++; // Skip next token
           } else {
             flags[flagName] = true;
@@ -55,7 +59,12 @@ export class ParameterParser {
         // Positional parameter
         if (parameterDefs && positionalIndex < parameterDefs.length) {
           const paramDef = parameterDefs[positionalIndex];
-          parameters[paramDef.name] = this.parseValue(token, paramDef.type);
+          if (paramDef && paramDef.name) {
+            parameters[paramDef.name] = this.parseValue(
+              token,
+              paramDef.type || "string",
+            );
+          }
         } else {
           parameters[`param${positionalIndex}`] = this.parseValue(token);
         }

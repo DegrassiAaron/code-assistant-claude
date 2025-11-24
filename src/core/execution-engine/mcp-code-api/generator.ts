@@ -173,7 +173,7 @@ export class CodeAPIGenerator {
     while ((match = importRegex.exec(code)) !== null) {
       const dep = match[1];
       // Filter out relative imports
-      if (!dep.startsWith(".") && !dep.startsWith("/")) {
+      if (dep && !dep.startsWith(".") && !dep.startsWith("/")) {
         deps.push(dep);
       }
     }
@@ -201,7 +201,7 @@ export class CodeAPIGenerator {
     while ((match = importRegex.exec(code)) !== null) {
       const dep = match[1];
       // Filter out standard library modules
-      if (!stdLibModules.has(dep)) {
+      if (dep && !stdLibModules.has(dep)) {
         deps.push(dep);
       }
     }

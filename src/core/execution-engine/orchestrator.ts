@@ -29,7 +29,7 @@ export class ExecutionOrchestrator {
   private cacheManager: CacheManager;
   private cleanupManager: CleanupManager;
   private auditLogger: AuditLogger;
-  private complianceManager: ComplianceManager;
+  private _complianceManager: ComplianceManager;
   private anomalyDetector: AnomalyDetector;
 
   constructor(toolsDir: string) {
@@ -40,11 +40,11 @@ export class ExecutionOrchestrator {
     this.tokenizer = new PIITokenizer();
     this.riskAssessor = new RiskAssessor();
     this.approvalGate = new ApprovalGate();
-    this.toolIndexer = new ToolIndexer(toolsDir);
+    this.toolIndexer = new ToolIndexer();
     this.workspaceManager = new WorkspaceManager();
     this.cacheManager = new CacheManager();
     this.auditLogger = new AuditLogger();
-    this.complianceManager = new ComplianceManager(this.auditLogger);
+    this._complianceManager = new ComplianceManager(this.auditLogger);
     this.anomalyDetector = new AnomalyDetector();
 
     // Initialize cleanup manager
