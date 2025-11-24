@@ -23,7 +23,7 @@ export class TokenCounter {
     }
 
     // Detect if text contains significant code
-    const hasCodeBlocks = text.includes('```') || text.includes('    ');
+    const hasCodeBlocks = text.includes("```") || text.includes("    ");
     const charPerToken = hasCodeBlocks ? 3 : 4;
 
     // Split by whitespace and punctuation to get word count
@@ -44,7 +44,10 @@ export class TokenCounter {
   /**
    * Estimate tokens for a prompt-response pair
    */
-  countPromptAndResponse(prompt: string, response: string): {
+  countPromptAndResponse(
+    prompt: string,
+    response: string,
+  ): {
     promptTokens: number;
     responseTokens: number;
     totalTokens: number;
@@ -77,7 +80,9 @@ export class TokenCounter {
     }
 
     // Estimate character limit
-    const estimatedCharLimit = Math.floor((limit / currentTokens) * text.length);
+    const estimatedCharLimit = Math.floor(
+      (limit / currentTokens) * text.length,
+    );
 
     // Truncate with some buffer
     const truncated = text.substring(0, estimatedCharLimit * 0.95);
@@ -88,6 +93,6 @@ export class TokenCounter {
       return this.truncateToLimit(truncated, limit);
     }
 
-    return truncated + '\n...[truncated]';
+    return truncated + "\n...[truncated]";
   }
 }

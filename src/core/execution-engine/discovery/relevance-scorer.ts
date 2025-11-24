@@ -1,29 +1,33 @@
-import type { Tool } from '../types';
+import type { MCPToolSchema } from "../types";
 
 interface ScoredTool {
-  tool: Tool;
+  tool: MCPToolSchema;
   score: number;
 }
 
 export class RelevanceScorer {
-  scoreTools(tools: Tool[], query: string): ScoredTool[] {
-    const scoredTools = tools.map(tool => ({
+  scoreTools(tools: MCPToolSchema[], query: string): ScoredTool[] {
+    const scoredTools = tools.map((tool) => ({
       tool,
-      score: this.scoreTool(tool, query)
+      score: this.scoreTool(tool, query),
     }));
     return scoredTools.sort((a, b) => b.score - a.score);
   }
 
-  getTopNTools(tools: Tool[], query: string, n: number): Tool[] {
+  getTopNTools(
+    tools: MCPToolSchema[],
+    query: string,
+    n: number,
+  ): MCPToolSchema[] {
     if (n <= 0) return [];
     const scored = this.scoreTools(tools, query);
-    return scored.slice(0, Math.min(n, scored.length)).map(s => s.tool);
+    return scored.slice(0, Math.min(n, scored.length)).map((s) => s.tool);
   }
 
-  scoreTool(tool: Tool, query: string): number {
+  scoreTool(tool: MCPToolSchema, query: string): number {
     const lowerQuery = query.toLowerCase();
     const lowerName = tool.name.toLowerCase();
-    const lowerDesc = (tool.description || '').toLowerCase();
+    const lowerDesc = (tool.description || "").toLowerCase();
     let score = 0;
 
     if (lowerName === lowerQuery) score += 1.0;
@@ -45,8 +49,11 @@ export class RelevanceScorer {
     return score;
   }
 
-  filterByThreshold(scoredTools: ScoredTool[], threshold: number): ScoredTool[] {
-    return scoredTools.filter(st => st.score >= threshold);
+  filterByThreshold(
+    scoredTools: ScoredTool[],
+    threshold: number,
+  ): ScoredTool[] {
+    return scoredTools.filter((st) => st.score >= threshold);
   }
 
   calculateSimilarity(str1: string, str2: string): number {
@@ -60,7 +67,8 @@ export class RelevanceScorer {
     const shorterLower = shorter.toLowerCase();
     let matches = 0;
     for (let i = 0; i < shorterLower.length; i++) {
-      if (longerLower.includes(shorterLower[i])) matches++;
+      const char = shorterLower[i];
+      if (char && longerLower.includes(char)) matches++;
     }
     return matches / longer.length;
   }

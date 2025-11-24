@@ -8,7 +8,7 @@ export interface UsageEvent {
   tokens: number;
   category: string;
   operation: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface UsageStats {
@@ -38,13 +38,18 @@ export class UsageMonitor {
   /**
    * Record a usage event
    */
-  record(tokens: number, category: string, operation: string, metadata?: Record<string, any>): void {
+  record(
+    tokens: number,
+    category: string,
+    operation: string,
+    metadata?: Record<string, unknown>,
+  ): void {
     const event: UsageEvent = {
       timestamp: Date.now(),
       tokens,
       category,
       operation,
-      metadata
+      metadata,
     };
 
     this.events.push(event);
@@ -63,7 +68,7 @@ export class UsageMonitor {
    */
   getStats(since?: number): UsageStats {
     const relevantEvents = since
-      ? this.events.filter(e => e.timestamp >= since)
+      ? this.events.filter((e) => e.timestamp >= since)
       : this.events;
 
     const total = relevantEvents.reduce((sum, e) => sum + e.tokens, 0);
@@ -72,17 +77,20 @@ export class UsageMonitor {
     const byOperation: Record<string, number> = {};
 
     for (const event of relevantEvents) {
-      byCategory[event.category] = (byCategory[event.category] || 0) + event.tokens;
-      byOperation[event.operation] = (byOperation[event.operation] || 0) + event.tokens;
+      byCategory[event.category] =
+        (byCategory[event.category] || 0) + event.tokens;
+      byOperation[event.operation] =
+        (byOperation[event.operation] || 0) + event.tokens;
     }
 
     const timeRange = {
       start: relevantEvents[0]?.timestamp || Date.now(),
-      end: relevantEvents[relevantEvents.length - 1]?.timestamp || Date.now()
+      end: relevantEvents[relevantEvents.length - 1]?.timestamp || Date.now(),
     };
 
-    const averagePerOperation = relevantEvents.length > 0 ? total / relevantEvents.length : 0;
-    const peakUsage = Math.max(...relevantEvents.map(e => e.tokens), 0);
+    const averagePerOperation =
+      relevantEvents.length > 0 ? total / relevantEvents.length : 0;
+    const peakUsage = Math.max(...relevantEvents.map((e) => e.tokens), 0);
 
     return {
       total,
@@ -90,7 +98,7 @@ export class UsageMonitor {
       byOperation,
       timeRange,
       averagePerOperation,
-      peakUsage
+      peakUsage,
     };
   }
 
@@ -101,15 +109,15 @@ export class UsageMonitor {
     if (this.events.length === 0) return [];
 
     const trends: UsageTrend[] = [];
-    const startTime = this.events[0].timestamp;
-    const endTime = this.events[this.events.length - 1].timestamp;
+    const startTime = this.events[0]?.timestamp || 0;
+    const endTime = this.events[this.events.length - 1]?.timestamp || 0;
 
     let currentTime = startTime;
 
     while (currentTime < endTime) {
       const intervalEnd = currentTime + intervalMs;
       const intervalEvents = this.events.filter(
-        e => e.timestamp >= currentTime && e.timestamp < intervalEnd
+        (e) => e.timestamp >= currentTime && e.timestamp < intervalEnd,
       );
 
       const tokens = intervalEvents.reduce((sum, e) => sum + e.tokens, 0);
@@ -120,7 +128,7 @@ export class UsageMonitor {
         period: new Date(currentTime).toISOString(),
         tokens,
         operations,
-        avgTokensPerOp
+        avgTokensPerOp,
       });
 
       currentTime = intervalEnd;
@@ -132,7 +140,9 @@ export class UsageMonitor {
   /**
    * Get top consumers by category
    */
-  getTopConsumers(limit: number = 5): Array<{ category: string; tokens: number; percentage: number }> {
+  getTopConsumers(
+    limit: number = 5,
+  ): Array<{ category: string; tokens: number; percentage: number }> {
     const stats = this.getStats();
     const total = stats.total;
 
@@ -140,7 +150,7 @@ export class UsageMonitor {
       .map(([category, tokens]) => ({
         category,
         tokens,
-        percentage: (tokens / total) * 100
+        percentage: (tokens / total) * 100,
       }))
       .sort((a, b) => b.tokens - a.tokens)
       .slice(0, limit);
@@ -185,7 +195,7 @@ export class UsageMonitor {
       try {
         listener(event);
       } catch (error) {
-        console.error('Error in usage monitor listener:', error);
+        console.error("Error in usage monitor listener:", error);
       }
     }
   }
@@ -197,19 +207,19 @@ export class UsageMonitor {
     const stats = this.getStats(since);
     const topConsumers = this.getTopConsumers(5);
 
-    let report = '## Token Usage Report\n\n';
+    let report = "## Token Usage Report\n\n";
 
     report += `**Total Tokens Used:** ${stats.total.toLocaleString()}\n`;
     report += `**Time Range:** ${new Date(stats.timeRange.start).toLocaleString()} - ${new Date(stats.timeRange.end).toLocaleString()}\n`;
     report += `**Average per Operation:** ${stats.averagePerOperation.toFixed(2)}\n`;
     report += `**Peak Usage:** ${stats.peakUsage.toLocaleString()}\n\n`;
 
-    report += '### Top Consumers\n\n';
+    report += "### Top Consumers\n\n";
     for (const consumer of topConsumers) {
       report += `- **${consumer.category}**: ${consumer.tokens.toLocaleString()} tokens (${consumer.percentage.toFixed(1)}%)\n`;
     }
 
-    report += '\n### By Category\n\n';
+    report += "\n### By Category\n\n";
     for (const [category, tokens] of Object.entries(stats.byCategory)) {
       report += `- ${category}: ${tokens.toLocaleString()}\n`;
     }
@@ -252,7 +262,7 @@ export class UsageMonitor {
       actual,
       baseline: baselineTokens,
       saved,
-      percentSaved
+      percentSaved,
     };
   }
 }

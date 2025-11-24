@@ -23,7 +23,7 @@ export class SkillError extends Error {
     message: string,
     code: string,
     context?: Record<string, unknown>,
-    cause?: Error
+    cause?: Error,
   ) {
     super(message);
     this.name = this.constructor.name;
@@ -47,7 +47,7 @@ export class SkillError extends Error {
       code: this.code,
       context: this.context,
       stack: this.stack,
-      cause: this.cause?.message
+      cause: this.cause?.message,
     };
   }
 }
@@ -56,38 +56,29 @@ export class SkillError extends Error {
  * Error thrown when a skill file cannot be parsed
  */
 export class SkillParseError extends SkillError {
-  constructor(
-    message: string,
-    skillPath: string,
-    cause?: Error
-  ) {
-    super(
-      message,
-      'SKILL_PARSE_ERROR',
-      { skillPath },
-      cause
-    );
+  constructor(message: string, skillPath: string, cause?: Error) {
+    super(message, "SKILL_PARSE_ERROR", { skillPath }, cause);
   }
 
   static missingFrontmatter(skillPath: string): SkillParseError {
     return new SkillParseError(
-      'Skill file missing YAML frontmatter',
-      skillPath
+      "Skill file missing YAML frontmatter",
+      skillPath,
     );
   }
 
   static emptyFrontmatter(skillPath: string): SkillParseError {
     return new SkillParseError(
-      'Skill file has empty YAML frontmatter',
-      skillPath
+      "Skill file has empty YAML frontmatter",
+      skillPath,
     );
   }
 
   static invalidYaml(skillPath: string, cause: Error): SkillParseError {
     return new SkillParseError(
-      'Failed to parse YAML frontmatter',
+      "Failed to parse YAML frontmatter",
       skillPath,
-      cause
+      cause,
     );
   }
 }
@@ -100,45 +91,43 @@ export class SkillValidationError extends SkillError {
     message: string,
     skillName: string,
     field?: string,
-    cause?: Error
+    cause?: Error,
   ) {
-    super(
-      message,
-      'SKILL_VALIDATION_ERROR',
-      { skillName, field },
-      cause
-    );
+    super(message, "SKILL_VALIDATION_ERROR", { skillName, field }, cause);
   }
 
   static missingField(skillName: string, field: string): SkillValidationError {
     return new SkillValidationError(
       `Skill metadata missing required field: ${field}`,
       skillName,
-      field
+      field,
     );
   }
 
-  static invalidCategory(skillName: string, category: string): SkillValidationError {
+  static invalidCategory(
+    skillName: string,
+    category: string,
+  ): SkillValidationError {
     return new SkillValidationError(
       `Invalid skill category: ${category}. Must be one of: core, domain, superclaude, meta`,
       skillName,
-      'category'
+      "category",
     );
   }
 
   static noTriggers(skillName: string): SkillValidationError {
     return new SkillValidationError(
-      'Skill must have at least one trigger',
+      "Skill must have at least one trigger",
       skillName,
-      'triggers'
+      "triggers",
     );
   }
 
   static missingTokenCost(skillName: string): SkillValidationError {
     return new SkillValidationError(
-      'Skill metadata missing required field: tokenCost',
+      "Skill metadata missing required field: tokenCost",
       skillName,
-      'tokenCost'
+      "tokenCost",
     );
   }
 }
@@ -151,30 +140,29 @@ export class SkillLoadError extends SkillError {
     message: string,
     skillName: string,
     stage?: string,
-    cause?: Error
+    cause?: Error,
   ) {
-    super(
-      message,
-      'SKILL_LOAD_ERROR',
-      { skillName, stage },
-      cause
-    );
+    super(message, "SKILL_LOAD_ERROR", { skillName, stage }, cause);
   }
 
   static fileNotFound(skillName: string, path: string): SkillLoadError {
     return new SkillLoadError(
       `Skill file not found: ${path}`,
       skillName,
-      undefined
+      undefined,
     );
   }
 
-  static resourceLoadFailed(skillName: string, resourcePath: string, cause: Error): SkillLoadError {
+  static resourceLoadFailed(
+    skillName: string,
+    resourcePath: string,
+    cause: Error,
+  ): SkillLoadError {
     return new SkillLoadError(
       `Failed to load skill resource: ${resourcePath}`,
       skillName,
-      'resources',
-      cause
+      "resources",
+      cause,
     );
   }
 }
@@ -183,24 +171,15 @@ export class SkillLoadError extends SkillError {
  * Error thrown when skill indexing fails
  */
 export class SkillIndexError extends SkillError {
-  constructor(
-    message: string,
-    skillPath: string,
-    cause?: Error
-  ) {
-    super(
-      message,
-      'SKILL_INDEX_ERROR',
-      { skillPath },
-      cause
-    );
+  constructor(message: string, skillPath: string, cause?: Error) {
+    super(message, "SKILL_INDEX_ERROR", { skillPath }, cause);
   }
 
   static indexFailed(skillPath: string, cause: Error): SkillIndexError {
     return new SkillIndexError(
       `Failed to index skill: ${skillPath}`,
       skillPath,
-      cause
+      cause,
     );
   }
 }
@@ -209,24 +188,15 @@ export class SkillIndexError extends SkillError {
  * Error thrown when skill activation logic fails
  */
 export class SkillActivationError extends SkillError {
-  constructor(
-    message: string,
-    skillName: string,
-    cause?: Error
-  ) {
-    super(
-      message,
-      'SKILL_ACTIVATION_ERROR',
-      { skillName },
-      cause
-    );
+  constructor(message: string, skillName: string, cause?: Error) {
+    super(message, "SKILL_ACTIVATION_ERROR", { skillName }, cause);
   }
 
   static matchFailed(skillName: string, cause: Error): SkillActivationError {
     return new SkillActivationError(
       `Failed to match skill: ${skillName}`,
       skillName,
-      cause
+      cause,
     );
   }
 }
@@ -235,35 +205,20 @@ export class SkillActivationError extends SkillError {
  * Error thrown when cache operations fail
  */
 export class CacheError extends SkillError {
-  constructor(
-    message: string,
-    operation: string,
-    key?: string,
-    cause?: Error
-  ) {
-    super(
-      message,
-      'CACHE_ERROR',
-      { operation, key },
-      cause
-    );
+  constructor(message: string, operation: string, key?: string, cause?: Error) {
+    super(message, "CACHE_ERROR", { operation, key }, cause);
   }
 
   static setFailed(key: string, cause: Error): CacheError {
-    return new CacheError(
-      `Failed to cache skill: ${key}`,
-      'set',
-      key,
-      cause
-    );
+    return new CacheError(`Failed to cache skill: ${key}`, "set", key, cause);
   }
 
   static getFailed(key: string, cause: Error): CacheError {
     return new CacheError(
       `Failed to retrieve cached skill: ${key}`,
-      'get',
+      "get",
       key,
-      cause
+      cause,
     );
   }
 }

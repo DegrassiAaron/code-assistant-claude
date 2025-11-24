@@ -24,12 +24,18 @@ export class ResourceLimiter {
   }
 
   checkExecutionTime(startTime: number): boolean {
-    return (Date.now() - startTime) <= this.maxExecutionTime;
+    return Date.now() - startTime <= this.maxExecutionTime;
   }
 
-  enforceLimit(resourceType: 'memory' | 'cpu' | 'time', withinLimit: boolean, customMessage?: string): void {
+  enforceLimit(
+    resourceType: "memory" | "cpu" | "time",
+    withinLimit: boolean,
+    customMessage?: string,
+  ): void {
     if (!withinLimit) {
-      throw new Error(customMessage || `Resource limit exceeded: ${resourceType}`);
+      throw new Error(
+        customMessage || `Resource limit exceeded: ${resourceType}`,
+      );
     }
   }
 
@@ -42,7 +48,7 @@ export class ResourceLimiter {
     return {
       memoryUsageMB: memoryUsage.heapUsed / 1024 / 1024,
       cpuUsagePercent: 0,
-      executionTimeMs: Date.now() - this.startTime
+      executionTimeMs: Date.now() - this.startTime,
     };
   }
 
@@ -51,8 +57,11 @@ export class ResourceLimiter {
     maxCpuPercent?: number;
     maxExecutionTime?: number;
   }): void {
-    if (newLimits.maxMemoryMB !== undefined) this.maxMemoryMB = newLimits.maxMemoryMB;
-    if (newLimits.maxCpuPercent !== undefined) this.maxCpuPercent = newLimits.maxCpuPercent;
-    if (newLimits.maxExecutionTime !== undefined) this.maxExecutionTime = newLimits.maxExecutionTime;
+    if (newLimits.maxMemoryMB !== undefined)
+      this.maxMemoryMB = newLimits.maxMemoryMB;
+    if (newLimits.maxCpuPercent !== undefined)
+      this.maxCpuPercent = newLimits.maxCpuPercent;
+    if (newLimits.maxExecutionTime !== undefined)
+      this.maxExecutionTime = newLimits.maxExecutionTime;
   }
 }

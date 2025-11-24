@@ -1,4 +1,5 @@
-import { CodeWrapper, ExecutionResult } from '../types';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { CodeWrapper } from "../types";
 
 /**
  * Runtime for executing generated MCP code
@@ -9,7 +10,10 @@ export class MCPCodeRuntime {
   /**
    * Execute generated code wrapper
    */
-  async execute(wrapper: CodeWrapper, context?: Record<string, any>): Promise<any> {
+  async execute(
+    wrapper: CodeWrapper,
+    context?: Record<string, unknown>,
+  ): Promise<unknown> {
     // Set up execution context
     if (context) {
       for (const [key, value] of Object.entries(context)) {
@@ -17,9 +21,9 @@ export class MCPCodeRuntime {
       }
     }
 
-    if (wrapper.language === 'typescript') {
+    if (wrapper.language === "typescript") {
       return this.executeTypeScript(wrapper.code);
-    } else if (wrapper.language === 'python') {
+    } else if (wrapper.language === "python") {
       return this.executePython(wrapper.code);
     } else {
       throw new Error(`Unsupported language: ${wrapper.language}`);
@@ -30,7 +34,7 @@ export class MCPCodeRuntime {
    * Execute TypeScript code
    * Note: In production, this would run in a sandbox
    */
-  private async executeTypeScript(code: string): Promise<any> {
+  private async executeTypeScript(code: string): Promise<unknown> {
     // This is a simplified version
     // In production, use a proper sandbox like VM2 or docker
 
@@ -39,11 +43,13 @@ export class MCPCodeRuntime {
       // Actual execution would happen in a sandbox
       return {
         success: true,
-        message: 'TypeScript code validated successfully',
-        code
+        message: "TypeScript code validated successfully",
+        code,
       };
     } catch (error) {
-      throw new Error(`TypeScript execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `TypeScript execution failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 
@@ -51,7 +57,7 @@ export class MCPCodeRuntime {
    * Execute Python code
    * Note: In production, this would run in a sandbox
    */
-  private async executePython(code: string): Promise<any> {
+  private async executePython(code: string): Promise<unknown> {
     // This is a simplified version
     // In production, use a proper sandbox like docker with python runtime
 
@@ -60,11 +66,13 @@ export class MCPCodeRuntime {
       // Actual execution would happen in a sandbox
       return {
         success: true,
-        message: 'Python code validated successfully',
-        code
+        message: "Python code validated successfully",
+        code,
       };
     } catch (error) {
-      throw new Error(`Python execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Python execution failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 
@@ -78,14 +86,14 @@ export class MCPCodeRuntime {
   /**
    * Get value from execution environment
    */
-  getEnvironmentValue(key: string): any {
+  getEnvironmentValue(key: string): unknown {
     return this.executionEnvironment.get(key);
   }
 
   /**
    * Set value in execution environment
    */
-  setEnvironmentValue(key: string, value: any): void {
+  setEnvironmentValue(key: string, value: unknown): void {
     this.executionEnvironment.set(key, value);
   }
 }

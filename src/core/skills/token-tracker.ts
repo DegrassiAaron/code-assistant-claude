@@ -1,4 +1,4 @@
-import { TokenUsageEntry, LoadingStage } from './types';
+import { TokenUsageEntry, LoadingStage } from "./types";
 
 /**
  * Tracks token consumption for skills
@@ -18,13 +18,13 @@ export class TokenTracker {
   trackSkillUsage(
     skillName: string,
     stage: LoadingStage,
-    tokens: number
+    tokens: number,
   ): void {
     this.entries.push({
       skillName,
       stage,
       tokens,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
   }
 
@@ -43,7 +43,7 @@ export class TokenTracker {
       skillName,
       stage: LoadingStage.METADATA_ONLY,
       tokens: -tokens,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
   }
 
@@ -51,8 +51,14 @@ export class TokenTracker {
    * Get total tokens consumed
    */
   getTotalTokens(): number {
-    const skillTokens = this.entries.reduce((sum, entry) => sum + entry.tokens, 0);
-    const systemTokens = Array.from(this.systemUsage.values()).reduce((sum, val) => sum + val, 0);
+    const skillTokens = this.entries.reduce(
+      (sum, entry) => sum + entry.tokens,
+      0,
+    );
+    const systemTokens = Array.from(this.systemUsage.values()).reduce(
+      (sum, val) => sum + val,
+      0,
+    );
     return skillTokens + systemTokens;
   }
 
@@ -77,7 +83,8 @@ export class TokenTracker {
     const usage = new Map<LoadingStage, number>();
 
     for (const entry of this.entries) {
-      if (entry.tokens > 0) { // Only count positive tokens
+      if (entry.tokens > 0) {
+        // Only count positive tokens
         const current = usage.get(entry.stage) || 0;
         usage.set(entry.stage, current + entry.tokens);
       }
@@ -144,7 +151,7 @@ export class TokenTracker {
    */
   getEntriesInRange(start: Date, end: Date): TokenUsageEntry[] {
     return this.entries.filter(
-      entry => entry.timestamp >= start && entry.timestamp <= end
+      (entry) => entry.timestamp >= start && entry.timestamp <= end,
     );
   }
 }

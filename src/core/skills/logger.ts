@@ -8,12 +8,12 @@ export interface Logger {
   /**
    * Log informational message
    */
-  info(message: string, ...args: any[]): void;
+  info(message: string, ...args: unknown[]): void;
 
   /**
    * Log warning message
    */
-  warn(message: string, ...args: any[]): void;
+  warn(message: string, ...args: unknown[]): void;
 
   /**
    * Log error message
@@ -23,20 +23,20 @@ export interface Logger {
   /**
    * Log debug message (optional, for verbose mode)
    */
-  debug?(message: string, ...args: any[]): void;
+  debug?(message: string, ...args: unknown[]): void;
 }
 
 /**
  * Default console logger implementation
  */
 export class ConsoleLogger implements Logger {
-  constructor(private prefix: string = '[Skills]') {}
+  constructor(private prefix: string = "[Skills]") {}
 
-  info(message: string, ...args: any[]): void {
+  info(message: string, ...args: unknown[]): void {
     console.log(`${this.prefix} ${message}`, ...args);
   }
 
-  warn(message: string, ...args: any[]): void {
+  warn(message: string, ...args: unknown[]): void {
     console.warn(`${this.prefix} ⚠️  ${message}`, ...args);
   }
 
@@ -48,7 +48,7 @@ export class ConsoleLogger implements Logger {
     }
   }
 
-  debug(message: string, ...args: any[]): void {
+  debug(message: string, ...args: unknown[]): void {
     if (process.env.DEBUG) {
       console.debug(`${this.prefix} 🐛 ${message}`, ...args);
     }

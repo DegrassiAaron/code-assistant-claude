@@ -1,6 +1,6 @@
-import { SecurityValidation, SecurityIssue } from '../types';
-import { promises as fs } from 'fs';
-import path from 'path';
+import { SecurityValidation, SecurityIssue } from "../types";
+import { promises as fs } from "fs";
+import path from "path";
 
 /**
  * Validates generated code for security issues
@@ -54,7 +54,7 @@ export class CodeValidator {
       isSecure: riskScore < 70,
       riskScore,
       issues,
-      requiresApproval: riskScore >= 70
+      requiresApproval: riskScore >= 70,
     };
   }
 
@@ -88,15 +88,16 @@ export class CodeValidator {
     let timeoutId: NodeJS.Timeout;
     const timeoutPromise = new Promise<never>((_, reject) => {
       timeoutId = setTimeout(() => {
-        reject(new Error(`Pattern loading timed out after ${this.INIT_TIMEOUT_MS}ms`));
+        reject(
+          new Error(
+            `Pattern loading timed out after ${this.INIT_TIMEOUT_MS}ms`,
+          ),
+        );
       }, this.INIT_TIMEOUT_MS);
     });
 
     try {
-      await Promise.race([
-        this.loadPatterns(),
-        timeoutPromise
-      ]);
+      await Promise.race([this.loadPatterns(), timeoutPromise]);
       // Clean up timeout on successful completion
       clearTimeout(timeoutId!);
     } catch (error) {
@@ -113,7 +114,7 @@ export class CodeValidator {
 
       // Intentionally using console.warn for critical security initialization failures
       // This ensures visibility in all environments before logging infrastructure is ready
-      console.warn('Pattern loading failed, using hardcoded patterns:', error);
+      console.warn("Pattern loading failed, using hardcoded patterns:", error);
     }
   }
 
@@ -122,14 +123,18 @@ export class CodeValidator {
    */
   private async loadPatterns(): Promise<void> {
     try {
-      const dangerousPath = path.join(__dirname, 'patterns/dangerous-patterns.json');
-      const safePath = path.join(__dirname, 'patterns/safe-patterns.json');
+      const dangerousPath = path.join(
+        __dirname,
+        "patterns/dangerous-patterns.json",
+      );
 
       // Try to load from files
       try {
-        const dangerousData = await fs.readFile(dangerousPath, 'utf-8');
+        const dangerousData = await fs.readFile(dangerousPath, "utf-8");
         const dangerous = JSON.parse(dangerousData);
-        this.dangerousPatterns = dangerous.patterns.map((p: string) => new RegExp(p, 'g'));
+        this.dangerousPatterns = dangerous.patterns.map(
+          (p: string) => new RegExp(p, "g"),
+        );
       } catch {
         // Use hardcoded patterns
         this.loadDefaultDangerousPatterns();
@@ -137,7 +142,6 @@ export class CodeValidator {
 
       // Load suspicious patterns
       this.loadDefaultSuspiciousPatterns();
-
     } catch (error) {
       // Fallback to hardcoded patterns
       this.loadDefaultDangerousPatterns();
@@ -150,22 +154,22 @@ export class CodeValidator {
    */
   private loadDefaultDangerousPatterns(): void {
     this.dangerousPatterns = [
-      /eval\(/g,                          // eval() execution
-      /Function\(/g,                      // Function constructor
+      /eval\(/g, // eval() execution
+      /Function\(/g, // Function constructor
       /require\(['"]child_process['"]\)/g, // Shell execution
-      /exec\(/g,                          // Shell execution
-      /execSync\(/g,                      // Synchronous shell execution
-      /spawn\(/g,                         // Process spawning
-      /\$\{[^}]*\}/g,                    // Template injection (risky)
-      /document\.cookie/g,                // Cookie stealing
-      /localStorage/g,                    // Local storage access
-      /sessionStorage/g,                  // Session storage access
-      /\.innerHTML\s*=/g,                // XSS via innerHTML
+      /exec\(/g, // Shell execution
+      /execSync\(/g, // Synchronous shell execution
+      /spawn\(/g, // Process spawning
+      /\$\{[^}]*\}/g, // Template injection (risky)
+      /document\.cookie/g, // Cookie stealing
+      /localStorage/g, // Local storage access
+      /sessionStorage/g, // Session storage access
+      /\.innerHTML\s*=/g, // XSS via innerHTML
       /on(click|load|error|mouseover)\s*=/g, // Event handler injection
-      /\.outerHTML\s*=/g,                // DOM manipulation
-      /dangerouslySetInnerHTML/g,        // React dangerous HTML
-      /__proto__/g,                      // Prototype pollution
-      /constructor\[/g,                  // Constructor access
+      /\.outerHTML\s*=/g, // DOM manipulation
+      /dangerouslySetInnerHTML/g, // React dangerous HTML
+      /__proto__/g, // Prototype pollution
+      /constructor\[/g, // Constructor access
     ];
   }
 
@@ -174,20 +178,20 @@ export class CodeValidator {
    */
   private loadDefaultSuspiciousPatterns(): void {
     this.suspiciousPatterns = [
-      /require\(/g,                       // Dynamic require
-      /import\(/g,                        // Dynamic import
-      /fetch\(/g,                         // Network requests
-      /XMLHttpRequest/g,                  // AJAX
-      /WebSocket/g,                       // WebSocket
-      /setTimeout/g,                      // Timers (potential DoS)
-      /setInterval/g,                     // Intervals (potential DoS)
-      /while\s*\(\s*true\s*\)/g,         // Infinite loop
-      /for\s*\([^)]*;;[^)]*\)/g,         // Infinite loop
-      /process\.env/g,                    // Environment access
-      /fs\./g,                            // File system access
-      /readFile/g,                        // File reading
-      /writeFile/g,                       // File writing
-      /\.exec\(/g,                        // Regex exec (potential ReDoS)
+      /require\(/g, // Dynamic require
+      /import\(/g, // Dynamic import
+      /fetch\(/g, // Network requests
+      /XMLHttpRequest/g, // AJAX
+      /WebSocket/g, // WebSocket
+      /setTimeout/g, // Timers (potential DoS)
+      /setInterval/g, // Intervals (potential DoS)
+      /while\s*\(\s*true\s*\)/g, // Infinite loop
+      /for\s*\([^)]*;;[^)]*\)/g, // Infinite loop
+      /process\.env/g, // Environment access
+      /fs\./g, // File system access
+      /readFile/g, // File reading
+      /writeFile/g, // File writing
+      /\.exec\(/g, // Regex exec (potential ReDoS)
     ];
   }
 
@@ -203,11 +207,11 @@ export class CodeValidator {
 
       for (const match of matches) {
         issues.push({
-          severity: 'critical',
-          type: 'dangerous_pattern',
+          severity: "critical",
+          type: "dangerous_pattern",
           description: `Blocked pattern detected: ${pattern.source}`,
           line: this.getLineNumber(code, match.index || 0),
-          suggestion: 'Remove or replace with safe alternative'
+          suggestion: "Remove or replace with safe alternative",
         });
       }
     }
@@ -227,11 +231,11 @@ export class CodeValidator {
 
       for (const match of matches) {
         issues.push({
-          severity: 'medium',
-          type: 'suspicious_pattern',
+          severity: "medium",
+          type: "suspicious_pattern",
           description: `Suspicious pattern detected: ${pattern.source}`,
           line: this.getLineNumber(code, match.index || 0),
-          suggestion: 'Review for security implications'
+          suggestion: "Review for security implications",
         });
       }
     }
@@ -247,12 +251,12 @@ export class CodeValidator {
       low: 10,
       medium: 25,
       high: 50,
-      critical: 100
+      critical: 100,
     };
 
     const totalScore = issues.reduce(
       (sum, issue) => sum + severityScores[issue.severity],
-      0
+      0,
     );
 
     // Normalize to 0-100
@@ -263,6 +267,6 @@ export class CodeValidator {
    * Get line number from character index
    */
   private getLineNumber(code: string, index: number): number {
-    return code.substring(0, index).split('\n').length;
+    return code.substring(0, index).split("\n").length;
   }
 }

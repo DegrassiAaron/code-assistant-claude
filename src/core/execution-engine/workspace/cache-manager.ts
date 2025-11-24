@@ -1,5 +1,5 @@
-import { ExecutionResult, CacheEntry } from '../types';
-import crypto from 'crypto';
+import { ExecutionResult, CacheEntry } from "../types";
+import crypto from "crypto";
 
 /**
  * Manages caching of execution results
@@ -45,7 +45,7 @@ export class CacheManager {
       value: result,
       createdAt: now,
       expiresAt,
-      hits: 0
+      hits: 0,
     };
 
     this.cache.set(key, entry);
@@ -87,7 +87,7 @@ export class CacheManager {
    * Generate cache key from code
    */
   private generateKey(code: string): string {
-    return crypto.createHash('sha256').update(code).digest('hex');
+    return crypto.createHash("sha256").update(code).digest("hex");
   }
 
   /**
@@ -111,7 +111,7 @@ export class CacheManager {
     return {
       size: this.cache.size,
       totalHits,
-      entries: entries.sort((a, b) => b.hits - a.hits)
+      entries: entries.sort((a, b) => b.hits - a.hits),
     };
   }
 

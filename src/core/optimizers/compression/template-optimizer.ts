@@ -6,8 +6,8 @@
 export interface Template {
   name: string;
   structure: string;
-  variables: Record<string, any>;
-  metadata?: Record<string, any>;
+  variables: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface OptimizedTemplate {
@@ -48,7 +48,7 @@ export class TemplateOptimizer {
     return {
       original: template,
       optimized,
-      tokensReduced
+      tokensReduced,
     };
   }
 
@@ -57,9 +57,9 @@ export class TemplateOptimizer {
    */
   private removeExcessiveWhitespace(text: string): string {
     return text
-      .replace(/\n\s*\n\s*\n/g, '\n\n') // Remove triple+ newlines
-      .replace(/[ \t]+/g, ' ') // Collapse multiple spaces
-      .replace(/\n +/g, '\n') // Remove leading spaces on lines
+      .replace(/\n\s*\n\s*\n/g, "\n\n") // Remove triple+ newlines
+      .replace(/[ \t]+/g, " ") // Collapse multiple spaces
+      .replace(/\n +/g, "\n") // Remove leading spaces on lines
       .trim();
   }
 
@@ -68,10 +68,12 @@ export class TemplateOptimizer {
    */
   private compressRepeatedPatterns(text: string): string {
     // Find and compress repeated bullet points
-    let compressed = text.replace(/(\n- [^\n]+){3,}/g, match => {
-      const items = match.split('\n').filter(Boolean);
+    const compressed = text.replace(/(\n- [^\n]+){3,}/g, (match) => {
+      const items = match.split("\n").filter(Boolean);
       if (items.length > 5) {
-        return items.slice(0, 3).join('\n') + `\n- ... (${items.length - 3} more)`;
+        return (
+          items.slice(0, 3).join("\n") + `\n- ... (${items.length - 3} more)`
+        );
       }
       return match;
     });
@@ -84,20 +86,20 @@ export class TemplateOptimizer {
    */
   private applyAbbreviations(text: string): string {
     const abbreviations: Record<string, string> = {
-      'for example': 'e.g.',
-      'that is': 'i.e.',
-      'and so on': 'etc.',
-      'versus': 'vs',
-      'approximately': '~',
-      'percent': '%',
-      'number': '#',
-      'at symbol': '@'
+      "for example": "e.g.",
+      "that is": "i.e.",
+      "and so on": "etc.",
+      versus: "vs",
+      approximately: "~",
+      percent: "%",
+      number: "#",
+      "at symbol": "@",
     };
 
     let abbreviated = text;
 
     for (const [full, abbrev] of Object.entries(abbreviations)) {
-      const pattern = new RegExp(`\\b${full}\\b`, 'gi');
+      const pattern = new RegExp(`\\b${full}\\b`, "gi");
       abbreviated = abbreviated.replace(pattern, abbrev);
     }
 
@@ -107,11 +109,14 @@ export class TemplateOptimizer {
   /**
    * Inject variables into template
    */
-  private injectVariables(template: string, variables: Record<string, any>): string {
+  private injectVariables(
+    template: string,
+    variables: Record<string, unknown>,
+  ): string {
     let result = template;
 
     for (const [key, value] of Object.entries(variables)) {
-      const pattern = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
+      const pattern = new RegExp(`\\{\\{${key}\\}\\}`, "g");
       result = result.replace(pattern, String(value));
     }
 
@@ -121,11 +126,13 @@ export class TemplateOptimizer {
   /**
    * Create a hierarchical template structure
    */
-  createHierarchical(sections: Array<{ title: string; content: string; level: number }>): string {
-    let output = '';
+  createHierarchical(
+    sections: Array<{ title: string; content: string; level: number }>,
+  ): string {
+    let output = "";
 
     for (const section of sections) {
-      const prefix = '#'.repeat(section.level);
+      const prefix = "#".repeat(section.level);
       output += `${prefix} ${section.title}\n\n`;
       output += `${section.content}\n\n`;
     }
@@ -137,7 +144,7 @@ export class TemplateOptimizer {
    * Optimize multiple templates
    */
   batchOptimize(templates: Template[]): OptimizedTemplate[] {
-    return templates.map(t => this.optimize(t));
+    return templates.map((t) => this.optimize(t));
   }
 
   /**
@@ -160,11 +167,11 @@ export class TemplateOptimizer {
 
     // Check for required fields
     if (!template.name) {
-      errors.push('Template name is required');
+      errors.push("Template name is required");
     }
 
     if (!template.structure) {
-      errors.push('Template structure is required');
+      errors.push("Template structure is required");
     }
 
     // Check for unresolved variables
@@ -173,14 +180,14 @@ export class TemplateOptimizer {
 
     for (const match of matches) {
       const varName = match[1];
-      if (!(varName in template.variables)) {
+      if (varName && !(varName in template.variables)) {
         errors.push(`Unresolved variable: ${varName}`);
       }
     }
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 }

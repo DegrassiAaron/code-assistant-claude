@@ -1,7 +1,7 @@
-import type { Tool } from '../types';
+import type { MCPToolSchema } from "../types";
 
 export class ToolIndexer {
-  private tools: Map<string, Tool>;
+  private tools: Map<string, MCPToolSchema>;
   private categoryIndex: Map<string, Set<string>>;
 
   constructor() {
@@ -9,7 +9,7 @@ export class ToolIndexer {
     this.categoryIndex = new Map();
   }
 
-  indexTools(tools: Tool[]): void {
+  indexTools(tools: MCPToolSchema[]): void {
     for (const tool of tools) {
       this.tools.set(tool.name, tool);
       if (tool.category) {
@@ -21,25 +21,26 @@ export class ToolIndexer {
     }
   }
 
-  getTool(name: string): Tool | undefined {
+  getTool(name: string): MCPToolSchema | undefined {
     return this.tools.get(name);
   }
 
-  getToolsByCategory(category: string): Tool[] {
+  getToolsByCategory(category: string): MCPToolSchema[] {
     const toolNames = this.categoryIndex.get(category);
     if (!toolNames) return [];
     return Array.from(toolNames)
-      .map(name => this.tools.get(name))
-      .filter((tool): tool is Tool => tool !== undefined);
+      .map((name) => this.tools.get(name))
+      .filter((tool): tool is MCPToolSchema => tool !== undefined);
   }
 
-  searchTools(keyword: string): Tool[] {
+  search(keyword: string, limit?: number): MCPToolSchema[] {
     const lowerKeyword = keyword.toLowerCase();
-    const results: Tool[] = [];
+    const results: MCPToolSchema[] = [];
     for (const tool of this.tools.values()) {
       const nameMatch = tool.name.toLowerCase().includes(lowerKeyword);
       const descMatch = tool.description?.toLowerCase().includes(lowerKeyword);
       if (nameMatch || descMatch) results.push(tool);
+      if (limit && results.length >= limit) break;
     }
     return results;
   }
@@ -48,7 +49,7 @@ export class ToolIndexer {
     return Array.from(this.categoryIndex.keys());
   }
 
-  updateTool(name: string, updatedTool: Tool): boolean {
+  updateTool(name: string, updatedTool: MCPToolSchema): boolean {
     if (!this.tools.has(name)) return false;
     this.tools.set(name, updatedTool);
     return true;
@@ -64,7 +65,27 @@ export class ToolIndexer {
     return true;
   }
 
-  getAllTools(): Tool[] {
+  getAllTools(): MCPToolSchema[] {
     return Array.from(this.tools.values());
+  }
+
+  initialize(): void {
+    // Initialization logic if needed
+  }
+
+  getStats(): {
+    totalTools: number;
+    categories: number;
+    toolsByCategory: Record<string, number>;
+  } {
+    const toolsByCategory: Record<string, number> = {};
+    for (const [category, tools] of this.categoryIndex.entries()) {
+      toolsByCategory[category] = tools.size;
+    }
+    return {
+      totalTools: this.tools.size,
+      categories: this.categoryIndex.size,
+      toolsByCategory,
+    };
   }
 }

@@ -1,5 +1,5 @@
-import Docker from 'dockerode';
-import { SandboxLogger, ConsoleLogger } from './sandbox-logger';
+import Docker from "dockerode";
+import { SandboxLogger, ConsoleLogger } from "./sandbox-logger";
 
 /**
  * Configuration for ContainerCleanupJob
@@ -36,27 +36,32 @@ export class ContainerCleanupJob {
    */
   start(intervalMs: number = 60000): void {
     if (this.isRunning) {
-      this.logger.warn('ContainerCleanupJob is already running');
+      this.logger.warn("ContainerCleanupJob is already running");
       return;
     }
 
     this.isRunning = true;
-    this.logger.info('Starting container cleanup job', {
+    this.logger.info("Starting container cleanup job", {
       intervalMs,
       maxAgeHours: this.maxAgeHours,
-      maxPerRun: this.maxCleanupPerRun
+      maxPerRun: this.maxCleanupPerRun,
     });
 
     // Run immediately on start
-    this.cleanup().catch(error => {
-      this.logger.error('Initial cleanup failed', error instanceof Error ? error : undefined);
+    this.cleanup().catch((error) => {
+      this.logger.error(
+        "Initial cleanup failed",
+        error instanceof Error ? error : undefined,
+      );
     });
 
     // Then run periodically with concurrency protection
     this.interval = setInterval(async () => {
       // Skip if previous cleanup still running
       if (this.cleanupInProgress) {
-        this.logger.warn('Skipping cleanup cycle - previous cleanup still in progress');
+        this.logger.warn(
+          "Skipping cleanup cycle - previous cleanup still in progress",
+        );
         return;
       }
 
@@ -64,7 +69,10 @@ export class ContainerCleanupJob {
       try {
         await this.cleanup();
       } catch (error) {
-        this.logger.error('Periodic cleanup failed', error instanceof Error ? error : undefined);
+        this.logger.error(
+          "Periodic cleanup failed",
+          error instanceof Error ? error : undefined,
+        );
       } finally {
         this.cleanupInProgress = false;
       }
@@ -80,7 +88,7 @@ export class ContainerCleanupJob {
       this.interval = null;
     }
     this.isRunning = false;
-    this.logger.info('Container cleanup job stopped');
+    this.logger.info("Container cleanup job stopped");
   }
 
   /**
@@ -97,19 +105,19 @@ export class ContainerCleanupJob {
       const containers = await this.docker.listContainers({
         all: true,
         filters: {
-          label: ['mcp.sandbox=true']
-        }
+          label: ["mcp.sandbox=true"],
+        },
       });
 
-      const zombieCount = containers.filter(c => {
-        const ageMs = Date.now() - (c.Created * 1000);
+      const zombieCount = containers.filter((c) => {
+        const ageMs = Date.now() - c.Created * 1000;
         const ageHours = ageMs / (1000 * 60 * 60);
         return ageHours > this.maxAgeHours;
       }).length;
 
       if (zombieCount > 0) {
-        this.logger.info('Zombie containers found', { count: zombieCount });
-        this.logger.metric('containers.zombies_found', zombieCount);
+        this.logger.info("Zombie containers found", { count: zombieCount });
+        this.logger.metric("containers.zombies_found", zombieCount);
       }
 
       const now = Date.now();
@@ -118,9 +126,9 @@ export class ContainerCleanupJob {
       for (const containerInfo of containers) {
         // Check batch limit
         if (cleanedCount >= this.maxCleanupPerRun) {
-          this.logger.warn('Reached batch limit', {
+          this.logger.warn("Reached batch limit", {
             limit: this.maxCleanupPerRun,
-            remaining: containers.length - cleanedCount
+            remaining: containers.length - cleanedCount,
           });
           break;
         }
@@ -133,13 +141,14 @@ export class ContainerCleanupJob {
         // Remove containers older than threshold
         if (ageHours > this.maxAgeHours) {
           try {
-            const language = containerInfo.Labels['mcp.sandbox.language'] || 'unknown';
+            const language =
+              containerInfo.Labels["mcp.sandbox.language"] || "unknown";
             const containerId = containerInfo.Id.substring(0, 12);
 
-            this.logger.info('Cleaning up zombie container', {
+            this.logger.info("Cleaning up zombie container", {
               containerId,
               language,
-              ageHours: ageHours.toFixed(2)
+              ageHours: ageHours.toFixed(2),
             });
 
             const container = this.docker.getContainer(containerInfo.Id);
@@ -150,9 +159,9 @@ export class ContainerCleanupJob {
             cleanedCount++;
           } catch (error) {
             this.logger.error(
-              'Failed to cleanup container',
+              "Failed to cleanup container",
               error instanceof Error ? error : undefined,
-              { containerId: containerInfo.Id.substring(0, 12) }
+              { containerId: containerInfo.Id.substring(0, 12) },
             );
           }
         }
@@ -161,17 +170,19 @@ export class ContainerCleanupJob {
       const cleanupDuration = Date.now() - cleanupStartTime;
 
       if (cleanedCount > 0) {
-        this.logger.info('Cleanup job completed', {
+        this.logger.info("Cleanup job completed", {
           cleanedCount,
-          durationMs: cleanupDuration
+          durationMs: cleanupDuration,
         });
-        this.logger.metric('containers.cleaned', cleanedCount);
+        this.logger.metric("containers.cleaned", cleanedCount);
       }
 
-      this.logger.metric('cleanup.duration_ms', cleanupDuration);
-
+      this.logger.metric("cleanup.duration_ms", cleanupDuration);
     } catch (error) {
-      this.logger.error('Cleanup job failed', error instanceof Error ? error : undefined);
+      this.logger.error(
+        "Cleanup job failed",
+        error instanceof Error ? error : undefined,
+      );
     }
   }
 

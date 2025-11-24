@@ -1,12 +1,12 @@
-import { promises as fs } from 'fs';
-import path from 'path';
-import yaml from 'js-yaml';
-import { Skill, SkillMetadata, LoadingStage, SkillResource } from './types';
-import { Logger, ConsoleLogger } from './logger';
-import { VALID_CATEGORIES, RESOURCES_DIR_NAME } from './constants';
-import { TokenEstimator, defaultTokenEstimator } from './token-estimator';
-import { withRetry } from './retry-utils';
-import { SkillParseError, SkillValidationError } from './errors';
+import { promises as fs } from "fs";
+import path from "path";
+import yaml from "js-yaml";
+import { Skill, SkillMetadata, LoadingStage, SkillResource } from "./types";
+import { Logger, ConsoleLogger } from "./logger";
+import { VALID_CATEGORIES, RESOURCES_DIR_NAME } from "./constants";
+import { TokenEstimator, defaultTokenEstimator } from "./token-estimator";
+import { withRetry } from "./retry-utils";
+import { SkillParseError, SkillValidationError } from "./errors";
 
 /**
  * Parses skill files and extracts metadata and content
@@ -26,8 +26,8 @@ export class SkillParser {
    * @param tokenEstimator - Token estimator for accurate token counting
    */
   constructor(
-    logger: Logger = new ConsoleLogger('[SkillParser]'),
-    tokenEstimator: TokenEstimator = defaultTokenEstimator
+    logger: Logger = new ConsoleLogger("[SkillParser]"),
+    tokenEstimator: TokenEstimator = defaultTokenEstimator,
   ) {
     this.logger = logger;
     this.tokenEstimator = tokenEstimator;
@@ -39,12 +39,11 @@ export class SkillParser {
    */
   async parseSkill(
     skillPath: string,
-    stage: LoadingStage = LoadingStage.METADATA_ONLY
+    stage: LoadingStage = LoadingStage.METADATA_ONLY,
   ): Promise<Skill> {
-    const content = await withRetry(
-      () => fs.readFile(skillPath, 'utf-8'),
-      { logger: this.logger }
-    );
+    const content = await withRetry(() => fs.readFile(skillPath, "utf-8"), {
+      logger: this.logger,
+    });
 
     // Extract YAML frontmatter
     const frontmatterMatch = content.match(/^---\n([\s\S]+?)\n---/);
@@ -79,10 +78,10 @@ export class SkillParser {
     if (stage === LoadingStage.METADATA_ONLY) {
       return {
         metadata,
-        content: '',
+        content: "",
         loaded: LoadingStage.METADATA_ONLY,
         loadedAt: new Date(),
-        tokensConsumed: metadataTokens
+        tokensConsumed: metadataTokens,
       };
     }
 
@@ -95,7 +94,7 @@ export class SkillParser {
       content: bodyContent,
       loaded: LoadingStage.FULL_CONTENT,
       loadedAt: new Date(),
-      tokensConsumed: fullTokens
+      tokensConsumed: fullTokens,
     };
 
     // Load resources if requested
@@ -103,8 +102,11 @@ export class SkillParser {
       const resources = await this.loadResources(skillPath);
       skill.resources = resources;
       skill.loaded = LoadingStage.WITH_RESOURCES;
-      skill.tokensConsumed = fullTokens + this.calculateResourceTokens(resources);
-      this.logger.debug?.(`Loaded ${resources.length} resources for skill: ${metadata.name}`);
+      skill.tokensConsumed =
+        fullTokens + this.calculateResourceTokens(resources);
+      this.logger.debug?.(
+        `Loaded ${resources.length} resources for skill: ${metadata.name}`,
+      );
     }
 
     return skill;
@@ -118,32 +120,30 @@ export class SkillParser {
     const resourcesDir = path.join(skillDir, RESOURCES_DIR_NAME);
 
     try {
-      const files = await withRetry(
-        () => fs.readdir(resourcesDir),
-        { logger: this.logger }
-      );
+      const files = await withRetry(() => fs.readdir(resourcesDir), {
+        logger: this.logger,
+      });
       const resources: SkillResource[] = [];
 
       for (const file of files) {
-        if (file === '.gitkeep') continue;
+        if (file === ".gitkeep") continue;
 
         const resourcePath = path.join(resourcesDir, file);
-        const stat = await withRetry(
-          () => fs.stat(resourcePath),
-          { logger: this.logger }
-        );
+        const stat = await withRetry(() => fs.stat(resourcePath), {
+          logger: this.logger,
+        });
 
         if (stat.isFile()) {
           const content = await withRetry(
-            () => fs.readFile(resourcePath, 'utf-8'),
-            { logger: this.logger }
+            () => fs.readFile(resourcePath, "utf-8"),
+            { logger: this.logger },
           );
           resources.push({
             name: file,
             type: this.detectResourceType(file),
             path: resourcePath,
             content,
-            loaded: true
+            loaded: true,
           });
         }
       }
@@ -158,13 +158,13 @@ export class SkillParser {
   /**
    * Detect resource type from file extension
    */
-  private detectResourceType(filename: string): SkillResource['type'] {
+  private detectResourceType(filename: string): SkillResource["type"] {
     const ext = path.extname(filename).toLowerCase();
 
-    if (ext === '.json') return 'config';
-    if (ext === '.js' || ext === '.ts') return 'script';
-    if (ext === '.md') return 'reference';
-    return 'template';
+    if (ext === ".json") return "config";
+    if (ext === ".js" || ext === ".ts") return "script";
+    if (ext === ".md") return "reference";
+    return "template";
   }
 
   /**
@@ -172,17 +172,17 @@ export class SkillParser {
    * @throws {SkillValidationError} If validation fails
    */
   private validateMetadata(metadata: SkillMetadata): void {
-    const name = metadata.name || 'unknown';
+    const name = metadata.name || "unknown";
 
     // Required fields
     if (!metadata.name) {
-      throw SkillValidationError.missingField(name, 'name');
+      throw SkillValidationError.missingField(name, "name");
     }
     if (!metadata.description) {
-      throw SkillValidationError.missingField(name, 'description');
+      throw SkillValidationError.missingField(name, "description");
     }
     if (!metadata.category) {
-      throw SkillValidationError.missingField(name, 'category');
+      throw SkillValidationError.missingField(name, "category");
     }
 
     // Validate category
@@ -219,7 +219,9 @@ export class SkillParser {
    */
   private calculateResourceTokens(resources: SkillResource[]): number {
     return resources.reduce((total, resource) => {
-      return total + (resource.content ? this.estimateTokens(resource.content) : 0);
+      return (
+        total + (resource.content ? this.estimateTokens(resource.content) : 0)
+      );
     }, 0);
   }
 }

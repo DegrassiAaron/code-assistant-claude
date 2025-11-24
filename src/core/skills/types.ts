@@ -13,7 +13,7 @@ export interface SkillMetadata {
   version: string;
   description: string;
   author?: string;
-  category: 'core' | 'domain' | 'superclaude' | 'meta';
+  category: "core" | "domain" | "superclaude" | "meta";
 
   triggers: {
     keywords?: string[];
@@ -45,9 +45,9 @@ export interface SkillMetadata {
     requiredTools?: string[];
   };
 
-  priority: 'high' | 'medium' | 'low';
+  priority: "high" | "medium" | "low";
   autoActivate: boolean;
-  cacheStrategy: 'aggressive' | 'normal' | 'minimal';
+  cacheStrategy: "aggressive" | "normal" | "minimal";
 }
 
 /**
@@ -55,7 +55,7 @@ export interface SkillMetadata {
  */
 export interface Skill {
   metadata: SkillMetadata;
-  content: string;           // Full markdown content
+  content: string; // Full markdown content
   resources?: SkillResource[];
   loaded: LoadingStage;
   loadedAt?: Date;
@@ -67,7 +67,7 @@ export interface Skill {
  */
 export interface SkillResource {
   name: string;
-  type: 'template' | 'script' | 'reference' | 'config';
+  type: "template" | "script" | "reference" | "config";
   path: string;
   content?: string;
   loaded: boolean;
@@ -77,9 +77,9 @@ export interface SkillResource {
  * Loading stages for progressive loading
  */
 export enum LoadingStage {
-  METADATA_ONLY = 'metadata',
-  FULL_CONTENT = 'full',
-  WITH_RESOURCES = 'resources'
+  METADATA_ONLY = "metadata",
+  FULL_CONTENT = "full",
+  WITH_RESOURCES = "resources",
 }
 
 /**

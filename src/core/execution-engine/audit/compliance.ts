@@ -1,5 +1,5 @@
-import { ComplianceReport, AuditLogEntry } from '../types';
-import { AuditLogger } from './logger';
+import { ComplianceReport, AuditLogEntry } from "../types";
+import { AuditLogger } from "./logger";
 
 /**
  * Compliance manager for GDPR, SOC2, HIPAA
@@ -19,7 +19,7 @@ export class ComplianceManager {
 
     // Filter logs within date range
     const periodLogs = logs.filter(
-      log => log.timestamp >= startDate && log.timestamp <= endDate
+      (log) => log.timestamp >= startDate && log.timestamp <= endDate,
     );
 
     // Calculate metrics
@@ -32,27 +32,27 @@ export class ComplianceManager {
       generatedAt: new Date(),
       period: {
         start: startDate,
-        end: endDate
+        end: endDate,
       },
       metrics,
-      compliance
+      compliance,
     };
   }
 
   /**
    * Calculate compliance metrics
    */
-  private calculateMetrics(logs: AuditLogEntry[]): ComplianceReport['metrics'] {
-    const executionLogs = logs.filter(l => l.type === 'execution');
-    const securityLogs = logs.filter(l => l.type === 'security');
+  private calculateMetrics(logs: AuditLogEntry[]): ComplianceReport["metrics"] {
+    const executionLogs = logs.filter((l) => l.type === "execution");
+    const securityLogs = logs.filter((l) => l.type === "security");
 
     return {
       totalExecutions: executionLogs.length,
-      securityIncidents: securityLogs.filter(l =>
-        l.severity === 'error' || l.severity === 'critical'
+      securityIncidents: securityLogs.filter(
+        (l) => l.severity === "error" || l.severity === "critical",
       ).length,
       piiDataProcessed: this.countPIIProcessed(logs),
-      sandboxEscapes: this.countSandboxEscapes(securityLogs)
+      sandboxEscapes: this.countSandboxEscapes(securityLogs),
     };
   }
 
@@ -60,9 +60,9 @@ export class ComplianceManager {
    * Count PII data processed
    */
   private countPIIProcessed(logs: AuditLogEntry[]): number {
-    return logs.filter(log =>
-      log.metadata?.piiTokenized === true ||
-      log.message.includes('PII')
+    return logs.filter(
+      (log) =>
+        log.metadata?.piiTokenized === true || log.message.includes("PII"),
     ).length;
   }
 
@@ -70,10 +70,11 @@ export class ComplianceManager {
    * Count sandbox escapes (security incidents)
    */
   private countSandboxEscapes(securityLogs: AuditLogEntry[]): number {
-    return securityLogs.filter(log =>
-      log.message.includes('escape') ||
-      log.message.includes('breach') ||
-      log.severity === 'critical'
+    return securityLogs.filter(
+      (log) =>
+        log.message.includes("escape") ||
+        log.message.includes("breach") ||
+        log.severity === "critical",
     ).length;
   }
 
@@ -81,13 +82,13 @@ export class ComplianceManager {
    * Check compliance against standards
    */
   private checkCompliance(
-    metrics: ComplianceReport['metrics'],
-    logs: AuditLogEntry[]
-  ): ComplianceReport['compliance'] {
+    metrics: ComplianceReport["metrics"],
+    logs: AuditLogEntry[],
+  ): ComplianceReport["compliance"] {
     return {
       gdpr: this.checkGDPRCompliance(metrics, logs),
       soc2: this.checkSOC2Compliance(metrics, logs),
-      hipaa: this.checkHIPAACompliance(metrics, logs)
+      hipaa: this.checkHIPAACompliance(metrics, logs),
     };
   }
 
@@ -95,8 +96,8 @@ export class ComplianceManager {
    * Check GDPR compliance
    */
   private checkGDPRCompliance(
-    metrics: ComplianceReport['metrics'],
-    logs: AuditLogEntry[]
+    metrics: ComplianceReport["metrics"],
+    logs: AuditLogEntry[],
   ): boolean {
     // GDPR requirements:
     // 1. All PII must be tokenized
@@ -104,10 +105,11 @@ export class ComplianceManager {
     // 3. No unauthorized data access
 
     const piiProcessedWithTokenization = logs.filter(
-      log => log.metadata?.piiTokenized === true
+      (log) => log.metadata?.piiTokenized === true,
     ).length;
 
-    const allPIITokenized = piiProcessedWithTokenization === metrics.piiDataProcessed;
+    const allPIITokenized =
+      piiProcessedWithTokenization === metrics.piiDataProcessed;
     const hasAuditTrail = logs.length > 0;
     const noUnauthorizedAccess = metrics.securityIncidents === 0;
 
@@ -118,8 +120,8 @@ export class ComplianceManager {
    * Check SOC2 compliance
    */
   private checkSOC2Compliance(
-    metrics: ComplianceReport['metrics'],
-    logs: AuditLogEntry[]
+    metrics: ComplianceReport["metrics"],
+    logs: AuditLogEntry[],
   ): boolean {
     // SOC2 requirements:
     // 1. Security controls in place (validation, sandboxing)
@@ -127,7 +129,7 @@ export class ComplianceManager {
     // 3. No security incidents
 
     const hasSecurityControls = logs.some(
-      log => log.type === 'security' && log.message.includes('validation')
+      (log) => log.type === "security" && log.message.includes("validation"),
     );
 
     const hasAuditLogging = logs.length > 0;
@@ -140,8 +142,8 @@ export class ComplianceManager {
    * Check HIPAA compliance
    */
   private checkHIPAACompliance(
-    metrics: ComplianceReport['metrics'],
-    logs: AuditLogEntry[]
+    metrics: ComplianceReport["metrics"],
+    logs: AuditLogEntry[],
   ): boolean {
     // HIPAA requirements (if processing health data):
     // 1. All PII/PHI must be encrypted/tokenized
@@ -163,14 +165,14 @@ export class ComplianceManager {
 
     // Check if audit logging is enabled
     if (!this.auditLogger) {
-      issues.push('Audit logging not initialized');
+      issues.push("Audit logging not initialized");
     }
 
     // Add more validation checks as needed
 
     return {
       compliant: issues.length === 0,
-      issues
+      issues,
     };
   }
 }

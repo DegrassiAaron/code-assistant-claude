@@ -1,10 +1,14 @@
-import { Skill, LoadingStage, ActivationContext, SkillMetadata } from './types';
-import { SkillRegistry } from './skill-registry';
-import { SkillParser } from './skill-parser';
-import { TokenTracker } from './token-tracker';
-import { CacheManager } from './cache-manager';
-import { Logger, ConsoleLogger } from './logger';
-import { DEFAULT_CACHE_SIZE, DEFAULT_CACHE_TTL_MS, PRIORITY_VALUES } from './constants';
+import { Skill, LoadingStage, ActivationContext, SkillMetadata } from "./types";
+import { SkillRegistry } from "./skill-registry";
+import { SkillParser } from "./skill-parser";
+import { TokenTracker } from "./token-tracker";
+import { CacheManager } from "./cache-manager";
+import { Logger, ConsoleLogger } from "./logger";
+import {
+  DEFAULT_CACHE_SIZE,
+  DEFAULT_CACHE_TTL_MS,
+  PRIORITY_VALUES,
+} from "./constants";
 
 /**
  * Manages progressive skill loading with caching and token tracking
@@ -32,7 +36,7 @@ export class SkillLoader {
     skillsDir: string,
     cacheSize: number = DEFAULT_CACHE_SIZE,
     cacheTTL: number = DEFAULT_CACHE_TTL_MS,
-    logger: Logger = new ConsoleLogger('[SkillLoader]')
+    logger: Logger = new ConsoleLogger("[SkillLoader]"),
   ) {
     this.registry = new SkillRegistry(skillsDir, logger);
     this.parser = new SkillParser(logger);
@@ -49,7 +53,7 @@ export class SkillLoader {
 
     // Track metadata tokens
     const metadataTokens = this.registry.getTotalMetadataTokens();
-    this.tokenTracker.trackSystemUsage('skills_metadata', metadataTokens);
+    this.tokenTracker.trackSystemUsage("skills_metadata", metadataTokens);
   }
 
   /**
@@ -74,7 +78,7 @@ export class SkillLoader {
    */
   async loadSkills(
     skillNames: string[],
-    stage: LoadingStage = LoadingStage.FULL_CONTENT
+    stage: LoadingStage = LoadingStage.FULL_CONTENT,
   ): Promise<Skill[]> {
     const skills: Skill[] = [];
 
@@ -93,7 +97,7 @@ export class SkillLoader {
    */
   private async loadSkill(
     skillName: string,
-    stage: LoadingStage
+    stage: LoadingStage,
   ): Promise<Skill | null> {
     // Check if already loaded at requested stage or higher
     const cached = this.loadedSkills.get(skillName);
@@ -119,11 +123,7 @@ export class SkillLoader {
       const skill = await this.parser.parseSkill(entry.path, stage);
 
       // Track tokens
-      this.tokenTracker.trackSkillUsage(
-        skillName,
-        stage,
-        skill.tokensConsumed
-      );
+      this.tokenTracker.trackSkillUsage(skillName, stage, skill.tokensConsumed);
 
       // Cache skill
       await this.cache.set(skillName, skill);
@@ -150,7 +150,7 @@ export class SkillLoader {
     if (!this.compiledPatterns.has(skillName)) {
       this.compiledPatterns.set(
         skillName,
-        patterns.map(p => new RegExp(p, 'i'))
+        patterns.map((p) => new RegExp(p, "i")),
       );
     }
     return this.compiledPatterns.get(skillName)!;
@@ -161,7 +161,7 @@ export class SkillLoader {
    */
   private shouldActivate(
     metadata: SkillMetadata,
-    context: ActivationContext
+    context: ActivationContext,
   ): boolean {
     const { triggers } = metadata;
     const { userMessage, currentCommand, eventType, projectType } = context;
@@ -169,15 +169,20 @@ export class SkillLoader {
     // Check keywords
     if (triggers.keywords) {
       const messageLower = userMessage.toLowerCase();
-      if (triggers.keywords.some(k => messageLower.includes(k.toLowerCase()))) {
+      if (
+        triggers.keywords.some((k) => messageLower.includes(k.toLowerCase()))
+      ) {
         return true;
       }
     }
 
     // Check patterns (regex) - using pre-compiled patterns for performance
     if (triggers.patterns && triggers.patterns.length > 0) {
-      const patterns = this.getCompiledPatterns(metadata.name, triggers.patterns);
-      if (patterns.some(p => p.test(userMessage))) {
+      const patterns = this.getCompiledPatterns(
+        metadata.name,
+        triggers.patterns,
+      );
+      if (patterns.some((p) => p.test(userMessage))) {
         return true;
       }
     }
@@ -226,11 +231,14 @@ export class SkillLoader {
   /**
    * Check if a stage includes another stage
    */
-  private isStageLoaded(loaded: LoadingStage, requested: LoadingStage): boolean {
+  private isStageLoaded(
+    loaded: LoadingStage,
+    requested: LoadingStage,
+  ): boolean {
     const stages = [
       LoadingStage.METADATA_ONLY,
       LoadingStage.FULL_CONTENT,
-      LoadingStage.WITH_RESOURCES
+      LoadingStage.WITH_RESOURCES,
     ];
 
     return stages.indexOf(loaded) >= stages.indexOf(requested);

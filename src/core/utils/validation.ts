@@ -16,25 +16,25 @@ export function validateProjectRoot(projectRoot: string): void {
     throw new Error("Invalid path: path traversal detected");
   }
 
-  // Ensure path is within or is current working directory
-  if (!resolved.startsWith(cwd) && resolved !== cwd) {
-    throw new Error("Project root must be within current working directory");
-  }
-
-  // Check for suspicious patterns
+  // Check for suspicious system directory patterns FIRST (before cwd check)
   const suspiciousPatterns = [
-    "/etc/",
-    "/root/",
-    "/sys/",
-    "/proc/",
+    "/etc",
+    "/root",
+    "/sys",
+    "/proc",
     "C:\\Windows",
     "C:\\Program Files",
   ];
 
   for (const pattern of suspiciousPatterns) {
-    if (resolved.includes(pattern)) {
+    if (resolved.startsWith(pattern) || resolved.includes(pattern + "/")) {
       throw new Error(`Access to system directory denied: ${pattern}`);
     }
+  }
+
+  // Ensure path is within or is current working directory
+  if (!resolved.startsWith(cwd) && resolved !== cwd) {
+    throw new Error("Project root must be within current working directory");
   }
 }
 

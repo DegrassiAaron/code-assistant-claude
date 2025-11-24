@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { promises as fs } from "fs";
 import path from "path";
 import os from "os";
@@ -215,7 +216,7 @@ MCP servers enabled globally provide consistent capabilities across projects.
     claudeDir: string,
     answers: SetupAnswers,
   ): Promise<void> {
-    const mcpServers: Record<string, any> = {};
+    const mcpServers: Record<string, unknown> = {};
 
     // Load MCP registry
     await this.loadMcpRegistry();
@@ -256,7 +257,7 @@ MCP servers enabled globally provide consistent capabilities across projects.
   /**
    * Get MCP configuration from registry
    */
-  private async getMcpConfig(mcpName: string): Promise<any> {
+  private async getMcpConfig(mcpName: string): Promise<unknown> {
     await this.loadMcpRegistry();
 
     const entry = this.mcpRegistry?.[mcpName];

@@ -1,14 +1,22 @@
 export class CleanupManager {
   private cleanupHandlers: Map<string, Array<() => Promise<void> | void>>;
   private autoCleanup: boolean;
+  private autoCleanupInterval?: NodeJS.Timeout;
 
-  constructor(options: { autoCleanup?: boolean } = {}) {
+  constructor(
+    _workspaceManager?: unknown,
+    _cacheManager?: unknown,
+    options: { autoCleanup?: boolean } = {},
+  ) {
     this.cleanupHandlers = new Map();
     this.autoCleanup = options.autoCleanup ?? false;
     if (this.autoCleanup) this.registerProcessHandlers();
   }
 
-  registerCleanup(resourceId: string, handler: () => Promise<void> | void): void {
+  registerCleanup(
+    resourceId: string,
+    handler: () => Promise<void> | void,
+  ): void {
     if (!this.cleanupHandlers.has(resourceId)) {
       this.cleanupHandlers.set(resourceId, []);
     }
@@ -16,8 +24,10 @@ export class CleanupManager {
   }
 
   hasCleanupHandler(resourceId: string): boolean {
-    return this.cleanupHandlers.has(resourceId) && 
-           this.cleanupHandlers.get(resourceId)!.length > 0;
+    return (
+      this.cleanupHandlers.has(resourceId) &&
+      this.cleanupHandlers.get(resourceId)!.length > 0
+    );
   }
 
   removeCleanupHandler(resourceId: string): void {
@@ -50,8 +60,33 @@ export class CleanupManager {
       await this.cleanup();
       process.exit(0);
     };
-    process.on('exit', () => console.log('Process exiting...'));
-    process.on('SIGINT', () => cleanupAndExit('SIGINT'));
-    process.on('SIGTERM', () => cleanupAndExit('SIGTERM'));
+    process.on("exit", () => console.log("Process exiting..."));
+    process.on("SIGINT", () => cleanupAndExit("SIGINT"));
+    process.on("SIGTERM", () => cleanupAndExit("SIGTERM"));
+  }
+
+  startAutoCleanup(intervalMinutes: number): void {
+    if (this.autoCleanupInterval) {
+      clearInterval(this.autoCleanupInterval);
+    }
+    this.autoCleanupInterval = setInterval(
+      () => {
+        this.cleanup().catch((err) =>
+          console.error("Auto-cleanup failed:", err),
+        );
+      },
+      intervalMinutes * 60 * 1000,
+    );
+  }
+
+  stopAutoCleanup(): void {
+    if (this.autoCleanupInterval) {
+      clearInterval(this.autoCleanupInterval);
+      this.autoCleanupInterval = undefined;
+    }
+  }
+
+  async performCleanup(): Promise<void> {
+    await this.cleanup();
   }
 }
