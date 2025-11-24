@@ -1,52 +1,100 @@
 import inquirer from "inquirer";
-import ora, { Ora } from "ora";
+import ora from "ora";
 import chalk from "chalk";
 import { promises as fs } from "fs";
 import path from "path";
 import { spawn, ChildProcess } from "child_process";
+import { z } from "zod";
 import type { MCPServerConfig, MCPToolSchema } from "../../core/execution-engine/types";
+import { Logger } from "../../core/utils/logger";
 
-// MCP Registry types
-interface MCPRegistryEntry {
-  name: string;
-  displayName: string;
-  description: string;
-  category: string;
-  official: boolean;
-  installation: {
-    command: string;
-    args: string[];
-    requiresInstall: boolean;
-  };
-  env: {
-    required: Array<{
-      name: string;
-      description: string;
-      type: string;
-      secret?: boolean;
-      example?: string;
-    }>;
-    optional: Array<{
-      name: string;
-      description: string;
-      default: string;
-      type: string;
-    }>;
-  };
-  features: string[];
-  docs: string;
-  repository: string;
-  priority: string;
-  recommended: boolean;
-  tags: string[];
-  verified: boolean;
-}
+// Configuration constants
+const CONFIG = {
+  CONNECTION_STARTUP_TIMEOUT_MS: 5000,
+  REQUEST_TIMEOUT_MS: 30000,
+  MAX_RETRIES: 3,
+  MAX_BUFFER_SIZE: 10 * 1024 * 1024, // 10MB
+  GRACEFUL_SHUTDOWN_TIMEOUT_MS: 5000,
+} as const;
 
-interface MCPRegistry {
-  version: string;
-  servers: Record<string, MCPRegistryEntry>;
-  categories: Record<string, { name: string; description: string; icon: string }>;
-}
+const logger = new Logger("mcp-add");
+
+// Zod schemas for validation
+const JSONSchemaSchema = z.object({
+  type: z.string(),
+  properties: z.record(z.any()).optional(),
+  items: z.any().optional(),
+  required: z.array(z.string()).optional(),
+});
+
+const MCPRegistryEntrySchema = z.object({
+  name: z.string(),
+  displayName: z.string(),
+  description: z.string(),
+  category: z.string(),
+  official: z.boolean(),
+  installation: z.object({
+    command: z.string(),
+    args: z.array(z.string()),
+    requiresInstall: z.boolean(),
+  }),
+  env: z.object({
+    required: z.array(z.object({
+      name: z.string(),
+      description: z.string(),
+      type: z.string(),
+      secret: z.boolean().optional(),
+      example: z.string().optional(),
+    })),
+    optional: z.array(z.object({
+      name: z.string(),
+      description: z.string(),
+      default: z.string(),
+      type: z.string(),
+    })),
+  }),
+  features: z.array(z.string()),
+  docs: z.string(),
+  repository: z.string(),
+  priority: z.string(),
+  recommended: z.boolean(),
+  tags: z.array(z.string()),
+  verified: z.boolean(),
+});
+
+const MCPRegistrySchema = z.object({
+  version: z.string(),
+  servers: z.record(MCPRegistryEntrySchema),
+  categories: z.record(z.object({
+    name: z.string(),
+    description: z.string(),
+    icon: z.string(),
+  })),
+});
+
+const JSONRPCResponseSchema = z.object({
+  jsonrpc: z.literal("2.0"),
+  id: z.number(),
+  result: z.any().optional(),
+  error: z.object({
+    code: z.number(),
+    message: z.string(),
+  }).optional(),
+});
+
+const MCPConfigSchema = z.object({
+  mcpServers: z.record(z.object({
+    command: z.string(),
+    args: z.array(z.string()),
+    env: z.record(z.string()).optional(),
+  })),
+});
+
+// Types
+type MCPRegistryEntry = z.infer<typeof MCPRegistryEntrySchema>;
+type MCPRegistry = z.infer<typeof MCPRegistrySchema>;
+type JSONRPCResponse = z.infer<typeof JSONRPCResponseSchema>;
+type MCPConfig = z.infer<typeof MCPConfigSchema>;
 
 interface AddMCPOptions {
   name?: string;
@@ -54,39 +102,26 @@ interface AddMCPOptions {
   test?: boolean;
 }
 
-interface MCPConfig {
-  mcpServers: Record<string, MCPServerConfig>;
-}
-
 interface ToolListResponse {
   tools: Array<{
     name: string;
     description?: string;
-    inputSchema?: any;
+    inputSchema?: z.infer<typeof JSONSchemaSchema>;
   }>;
 }
 
 interface JSONRPCRequest {
-  jsonrpc: string;
+  jsonrpc: "2.0";
   id: number;
   method: string;
-  params?: any;
-}
-
-interface JSONRPCResponse {
-  jsonrpc: string;
-  id: number;
-  result?: any;
-  error?: {
-    code: number;
-    message: string;
-  };
+  params?: unknown;
 }
 
 /**
  * Main command: Add new MCP server
  */
 export async function mcpAddCommand(options: AddMCPOptions = {}): Promise<void> {
+  logger.info("Starting MCP add command");
   console.log(chalk.blue.bold("\n🔌 Add MCP Server\n"));
 
   try {
@@ -115,31 +150,45 @@ export async function mcpAddCommand(options: AddMCPOptions = {}): Promise<void> 
 
     // Success message
     displaySuccessMessage(selectedMCP, tools);
+    logger.info("MCP server added successfully", { server: selectedMCP.name });
   } catch (error) {
     if (error instanceof Error && error.message === "USER_CANCELLED") {
+      logger.info("Setup cancelled by user");
       console.log(chalk.yellow("\n⚠️  Setup cancelled by user\n"));
       process.exit(0);
     }
 
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    logger.error("Failed to add MCP server", { error: errorMessage });
     console.error(
       chalk.red("\n❌ Failed to add MCP server:"),
-      error instanceof Error ? error.message : "Unknown error"
+      errorMessage
     );
     process.exit(1);
   }
 }
 
 /**
- * Load MCP registry from JSON file
+ * Load MCP registry from JSON file with validation
  */
 async function loadMCPRegistry(): Promise<MCPRegistry> {
   const registryPath = path.join(__dirname, "../../core/configurators/mcp-registry.json");
 
   try {
+    logger.debug("Loading MCP registry", { path: registryPath });
     const content = await fs.readFile(registryPath, "utf-8");
-    return JSON.parse(content);
+    const parsed = JSON.parse(content);
+    const validated = MCPRegistrySchema.parse(parsed);
+    logger.debug("MCP registry loaded", { serverCount: Object.keys(validated.servers).length });
+    return validated;
   } catch (error) {
-    throw new Error(`Failed to load MCP registry: ${error instanceof Error ? error.message : "Unknown error"}`);
+    if (error instanceof z.ZodError) {
+      logger.error("Invalid registry format", { errors: error.errors });
+      throw new Error(`Invalid MCP registry format: ${error.errors[0].message}`);
+    }
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    logger.error("Failed to load MCP registry", { error: errorMessage });
+    throw new Error(`Failed to load MCP registry: ${errorMessage}`);
   }
 }
 
@@ -154,8 +203,10 @@ async function selectMCPServer(
   if (providedName) {
     const entry = registry.servers[providedName];
     if (entry) {
+      logger.debug("Using provided MCP server", { name: providedName });
       return entry;
     }
+    logger.warn("Provided MCP not found in registry", { name: providedName });
     console.log(chalk.yellow(`\n⚠️  MCP "${providedName}" not found in registry`));
   }
 
@@ -239,9 +290,57 @@ async function selectMCPServer(
 }
 
 /**
+ * Parse command arguments safely (prevents command injection)
+ */
+function parseArguments(input: string): string[] {
+  // Match quoted strings or non-whitespace sequences
+  const regex = /(?:[^\s"]+|"[^"]*")+/g;
+  const matches = input.match(regex) || [];
+
+  // Remove quotes from matched strings
+  return matches.map(arg => arg.replace(/^"(.*)"$/, "$1"));
+}
+
+/**
+ * Validate script path for security
+ */
+async function validateScriptPath(scriptPath: string): Promise<string> {
+  const resolvedPath = path.resolve(scriptPath);
+  const cwd = process.cwd();
+
+  // Check if path is within project directory (security)
+  if (!resolvedPath.startsWith(cwd)) {
+    throw new Error("Script path must be within project directory");
+  }
+
+  // Check if file exists
+  try {
+    await fs.access(resolvedPath);
+    logger.debug("Script path validated", { path: resolvedPath });
+  } catch {
+    logger.warn("Script file not found", { path: scriptPath });
+    console.log(chalk.yellow(`\n⚠️  Warning: File not found: ${scriptPath}`));
+    const { continueAnyway } = await inquirer.prompt([
+      {
+        type: "confirm",
+        name: "continueAnyway",
+        message: "Continue anyway?",
+        default: false,
+      },
+    ]);
+    if (!continueAnyway) {
+      throw new Error("USER_CANCELLED");
+    }
+  }
+
+  return resolvedPath;
+}
+
+/**
  * Custom MCP configuration wizard
  */
 async function customMCPConfiguration(registry: MCPRegistry): Promise<MCPRegistryEntry> {
+  logger.info("Starting custom MCP configuration");
   console.log(chalk.cyan("\n🔧 Custom MCP Configuration\n"));
 
   const answers = await inquirer.prompt([
@@ -307,8 +406,9 @@ async function customMCPConfiguration(registry: MCPRegistry): Promise<MCPRegistr
         default: "./server.js",
       },
     ]);
+    const validatedPath = await validateScriptPath(scriptPath);
     command = "node";
-    args = [scriptPath];
+    args = [validatedPath];
   } else if (answers.commandType === "python") {
     const { scriptPath } = await inquirer.prompt([
       {
@@ -318,8 +418,9 @@ async function customMCPConfiguration(registry: MCPRegistry): Promise<MCPRegistr
         default: "./server.py",
       },
     ]);
+    const validatedPath = await validateScriptPath(scriptPath);
     command = "python";
-    args = [scriptPath];
+    args = [validatedPath];
   } else {
     const { customCommand, customArgs } = await inquirer.prompt([
       {
@@ -331,12 +432,14 @@ async function customMCPConfiguration(registry: MCPRegistry): Promise<MCPRegistr
       {
         type: "input",
         name: "customArgs",
-        message: "Arguments (space-separated):",
+        message: "Arguments (space-separated, use quotes for args with spaces):",
       },
     ]);
     command = customCommand;
-    args = customArgs ? customArgs.split(" ") : [];
+    args = customArgs ? parseArguments(customArgs) : [];
   }
+
+  logger.info("Custom MCP configured", { name: answers.name, command });
 
   // Return custom MCP entry
   return {
@@ -387,6 +490,7 @@ async function configureEnvironmentVariables(
       ]);
 
       envConfig[envVar.name] = value;
+      logger.debug("Environment variable configured", { name: envVar.name });
     }
   }
 
@@ -416,6 +520,7 @@ async function configureEnvironmentVariables(
 
         if (value !== envVar.default) {
           envConfig[envVar.name] = value;
+          logger.debug("Optional environment variable configured", { name: envVar.name });
         }
       }
     }
@@ -425,69 +530,97 @@ async function configureEnvironmentVariables(
 }
 
 /**
- * Test MCP connection via JSON-RPC
+ * Test MCP connection via JSON-RPC with retry logic
  */
 async function testMCPConnection(
   mcpEntry: MCPRegistryEntry,
   envConfig: Record<string, string>
 ): Promise<MCPToolSchema[]> {
-  const spinner = ora("Testing MCP connection...").start();
+  let attempt = 0;
 
-  try {
-    // Spawn MCP server process
-    const client = new MCPClient(
-      mcpEntry.installation.command,
-      mcpEntry.installation.args,
-      envConfig
-    );
+  while (attempt < CONFIG.MAX_RETRIES) {
+    const spinner = ora("Testing MCP connection...").start();
 
-    await client.connect();
+    try {
+      logger.debug("Attempting MCP connection", { attempt: attempt + 1, server: mcpEntry.name });
 
-    spinner.text = "Fetching available tools...";
+      // Spawn MCP server process
+      const client = new MCPClient(
+        mcpEntry.installation.command,
+        mcpEntry.installation.args,
+        envConfig
+      );
 
-    // Get tools list
-    const tools = await client.listTools();
+      await client.connect();
 
-    spinner.succeed(`Connection successful! Found ${chalk.bold(tools.length)} tools`);
+      spinner.text = "Fetching available tools...";
 
-    await client.disconnect();
+      // Get tools list
+      const tools = await client.listTools();
 
-    return tools;
-  } catch (error) {
-    spinner.fail("Connection test failed");
+      spinner.succeed(`Connection successful! Found ${chalk.bold(tools.length)} tools`);
+      logger.info("MCP connection successful", { toolCount: tools.length });
 
-    const { retry } = await inquirer.prompt([
-      {
-        type: "confirm",
-        name: "retry",
-        message: `Error: ${error instanceof Error ? error.message : "Unknown error"}\n   Retry connection?`,
-        default: true,
-      },
-    ]);
+      await client.disconnect();
 
-    if (retry) {
-      return testMCPConnection(mcpEntry, envConfig);
+      return tools;
+    } catch (error) {
+      spinner.fail("Connection test failed");
+      attempt++;
+
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      logger.error("Connection test failed", { attempt, error: errorMessage });
+
+      if (attempt >= CONFIG.MAX_RETRIES) {
+        const { continueAnyway } = await inquirer.prompt([
+          {
+            type: "confirm",
+            name: "continueAnyway",
+            message: `All ${CONFIG.MAX_RETRIES} attempts failed. Continue without testing connection?`,
+            default: false,
+          },
+        ]);
+
+        if (!continueAnyway) {
+          throw new Error("USER_CANCELLED");
+        }
+
+        return [];
+      }
+
+      const { retry } = await inquirer.prompt([
+        {
+          type: "confirm",
+          name: "retry",
+          message: `Attempt ${attempt}/${CONFIG.MAX_RETRIES} - Error: ${errorMessage}\n   Retry connection?`,
+          default: true,
+        },
+      ]);
+
+      if (!retry) {
+        const { continueAnyway } = await inquirer.prompt([
+          {
+            type: "confirm",
+            name: "continueAnyway",
+            message: "Continue without testing connection?",
+            default: false,
+          },
+        ]);
+
+        if (!continueAnyway) {
+          throw new Error("USER_CANCELLED");
+        }
+
+        return [];
+      }
     }
-
-    const { continueAnyway } = await inquirer.prompt([
-      {
-        type: "confirm",
-        name: "continueAnyway",
-        message: "Continue without testing connection?",
-        default: false,
-      },
-    ]);
-
-    if (!continueAnyway) {
-      throw new Error("USER_CANCELLED");
-    }
-
-    return [];
   }
+
+  return [];
 }
 
 /**
- * JSON-RPC MCP Client
+ * JSON-RPC MCP Client with proper resource management
  */
 class MCPClient {
   private process: ChildProcess | null = null;
@@ -497,6 +630,12 @@ class MCPClient {
     reject: (error: Error) => void;
     timeout: NodeJS.Timeout;
   }>();
+  private stdoutHandler?: (data: Buffer) => void;
+  private stderrHandler?: (data: Buffer) => void;
+  private errorHandler?: (error: Error) => void;
+  private exitHandler?: (code: number | null) => void;
+  private errorBuffer = "";
+  private stdoutBuffer = "";
 
   constructor(
     private command: string,
@@ -506,6 +645,15 @@ class MCPClient {
 
   async connect(): Promise<void> {
     return new Promise((resolve, reject) => {
+      let resolved = false;
+      const timeoutHandle = setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          this.cleanup();
+          reject(new Error("Server startup timeout"));
+        }
+      }, CONFIG.CONNECTION_STARTUP_TIMEOUT_MS);
+
       try {
         // Spawn process
         this.process = spawn(this.command, this.args, {
@@ -514,57 +662,146 @@ class MCPClient {
         });
 
         // Handle stdout (JSON-RPC responses)
-        let buffer = "";
-        this.process.stdout?.on("data", (data: Buffer) => {
-          buffer += data.toString();
+        this.stdoutHandler = (data: Buffer) => {
+          this.stdoutBuffer += data.toString();
+
+          // Buffer size limit
+          if (this.stdoutBuffer.length > CONFIG.MAX_BUFFER_SIZE) {
+            if (!resolved) {
+              resolved = true;
+              clearTimeout(timeoutHandle);
+              this.cleanup();
+              reject(new Error("Buffer overflow: MCP server sent too much data"));
+            }
+            return;
+          }
 
           // Try to parse complete JSON messages
-          const lines = buffer.split("\n");
-          buffer = lines.pop() || "";
+          const lines = this.stdoutBuffer.split("\n");
+          this.stdoutBuffer = lines.pop() || "";
 
           for (const line of lines) {
             if (line.trim()) {
               try {
-                const response: JSONRPCResponse = JSON.parse(line);
+                const parsed = JSON.parse(line);
+                const response = JSONRPCResponseSchema.parse(parsed);
                 this.handleResponse(response);
+
+                // Resolve on first valid JSON-RPC response (server is ready)
+                if (!resolved) {
+                  resolved = true;
+                  clearTimeout(timeoutHandle);
+                  resolve();
+                }
               } catch (e) {
-                // Ignore non-JSON lines
+                // Ignore non-JSON lines or validation errors
+                logger.debug("Ignored non-JSON line from stdout", { line });
               }
             }
           }
-        });
+        };
+
+        this.process.stdout?.on("data", this.stdoutHandler);
 
         // Handle stderr
-        let errorBuffer = "";
-        this.process.stderr?.on("data", (data: Buffer) => {
-          errorBuffer += data.toString();
-        });
+        this.stderrHandler = (data: Buffer) => {
+          this.errorBuffer += data.toString();
+
+          // Buffer size limit
+          if (this.errorBuffer.length > CONFIG.MAX_BUFFER_SIZE) {
+            this.errorBuffer = this.errorBuffer.substring(0, CONFIG.MAX_BUFFER_SIZE) + "\n[Buffer limit reached]";
+          }
+        };
+
+        this.process.stderr?.on("data", this.stderrHandler);
 
         // Handle process errors
-        this.process.on("error", (error) => {
-          reject(new Error(`Failed to start MCP server: ${error.message}`));
-        });
+        this.errorHandler = (error: Error) => {
+          if (!resolved) {
+            resolved = true;
+            clearTimeout(timeoutHandle);
+            this.cleanup();
+            reject(new Error(`Failed to start MCP server: ${error.message}`));
+          }
+        };
+
+        this.process.on("error", this.errorHandler);
 
         // Handle process exit
-        this.process.on("exit", (code) => {
-          if (code !== 0) {
-            reject(new Error(`MCP server exited with code ${code}\n${errorBuffer}`));
+        this.exitHandler = (code: number | null) => {
+          if (code !== 0 && code !== null) {
+            if (!resolved) {
+              resolved = true;
+              clearTimeout(timeoutHandle);
+              this.cleanup();
+              reject(new Error(`MCP server exited with code ${code}\n${this.errorBuffer}`));
+            }
           }
-        });
+        };
 
-        // Give process time to start
-        setTimeout(() => resolve(), 1000);
+        this.process.on("exit", this.exitHandler);
       } catch (error) {
-        reject(error);
+        if (!resolved) {
+          resolved = true;
+          clearTimeout(timeoutHandle);
+          this.cleanup();
+          reject(error);
+        }
       }
     });
   }
 
   async disconnect(): Promise<void> {
+    if (!this.process) return;
+
+    logger.debug("Disconnecting MCP client");
+
+    // Try graceful shutdown first
+    this.process.kill("SIGTERM");
+
+    // Wait for process to exit
+    await new Promise<void>((resolve) => {
+      const timeout = setTimeout(() => {
+        // Force kill after timeout
+        if (this.process) {
+          logger.warn("Forcing MCP server kill after timeout");
+          this.process.kill("SIGKILL");
+        }
+        resolve();
+      }, CONFIG.GRACEFUL_SHUTDOWN_TIMEOUT_MS);
+
+      this.process?.once("exit", () => {
+        clearTimeout(timeout);
+        resolve();
+      });
+    });
+
+    this.cleanup();
+  }
+
+  private cleanup(): void {
+    // Remove event listeners to prevent memory leaks
     if (this.process) {
-      this.process.kill();
+      if (this.stdoutHandler) {
+        this.process.stdout?.removeListener("data", this.stdoutHandler);
+      }
+      if (this.stderrHandler) {
+        this.process.stderr?.removeListener("data", this.stderrHandler);
+      }
+      if (this.errorHandler) {
+        this.process.removeListener("error", this.errorHandler);
+      }
+      if (this.exitHandler) {
+        this.process.removeListener("exit", this.exitHandler);
+      }
+
       this.process = null;
     }
+
+    this.stdoutHandler = undefined;
+    this.stderrHandler = undefined;
+    this.errorHandler = undefined;
+    this.exitHandler = undefined;
 
     // Reject all pending requests
     for (const [, pending] of this.pendingRequests) {
@@ -572,6 +809,10 @@ class MCPClient {
       pending.reject(new Error("Client disconnected"));
     }
     this.pendingRequests.clear();
+
+    // Clear buffers
+    this.stdoutBuffer = "";
+    this.errorBuffer = "";
   }
 
   async listTools(): Promise<MCPToolSchema[]> {
@@ -585,7 +826,7 @@ class MCPClient {
     }));
   }
 
-  private async request<T = any>(method: string, params: any = {}): Promise<T> {
+  private async request<T = unknown>(method: string, params: unknown = {}): Promise<T> {
     return new Promise((resolve, reject) => {
       if (!this.process || !this.process.stdin) {
         reject(new Error("MCP client not connected"));
@@ -603,8 +844,9 @@ class MCPClient {
       // Set timeout
       const timeout = setTimeout(() => {
         this.pendingRequests.delete(id);
+        logger.warn("Request timeout", { method, id });
         reject(new Error(`Request timeout: ${method}`));
-      }, 30000); // 30 second timeout
+      }, CONFIG.REQUEST_TIMEOUT_MS);
 
       // Store pending request
       this.pendingRequests.set(id, { resolve, reject, timeout });
@@ -612,6 +854,7 @@ class MCPClient {
       // Send request
       try {
         this.process.stdin.write(JSON.stringify(request) + "\n");
+        logger.debug("Sent JSON-RPC request", { method, id });
       } catch (error) {
         clearTimeout(timeout);
         this.pendingRequests.delete(id);
@@ -622,14 +865,19 @@ class MCPClient {
 
   private handleResponse(response: JSONRPCResponse): void {
     const pending = this.pendingRequests.get(response.id);
-    if (!pending) return;
+    if (!pending) {
+      logger.warn("Received response for unknown request", { id: response.id });
+      return;
+    }
 
     clearTimeout(pending.timeout);
     this.pendingRequests.delete(response.id);
 
     if (response.error) {
+      logger.error("JSON-RPC error", { id: response.id, error: response.error });
       pending.reject(new Error(`JSON-RPC error: ${response.error.message}`));
     } else {
+      logger.debug("JSON-RPC response received", { id: response.id });
       pending.resolve(response.result);
     }
   }
@@ -668,10 +916,11 @@ async function generateToolSchema(
   await fs.writeFile(schemaPath, JSON.stringify(schema, null, 2));
 
   console.log(chalk.green(`\n✓ Generated schema: ${chalk.bold(path.relative(process.cwd(), schemaPath))}`));
+  logger.info("Schema generated", { path: schemaPath, toolCount: tools.length });
 }
 
 /**
- * Save MCP configuration to .mcp.json
+ * Save MCP configuration to .mcp.json with validation
  */
 async function saveMCPConfiguration(
   mcpEntry: MCPRegistryEntry,
@@ -683,8 +932,12 @@ async function saveMCPConfiguration(
   let config: MCPConfig;
   try {
     const content = await fs.readFile(configPath, "utf-8");
-    config = JSON.parse(content);
-  } catch {
+    const parsed = JSON.parse(content);
+    config = MCPConfigSchema.parse(parsed);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      logger.warn("Existing config invalid, creating new", { errors: error.errors });
+    }
     config = { mcpServers: {} };
   }
 
@@ -702,6 +955,7 @@ async function saveMCPConfiguration(
   await fs.writeFile(configPath, JSON.stringify(config, null, 2));
 
   console.log(chalk.green(`\n✓ Configuration saved: ${chalk.bold(path.relative(process.cwd(), configPath))}`));
+  logger.info("Configuration saved", { path: configPath, server: mcpEntry.name });
 }
 
 /**
