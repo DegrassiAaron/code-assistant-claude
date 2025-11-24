@@ -1,6 +1,7 @@
 import { DocumentationAnalyzer } from "./documentation-analyzer";
 import { GitWorkflowAnalyzer } from "./git-workflow-analyzer";
 import { TechStackDetector } from "./tech-stack-detector";
+import { MonorepoDetector, MonorepoInfo, WorkspaceInfo } from "./monorepo-detector";
 import { validateProjectRoot } from "../utils/validation";
 import { createLogger } from "../utils/logger";
 
@@ -17,12 +18,16 @@ export interface ProjectContext {
   };
   customInstructions: string[];
   confidence: number;
+  monorepo?: MonorepoInfo;
 }
+
+export { MonorepoInfo, WorkspaceInfo };
 
 export class ProjectAnalyzer {
   private docAnalyzer: DocumentationAnalyzer;
   private gitAnalyzer: GitWorkflowAnalyzer;
   private techDetector: TechStackDetector;
+  private monorepoDetector: MonorepoDetector | null = null;
   private logger = createLogger("ProjectAnalyzer");
 
   constructor() {
@@ -58,15 +63,42 @@ export class ProjectAnalyzer {
 
     try {
       // 1. Detect tech stack (fastest, always succeeds)
-      this.logger.step(1, 3, "Detecting tech stack");
+      this.logger.step(1, 4, "Detecting tech stack");
       const techStack = await this.techDetector.detect(projectRoot);
       context.techStack = techStack.languages;
-      context.type = this.inferProjectType(techStack);
-      this.logger.verbose(`Detected: ${context.type}`);
+      this.logger.verbose(`Detected tech stack: ${techStack.languages.join(", ")}`);
       this.logger.debugObject("Tech stack", techStack);
 
-      // 2. Analyze documentation (may not exist, don't fail)
-      this.logger.step(2, 3, "Analyzing documentation");
+      // 2. Detect monorepo structure (may not be a monorepo, don't fail)
+      this.logger.step(2, 4, "Detecting monorepo structure");
+      try {
+        this.monorepoDetector = new MonorepoDetector(projectRoot);
+        const monorepoInfo = await this.monorepoDetector.detect();
+
+        if (monorepoInfo.isMonorepo) {
+          context.monorepo = monorepoInfo;
+          this.logger.verbose(`Monorepo detected: ${monorepoInfo.tool} with ${monorepoInfo.workspaces.length} workspaces`);
+          this.logger.debugObject("Monorepo info", monorepoInfo);
+
+          // Aggiorna il tipo di progetto per riflettere che è un monorepo
+          context.type = this.inferProjectTypeWithMonorepo(techStack, monorepoInfo);
+        } else {
+          this.logger.verbose("Single-project repository detected");
+          context.type = this.inferProjectType(techStack);
+        }
+      } catch (error) {
+        // Monorepo detection failed, continue as single project
+        this.logger.warn(
+          "Monorepo detection failed: " +
+            (error instanceof Error ? error.message : "Unknown error"),
+        );
+        context.type = this.inferProjectType(techStack);
+      }
+
+      this.logger.verbose(`Project type: ${context.type}`);
+
+      // 3. Analyze documentation (may not exist, don't fail)
+      this.logger.step(3, 4, "Analyzing documentation");
       try {
         const docContext = await this.docAnalyzer.analyze(projectRoot);
         context.purpose = docContext.purpose;
@@ -91,8 +123,8 @@ export class ProjectAnalyzer {
         );
       }
 
-      // 3. Analyze Git workflow (may not be a git repo, don't fail)
-      this.logger.step(3, 3, "Analyzing Git workflow");
+      // 4. Analyze Git workflow (may not be a git repo, don't fail)
+      this.logger.step(4, 4, "Analyzing Git workflow");
       try {
         const gitConventions = await this.gitAnalyzer.detect(projectRoot);
         context.gitWorkflow = gitConventions.workflow;
@@ -109,7 +141,7 @@ export class ProjectAnalyzer {
         );
       }
 
-      // 4. Calculate confidence score
+      // Calculate confidence score
       context.confidence = this.calculateConfidence(context);
       this.logger.verbose(`Analysis confidence: ${(context.confidence * 100).toFixed(0)}%`);
       this.logger.debugObject("Final context", context);
@@ -164,15 +196,57 @@ export class ProjectAnalyzer {
     return "Unknown Project Type";
   }
 
+  private inferProjectTypeWithMonorepo(
+    techStack: any,
+    monorepoInfo: MonorepoInfo,
+  ): string {
+    const { tool, workspaces, crossLanguage } = monorepoInfo;
+
+    // Determina il tipo base
+    const toolName = this.getMonorepoToolName(tool || "unknown");
+
+    // Se è cross-language, enfatizza questo
+    if (crossLanguage) {
+      const uniqueTechs = new Set<string>();
+      workspaces.forEach((ws) => ws.technologies.forEach((t) => uniqueTechs.add(t)));
+      const techList = Array.from(uniqueTechs).slice(0, 3).join("/");
+      return `${toolName} Monorepo (${techList}, ${workspaces.length} workspaces)`;
+    }
+
+    // Se è single-language, menziona il linguaggio principale
+    const mainTech = monorepoInfo.rootTechnologies[0] || techStack.languages[0];
+    return `${toolName} Monorepo (${mainTech}, ${workspaces.length} workspaces)`;
+  }
+
+  private getMonorepoToolName(tool: string): string {
+    const toolNames: Record<string, string> = {
+      lerna: "Lerna",
+      pnpm: "pnpm",
+      yarn: "Yarn",
+      npm: "npm",
+      "go-workspace": "Go",
+      "cargo-workspace": "Cargo",
+      maven: "Maven",
+      gradle: "Gradle",
+      poetry: "Poetry",
+      "python-custom": "Python",
+      "dotnet-solution": ".NET",
+    };
+    return toolNames[tool] || "Multi-project";
+  }
+
   private calculateConfidence(context: ProjectContext): number {
     let confidence = 0;
 
     // Tech stack detection (always succeeds)
-    if (context.techStack.length > 0) confidence += 0.3;
+    if (context.techStack.length > 0) confidence += 0.25;
+
+    // Monorepo detection
+    if (context.monorepo?.isMonorepo) confidence += 0.15;
 
     // Documentation analysis
-    if (context.purpose) confidence += 0.3;
-    if (context.domain.length > 0) confidence += 0.2;
+    if (context.purpose) confidence += 0.25;
+    if (context.domain.length > 0) confidence += 0.15;
 
     // Git workflow detection
     if (context.gitWorkflow) confidence += 0.2;
