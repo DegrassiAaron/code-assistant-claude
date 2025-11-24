@@ -2,7 +2,11 @@
 import { DocumentationAnalyzer } from "./documentation-analyzer";
 import { GitWorkflowAnalyzer } from "./git-workflow-analyzer";
 import { TechStackDetector } from "./tech-stack-detector";
-import { MonorepoDetector, MonorepoInfo, WorkspaceInfo } from "./monorepo-detector";
+import {
+  MonorepoDetector,
+  MonorepoInfo,
+  WorkspaceInfo,
+} from "./monorepo-detector";
 import { validateProjectRoot } from "../utils/validation";
 import { createLogger } from "../utils/logger";
 
@@ -67,7 +71,9 @@ export class ProjectAnalyzer {
       this.logger.step(1, 4, "Detecting tech stack");
       const techStack = await this.techDetector.detect(projectRoot);
       context.techStack = techStack.languages;
-      this.logger.verbose(`Detected tech stack: ${techStack.languages.join(", ")}`);
+      this.logger.verbose(
+        `Detected tech stack: ${techStack.languages.join(", ")}`,
+      );
       this.logger.debugObject("Tech stack", techStack);
 
       // 2. Detect monorepo structure (may not be a monorepo, don't fail)
@@ -78,11 +84,16 @@ export class ProjectAnalyzer {
 
         if (monorepoInfo.isMonorepo) {
           context.monorepo = monorepoInfo;
-          this.logger.verbose(`Monorepo detected: ${monorepoInfo.tool} with ${monorepoInfo.workspaces.length} workspaces`);
+          this.logger.verbose(
+            `Monorepo detected: ${monorepoInfo.tool} with ${monorepoInfo.workspaces.length} workspaces`,
+          );
           this.logger.debugObject("Monorepo info", monorepoInfo);
 
           // Aggiorna il tipo di progetto per riflettere che è un monorepo
-          context.type = this.inferProjectTypeWithMonorepo(techStack, monorepoInfo);
+          context.type = this.inferProjectTypeWithMonorepo(
+            techStack,
+            monorepoInfo,
+          );
         } else {
           this.logger.verbose("Single-project repository detected");
           context.type = this.inferProjectType(techStack);
@@ -213,7 +224,9 @@ export class ProjectAnalyzer {
     // Se è cross-language, enfatizza questo
     if (crossLanguage) {
       const uniqueTechs = new Set<string>();
-      workspaces.forEach((ws) => ws.technologies.forEach((t) => uniqueTechs.add(t)));
+      workspaces.forEach((ws) =>
+        ws.technologies.forEach((t) => uniqueTechs.add(t)),
+      );
       const techList = Array.from(uniqueTechs).slice(0, 3).join("/");
       return `${toolName} Monorepo (${techList}, ${workspaces.length} workspaces)`;
     }
