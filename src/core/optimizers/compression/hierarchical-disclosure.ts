@@ -54,7 +54,10 @@ export class HierarchicalDisclosure {
       };
 
       // Find parent
-      while (stack.length > 0 && stack[stack.length - 1].level >= node.level) {
+      while (
+        stack.length > 0 &&
+        (stack[stack.length - 1]?.level || 0) >= node.level
+      ) {
         stack.pop();
       }
 
@@ -62,8 +65,10 @@ export class HierarchicalDisclosure {
         root.push(node);
       } else {
         const parent = stack[stack.length - 1];
-        if (!parent.children) parent.children = [];
-        parent.children.push(node);
+        if (parent) {
+          if (!parent.children) parent.children = [];
+          parent.children.push(node);
+        }
       }
 
       stack.push(node);
@@ -164,8 +169,8 @@ export class HierarchicalDisclosure {
 
     // Try to break at sentence boundary
     const sentences = content.split(/[.!?]\s+/);
-    if (sentences.length > 0 && sentences[0].length <= maxLength) {
-      return sentences[0] + ".";
+    if (sentences.length > 0 && (sentences[0]?.length || 0) <= maxLength) {
+      return (sentences[0] || "") + ".";
     }
 
     // Otherwise truncate
@@ -228,8 +233,8 @@ export class HierarchicalDisclosure {
     // Navigate to the specified path
     for (const index of path) {
       if (index >= current.length) break;
-      selectedNode = current[index];
-      current = selectedNode.children || [];
+      selectedNode = current[index] || null;
+      current = selectedNode?.children || [];
     }
 
     if (!selectedNode) {

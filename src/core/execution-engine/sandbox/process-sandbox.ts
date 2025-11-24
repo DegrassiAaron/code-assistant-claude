@@ -189,7 +189,7 @@ export class ProcessSandbox {
         }
       });
 
-      child.on("error", (error) => {
+      child.on("error", (error: Error) => {
         safeResolve({
           success: false,
           error: error.message,
@@ -221,7 +221,7 @@ export class ProcessSandbox {
     const [, amount, unit] = match;
     const multipliers = { K: 1024, M: 1024 ** 2, G: 1024 ** 3 };
 
-    return parseInt(amount) * multipliers[unit as keyof typeof multipliers];
+    return parseInt(amount || "0") * multipliers[unit as keyof typeof multipliers];
   }
 
   /**

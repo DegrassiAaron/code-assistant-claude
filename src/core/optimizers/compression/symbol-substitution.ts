@@ -100,9 +100,9 @@ export class SymbolSubstitution {
   }
 
   /**
-   * Check if position is in a protected range
+   * Check if position is in a protected range (reserved for future use)
    */
-  private isProtected(
+  private _isProtected(
     position: number,
     ranges: Array<{ start: number; end: number }>,
   ): boolean {

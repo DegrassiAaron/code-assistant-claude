@@ -180,7 +180,7 @@ export class TemplateOptimizer {
 
     for (const match of matches) {
       const varName = match[1];
-      if (!(varName in template.variables)) {
+      if (varName && !(varName in template.variables)) {
         errors.push(`Unresolved variable: ${varName}`);
       }
     }

@@ -216,6 +216,10 @@ export class BudgetManager {
     const targetIndex = this.usageHistory.length - stepsBack;
     const snapshot = this.usageHistory[targetIndex];
 
+    if (!snapshot) {
+      return false;
+    }
+
     // Restore state
     this.currentUsage = snapshot.totalUsage;
     this.categoryUsage = new Map(snapshot.categoryUsage);

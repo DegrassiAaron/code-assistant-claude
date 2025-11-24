@@ -1,5 +1,7 @@
 import { VM } from "vm2";
-import type { SandboxConfig, SandboxLevel } from "../types";
+import type { SandboxConfig } from "../types";
+
+type SandboxLevel = "docker" | "vm" | "process";
 
 interface SandboxExecutionOptions {
   level: SandboxLevel;
@@ -17,15 +19,17 @@ interface SandboxResult {
 }
 
 export class SandboxManager {
-  private config: SandboxConfig;
   private activeSandboxes: Map<string, any>;
+  private defaultConfig: SandboxConfig;
 
   constructor(config?: SandboxConfig) {
-    this.config = config || {
-      level: "process",
-      timeout: 5000,
-      memoryLimit: 256,
-      cpuLimit: 0.8,
+    this.defaultConfig = config || {
+      type: "process",
+      resourceLimits: {
+        cpu: 0.8,
+        memory: "256M",
+        timeout: 5000,
+      },
     };
     this.activeSandboxes = new Map();
   }

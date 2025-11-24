@@ -109,8 +109,8 @@ export class UsageMonitor {
     if (this.events.length === 0) return [];
 
     const trends: UsageTrend[] = [];
-    const startTime = this.events[0].timestamp;
-    const endTime = this.events[this.events.length - 1].timestamp;
+    const startTime = this.events[0]?.timestamp || 0;
+    const endTime = this.events[this.events.length - 1]?.timestamp || 0;
 
     let currentTime = startTime;
 

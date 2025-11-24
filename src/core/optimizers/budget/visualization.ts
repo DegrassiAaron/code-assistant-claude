@@ -51,8 +51,6 @@ export class Visualization {
    * Render header
    */
   private renderHeader(): string {
-    const _status = this.budgetManager.getStatus();
-
     let header =
       "╔════════════════════════════════════════════════════════════╗\n";
     header +=

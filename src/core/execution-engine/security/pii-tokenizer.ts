@@ -114,7 +114,7 @@ export class PIITokenizer {
     const titlePattern =
       /\b(Mr\.|Mrs\.|Ms\.|Dr\.)\s+([A-Z][a-z]+\s+[A-Z][a-z]+)\b/g;
 
-    const result = text.replace(titlePattern, (match, title, name) => {
+    const result = text.replace(titlePattern, (_match, title, name) => {
       return `${title} ${this.getOrCreateToken(name, "name")}`;
     });
 

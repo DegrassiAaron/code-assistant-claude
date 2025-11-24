@@ -19,12 +19,14 @@ export class StateManager {
     const state = {
       version: "1.0.0",
       savedAt: new Date().toISOString(),
-      workspaces: Array.from(workspaces.entries()).map(([id, workspace]) => ({
-        id,
-        ...workspace,
-        createdAt: workspace.createdAt.toISOString(),
-        lastAccessedAt: workspace.lastAccessedAt.toISOString(),
-      })),
+      workspaces: Array.from(workspaces.entries()).map(
+        ([workspaceId, workspace]) => ({
+          id: workspaceId,
+          ...workspace,
+          createdAt: workspace.createdAt.toISOString(),
+          lastAccessedAt: workspace.lastAccessedAt.toISOString(),
+        }),
+      ),
     };
 
     await fs.writeFile(this.stateFile, JSON.stringify(state, null, 2));

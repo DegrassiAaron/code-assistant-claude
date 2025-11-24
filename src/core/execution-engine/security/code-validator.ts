@@ -127,7 +127,6 @@ export class CodeValidator {
         __dirname,
         "patterns/dangerous-patterns.json",
       );
-      const _safePath = path.join(__dirname, "patterns/safe-patterns.json");
 
       // Try to load from files
       try {
