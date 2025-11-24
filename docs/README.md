@@ -52,10 +52,11 @@ graph TB
 
 ## 🚀 Quick Navigation
 
-### For New Users (Start Here!)
+### 💡 Start Here!
 
 | Guide | Description | Time |
 |-------|-------------|------|
+| [**FAQ**](FAQ.md) | **Domande frequenti su workflow e MCP** | **10 min** |
 | [Installation Guide](user-guides/01-installation.md) | Complete setup walkthrough | 5 min |
 | [Quick Start Tutorial](user-guides/02-quick-start.md) | Your first 5 minutes | 5 min |
 | [Configuration Guide](user-guides/03-configuration.md) | Customize your setup | 10 min |
@@ -200,6 +201,7 @@ graph TB
 
 | Document | Topic | Complexity |
 |----------|-------|------------|
+| [**FAQ**](FAQ.md) | **Frequently Asked Questions** | **All levels** |
 | [MCP Code Execution](reference/MCP_CODE_EXECUTION.md) | 98.7% token reduction system | Advanced |
 | [Intelligent Routing](reference/INTELLIGENT_ROUTING.md) | Task classification & routing | Intermediate |
 | [Token Efficiency Layer](reference/TOKEN_EFFICIENCY_LAYER.md) | Optimization strategies | Intermediate |

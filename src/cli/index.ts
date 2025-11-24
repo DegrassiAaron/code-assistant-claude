@@ -3,6 +3,7 @@ import chalk from "chalk";
 import { initCommand } from "./commands/init";
 import { configCommand } from "./commands/config";
 import { resetCommand } from "./commands/reset";
+import { mcpAddCommand } from "./commands/mcp-add";
 import { Logger } from "../core/utils/logger";
 
 const program = new Command();
@@ -71,6 +72,15 @@ program
   .option("--backup", "Create backup before reset (default: true)")
   .option("--no-backup", "Skip backup creation")
   .action(resetCommand);
+
+// MCP Add command - Add new MCP server with auto-discovery
+program
+  .command("mcp:add")
+  .description("Add new MCP server with automatic configuration")
+  .option("--name <name>", "MCP server name from registry")
+  .option("--no-test", "Skip connection testing")
+  .option("--no-interactive", "Non-interactive mode (use defaults)")
+  .action(mcpAddCommand);
 
 // Global error handler
 program.exitOverride((err) => {
