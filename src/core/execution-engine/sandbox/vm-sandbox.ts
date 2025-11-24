@@ -1,5 +1,5 @@
 import { SandboxConfig, ExecutionResult } from "../types";
-import { VM } from "vm2";
+import * as vm from "vm";
 
 /**
  * VM-based sandbox for isolated code execution
@@ -37,14 +37,14 @@ export class VMSandbox {
     }
 
     try {
-      // Create VM instance with timeout
-      const vm = new VM({
-        timeout: this.config.resourceLimits.timeout,
-        sandbox: this.createSandboxContext(),
-      });
+      // Create sandbox context
+      const context = vm.createContext(this.createSandboxContext());
 
-      // Execute code
-      const result = vm.run(code);
+      // Execute code with timeout
+      const result = vm.runInContext(code, context, {
+        timeout: this.config.resourceLimits.timeout,
+        displayErrors: true,
+      });
 
       const executionTime = Date.now() - startTime;
       const memoryUsed = process.memoryUsage().heapUsed;

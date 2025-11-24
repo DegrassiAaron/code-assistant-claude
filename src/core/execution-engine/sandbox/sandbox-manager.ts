@@ -1,4 +1,4 @@
-import { VM } from "vm2";
+import * as vm from "vm";
 import type { SandboxConfig } from "../types";
 
 type SandboxLevel = "docker" | "vm" | "process";
@@ -83,13 +83,11 @@ export class SandboxManager {
         resolve({ success: false, error: "Execution timeout exceeded" });
       }, options.timeout);
       try {
-        const vm = new VM({
+        const context = vm.createContext({});
+        const result = vm.runInContext(code, context, {
           timeout: options.timeout,
-          sandbox: {},
-          eval: false,
-          wasm: false,
+          displayErrors: true,
         });
-        const result = vm.run(code);
         clearTimeout(timer);
         resolve({ success: true, result });
       } catch (error: unknown) {
