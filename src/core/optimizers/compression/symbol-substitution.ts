@@ -41,8 +41,6 @@ export class SymbolSubstitution {
     const substitutions: Array<{ from: string; to: string; position: number }> =
       [];
 
-    const substituted = text;
-
     // Preserve code blocks if requested
     const protectedRanges: Array<{ start: number; end: number }> = [];
 

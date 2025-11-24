@@ -39,7 +39,9 @@ export class WorkspaceManager {
     try {
       await fs.rm(sessionPath, { recursive: true, force: true });
       this.sessions.delete(sessionId);
-    } catch (error) {}
+    } catch (error) {
+      // Ignore cleanup errors
+    }
   }
 
   getSessionPath(sessionId: string): string {
@@ -66,7 +68,9 @@ export class WorkspaceManager {
           this.sessions.delete(session);
           cleaned++;
         }
-      } catch {}
+      } catch {
+        // Ignore errors for individual session cleanup
+      }
     }
     return cleaned;
   }

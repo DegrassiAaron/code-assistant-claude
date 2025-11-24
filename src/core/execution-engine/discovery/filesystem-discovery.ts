@@ -1,6 +1,5 @@
 import { promises as fs } from "fs";
 import { glob } from "glob";
-import path from "path";
 import { MCPToolSchema, DiscoveredTool } from "../types";
 import { SchemaParser } from "../mcp-code-api/schema-parser";
 
@@ -95,7 +94,7 @@ export class FilesystemDiscovery {
   /**
    * Get tools by category
    */
-  getByCategory(category: string): MCPToolSchema[] {
+  getByCategory(_category: string): MCPToolSchema[] {
     // Category is inferred from file path
     // e.g., templates/mcp-tools/tech-specific/javascript/*.json
     return this.getAll(); // Simplified - would need category metadata

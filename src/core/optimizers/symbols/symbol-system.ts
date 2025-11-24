@@ -119,13 +119,13 @@ export class SymbolSystem {
    */
   private compileRegexPatterns(): void {
     // Compile compression patterns (keyword -> symbol)
-    for (const [keyword, symbol] of this.symbolMap.entries()) {
+    for (const [keyword, _symbol] of this.symbolMap.entries()) {
       const pattern = createWordBoundaryPattern(keyword, "gi");
       this.regexCache.set(keyword, pattern);
     }
 
     // Compile expansion patterns (symbol -> keyword)
-    for (const [symbol, keyword] of this.reverseMap.entries()) {
+    for (const [symbol, _keyword] of this.reverseMap.entries()) {
       const escapedSymbol = escapeRegex(symbol);
       const pattern = new RegExp(escapedSymbol, "g");
       this.reverseRegexCache.set(symbol, pattern);

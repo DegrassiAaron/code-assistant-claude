@@ -1,4 +1,4 @@
-import { SecurityValidation, SecurityIssue } from "../types";
+import { SecurityValidation } from "../types";
 
 /**
  * Assesses risk level of code execution

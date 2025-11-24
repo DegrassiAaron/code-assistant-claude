@@ -1,4 +1,4 @@
-import { CodeWrapper, ExecutionResult } from "../types";
+import { CodeWrapper } from "../types";
 
 /**
  * Runtime for executing generated MCP code

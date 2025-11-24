@@ -169,7 +169,7 @@ export class AgentOrchestrator implements IAgentOrchestrator {
     // For now, we'll create a structured output based on agent content
     // This simulates what a real execution might produce
 
-    const { metadata, content } = agent;
+    const { metadata } = agent;
 
     // Build prompt for agent
     const prompt = this.buildAgentPrompt(agent, context);

@@ -8,7 +8,7 @@
  * - Duplicate prevention
  */
 
-import { escapeRegex, createWordBoundaryPattern } from "../../utils/regex";
+import { createWordBoundaryPattern } from "../../utils/regex";
 
 export interface AbbreviationRule {
   full: string;
@@ -160,7 +160,7 @@ export class AbbreviationEngine {
    */
   abbreviate(
     text: string,
-    options: AbbreviationOptions = {},
+    _options: AbbreviationOptions = {},
   ): AbbreviationResult {
     if (text.length === 0) {
       return {

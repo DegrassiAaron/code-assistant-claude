@@ -3,8 +3,8 @@
  * Provides optimization suggestions based on usage patterns
  */
 
-import { BudgetManager, BudgetStatus } from "./budget-manager";
-import { UsageMonitor, UsageStats } from "./usage-monitor";
+import { BudgetManager } from "./budget-manager";
+import { UsageMonitor } from "./usage-monitor";
 
 export interface Recommendation {
   type: "optimization" | "allocation" | "workflow" | "warning";

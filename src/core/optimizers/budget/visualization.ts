@@ -3,8 +3,8 @@
  * ASCII dashboard for token budget and usage
  */
 
-import { BudgetManager, BudgetStatus } from "./budget-manager";
-import { UsageMonitor, UsageStats } from "./usage-monitor";
+import { BudgetManager } from "./budget-manager";
+import { UsageMonitor } from "./usage-monitor";
 
 export interface VisualizationOptions {
   width: number;
@@ -51,7 +51,7 @@ export class Visualization {
    * Render header
    */
   private renderHeader(): string {
-    const status = this.budgetManager.getStatus();
+    const _status = this.budgetManager.getStatus();
 
     let header =
       "╔════════════════════════════════════════════════════════════╗\n";

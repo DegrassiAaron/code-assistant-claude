@@ -30,7 +30,6 @@ export class SymbolRenderer {
     text: string,
     options: RenderOptions = { mode: "hybrid" },
   ): RenderedOutput {
-    const symbolsUsed: string[] = [];
     let rendered = text;
 
     // In compact mode, keep symbols as-is

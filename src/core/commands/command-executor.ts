@@ -123,7 +123,7 @@ export class CommandExecutor {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      const errorStack = error instanceof Error ? error.stack : undefined;
+      const _errorStack = error instanceof Error ? error.stack : undefined;
 
       this.logger.error(
         "Failed to load command",
