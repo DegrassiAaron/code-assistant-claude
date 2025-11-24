@@ -101,8 +101,9 @@ export class SymbolSubstitution {
 
   /**
    * Check if position is in a protected range (reserved for future use)
+   * @internal This method is reserved for future enhancements
    */
-  private _isProtected(
+  private __isProtected(
     position: number,
     ranges: Array<{ start: number; end: number }>,
   ): boolean {

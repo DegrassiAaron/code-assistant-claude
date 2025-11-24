@@ -28,10 +28,10 @@ interface SandboxResult {
 
 export class SandboxManager {
   private activeSandboxes: Map<string, any>;
-  private defaultConfig: SandboxConfig;
+  private _defaultConfig: SandboxConfig;
 
   constructor(config?: SandboxConfig) {
-    this.defaultConfig = config || {
+    this._defaultConfig = config || {
       type: "process",
       resourceLimits: {
         cpu: 0.8,

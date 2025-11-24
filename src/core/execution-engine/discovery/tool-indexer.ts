@@ -72,4 +72,20 @@ export class ToolIndexer {
   initialize(): void {
     // Initialization logic if needed
   }
+
+  getStats(): {
+    totalTools: number;
+    categories: number;
+    toolsByCategory: Record<string, number>;
+  } {
+    const toolsByCategory: Record<string, number> = {};
+    for (const [category, tools] of this.categoryIndex.entries()) {
+      toolsByCategory[category] = tools.size;
+    }
+    return {
+      totalTools: this.tools.size,
+      categories: this.categoryIndex.size,
+      toolsByCategory,
+    };
+  }
 }

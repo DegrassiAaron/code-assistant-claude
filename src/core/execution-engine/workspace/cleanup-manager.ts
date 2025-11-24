@@ -78,4 +78,15 @@ export class CleanupManager {
       intervalMinutes * 60 * 1000,
     );
   }
+
+  stopAutoCleanup(): void {
+    if (this.autoCleanupInterval) {
+      clearInterval(this.autoCleanupInterval);
+      this.autoCleanupInterval = undefined;
+    }
+  }
+
+  async performCleanup(): Promise<void> {
+    await this.cleanup();
+  }
 }
