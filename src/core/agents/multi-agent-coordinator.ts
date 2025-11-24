@@ -393,7 +393,9 @@ export class MultiAgentCoordinator implements IAgentCoordinator {
         }
       }
 
-      dependencies.set(agent.metadata.name, deps);
+      if (agent) {
+        dependencies.set(agent.metadata.name, deps);
+      }
     }
 
     return dependencies;

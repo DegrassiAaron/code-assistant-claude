@@ -74,4 +74,22 @@ export class WorkspaceManager {
     }
     return cleaned;
   }
+
+  createWorkspace(
+    sessionId: string,
+    _language?: string,
+  ): { id: string; path: string } {
+    return { id: sessionId, path: this.workspaceDir };
+  }
+
+  updateStatus(_sessionId: string, _status: string, _result?: any): void {
+    // Update status logic
+  }
+
+  getStats(): { totalSessions: number; activeSessions: number } {
+    return {
+      totalSessions: this.sessions.size,
+      activeSessions: this.sessions.size,
+    };
+  }
 }

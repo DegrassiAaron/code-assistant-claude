@@ -1,8 +1,13 @@
 export class CleanupManager {
   private cleanupHandlers: Map<string, Array<() => Promise<void> | void>>;
   private autoCleanup: boolean;
+  private autoCleanupInterval?: NodeJS.Timeout;
 
-  constructor(options: { autoCleanup?: boolean } = {}) {
+  constructor(
+    _workspaceManager?: any,
+    _cacheManager?: any,
+    options: { autoCleanup?: boolean } = {},
+  ) {
     this.cleanupHandlers = new Map();
     this.autoCleanup = options.autoCleanup ?? false;
     if (this.autoCleanup) this.registerProcessHandlers();
@@ -58,5 +63,19 @@ export class CleanupManager {
     process.on("exit", () => console.log("Process exiting..."));
     process.on("SIGINT", () => cleanupAndExit("SIGINT"));
     process.on("SIGTERM", () => cleanupAndExit("SIGTERM"));
+  }
+
+  startAutoCleanup(intervalMinutes: number): void {
+    if (this.autoCleanupInterval) {
+      clearInterval(this.autoCleanupInterval);
+    }
+    this.autoCleanupInterval = setInterval(
+      () => {
+        this.cleanup().catch((err) =>
+          console.error("Auto-cleanup failed:", err),
+        );
+      },
+      intervalMinutes * 60 * 1000,
+    );
   }
 }

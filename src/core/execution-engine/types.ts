@@ -14,6 +14,7 @@ export interface MCPToolSchema {
   parameters: MCPParameter[];
   returns?: MCPReturnType;
   examples?: MCPExample[];
+  category?: string;
 }
 
 export interface MCPParameter {

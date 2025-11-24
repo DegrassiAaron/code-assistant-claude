@@ -32,7 +32,7 @@ export class ExecutionOrchestrator {
   private _complianceManager: ComplianceManager;
   private anomalyDetector: AnomalyDetector;
 
-  constructor(toolsDir: string) {
+  constructor(_toolsDir?: string) {
     // Initialize all components
     this.generator = new CodeAPIGenerator();
     this.sandboxManager = new SandboxManager();
@@ -287,7 +287,9 @@ export class ExecutionOrchestrator {
     const [, amount, unit] = match;
     const multipliers = { B: 1, K: 1024, M: 1024 ** 2, G: 1024 ** 3 };
 
-    return parseFloat(amount) * multipliers[unit as keyof typeof multipliers];
+    return (
+      parseFloat(amount || "0") * multipliers[unit as keyof typeof multipliers]
+    );
   }
 
   /**

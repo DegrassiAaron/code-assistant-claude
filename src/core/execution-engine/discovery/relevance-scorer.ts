@@ -67,7 +67,8 @@ export class RelevanceScorer {
     const shorterLower = shorter.toLowerCase();
     let matches = 0;
     for (let i = 0; i < shorterLower.length; i++) {
-      if (longerLower.includes(shorterLower[i])) matches++;
+      const char = shorterLower[i];
+      if (char && longerLower.includes(char)) matches++;
     }
     return matches / longer.length;
   }

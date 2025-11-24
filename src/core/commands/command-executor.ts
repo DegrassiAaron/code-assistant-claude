@@ -358,7 +358,11 @@ export class CommandExecutor {
       const trimmed = line.trim();
 
       // Pop stack if we've decreased indentation
-      while (stack.length > 1 && indent <= stack[stack.length - 1].indent) {
+      while (
+        stack.length > 1 &&
+        stack[stack.length - 1] &&
+        indent <= (stack[stack.length - 1]?.indent || 0)
+      ) {
         stack.pop();
         currentArray = null;
       }

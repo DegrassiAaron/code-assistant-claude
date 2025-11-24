@@ -15,7 +15,15 @@ interface SandboxExecutionOptions {
 interface SandboxResult {
   success: boolean;
   result?: any;
+  output?: any;
   error?: string;
+  summary?: string;
+  metrics?: {
+    executionTime: number;
+    memoryUsed: string;
+    tokensInSummary: number;
+  };
+  piiTokenized?: boolean;
 }
 
 export class SandboxManager {
@@ -123,5 +131,17 @@ export class SandboxManager {
 
   async cleanupSession(sessionId: string): Promise<void> {
     this.activeSandboxes.delete(sessionId);
+  }
+
+  async execute(
+    _code: string,
+    _language?: string,
+    _config?: any,
+  ): Promise<SandboxResult> {
+    const options: SandboxExecutionOptions = {
+      level: "process",
+      timeout: 5000,
+    };
+    return this.executeInSandbox(_code, options);
   }
 }
