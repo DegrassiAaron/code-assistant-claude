@@ -3,7 +3,7 @@
  * Intelligent replacement of text with symbols for compression
  */
 
-import { symbolSystem } from '../symbols/symbol-system';
+import { symbolSystem } from "../symbols/symbol-system";
 
 export interface SubstitutionOptions {
   aggressive: boolean;
@@ -27,17 +27,21 @@ export class SymbolSubstitution {
     aggressive: false,
     preserveCodeBlocks: true,
     preserveUrls: true,
-    minWordLength: 3
+    minWordLength: 3,
   };
 
   /**
    * Substitute text with symbols
    */
-  substitute(text: string, options?: Partial<SubstitutionOptions>): SubstitutionResult {
+  substitute(
+    text: string,
+    options?: Partial<SubstitutionOptions>,
+  ): SubstitutionResult {
     const opts = { ...this.defaultOptions, ...options };
-    const substitutions: Array<{ from: string; to: string; position: number }> = [];
+    const substitutions: Array<{ from: string; to: string; position: number }> =
+      [];
 
-    let substituted = text;
+    const substituted = text;
 
     // Preserve code blocks if requested
     const protectedRanges: Array<{ start: number; end: number }> = [];
@@ -57,7 +61,7 @@ export class SymbolSubstitution {
       original: text,
       substituted: result.compressed,
       substitutions,
-      compressionRatio: result.compressionRatio
+      compressionRatio: result.compressionRatio,
     };
   }
 
@@ -72,7 +76,7 @@ export class SymbolSubstitution {
     while ((match = codeBlockPattern.exec(text)) !== null) {
       ranges.push({
         start: match.index,
-        end: match.index + match[0].length
+        end: match.index + match[0].length,
       });
     }
 
@@ -90,7 +94,7 @@ export class SymbolSubstitution {
     while ((match = urlPattern.exec(text)) !== null) {
       ranges.push({
         start: match.index,
-        end: match.index + match[0].length
+        end: match.index + match[0].length,
       });
     }
 
@@ -102,9 +106,11 @@ export class SymbolSubstitution {
    */
   private isProtected(
     position: number,
-    ranges: Array<{ start: number; end: number }>
+    ranges: Array<{ start: number; end: number }>,
   ): boolean {
-    return ranges.some(range => position >= range.start && position < range.end);
+    return ranges.some(
+      (range) => position >= range.start && position < range.end,
+    );
   }
 
   /**
@@ -112,9 +118,9 @@ export class SymbolSubstitution {
    */
   batchSubstitute(
     texts: string[],
-    options?: Partial<SubstitutionOptions>
+    options?: Partial<SubstitutionOptions>,
   ): SubstitutionResult[] {
-    return texts.map(text => this.substitute(text, options));
+    return texts.map((text) => this.substitute(text, options));
   }
 
   /**
@@ -135,7 +141,7 @@ export class SymbolSubstitution {
       originalLength,
       substitutedLength,
       reduction,
-      percentReduction
+      percentReduction,
     };
   }
 }

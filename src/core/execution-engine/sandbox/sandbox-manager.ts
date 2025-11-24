@@ -1,5 +1,5 @@
-import { VM } from 'vm2';
-import type { SandboxConfig, SandboxLevel } from '../types';
+import { VM } from "vm2";
+import type { SandboxConfig, SandboxLevel } from "../types";
 
 interface SandboxExecutionOptions {
   level: SandboxLevel;
@@ -21,7 +21,12 @@ export class SandboxManager {
   private activeSandboxes: Map<string, any>;
 
   constructor(config?: SandboxConfig) {
-    this.config = config || { level: 'process', timeout: 5000, memoryLimit: 256, cpuLimit: 0.8 };
+    this.config = config || {
+      level: "process",
+      timeout: 5000,
+      memoryLimit: 256,
+      cpuLimit: 0.8,
+    };
     this.activeSandboxes = new Map();
   }
 
@@ -30,34 +35,54 @@ export class SandboxManager {
     codeType: string;
     operations: string[];
   }): SandboxLevel {
-    return riskAssessment.riskScore >= 0.7 ? 'docker' : 
-           riskAssessment.riskScore >= 0.4 ? 'vm' : 'process';
+    return riskAssessment.riskScore >= 0.7
+      ? "docker"
+      : riskAssessment.riskScore >= 0.4
+        ? "vm"
+        : "process";
   }
 
-  async executeInSandbox(code: string, options: SandboxExecutionOptions): Promise<SandboxResult> {
+  async executeInSandbox(
+    code: string,
+    options: SandboxExecutionOptions,
+  ): Promise<SandboxResult> {
     try {
       switch (options.level) {
-        case 'vm':
+        case "vm":
           return await this.executeInVM(code, options);
-        case 'process':
+        case "process":
           return await this.executeInProcess(code, options);
-        case 'docker':
-          return { success: false, error: 'Docker sandbox not yet implemented' };
+        case "docker":
+          return {
+            success: false,
+            error: "Docker sandbox not yet implemented",
+          };
         default:
-          return { success: false, error: `Unknown sandbox level: ${options.level}` };
+          return {
+            success: false,
+            error: `Unknown sandbox level: ${options.level}`,
+          };
       }
     } catch (error: any) {
       return { success: false, error: error.message };
     }
   }
 
-  private async executeInVM(code: string, options: SandboxExecutionOptions): Promise<SandboxResult> {
+  private async executeInVM(
+    code: string,
+    options: SandboxExecutionOptions,
+  ): Promise<SandboxResult> {
     return new Promise((resolve) => {
       const timer = setTimeout(() => {
-        resolve({ success: false, error: 'Execution timeout exceeded' });
+        resolve({ success: false, error: "Execution timeout exceeded" });
       }, options.timeout);
       try {
-        const vm = new VM({ timeout: options.timeout, sandbox: {}, eval: false, wasm: false });
+        const vm = new VM({
+          timeout: options.timeout,
+          sandbox: {},
+          eval: false,
+          wasm: false,
+        });
         const result = vm.run(code);
         clearTimeout(timer);
         resolve({ success: true, result });
@@ -68,10 +93,13 @@ export class SandboxManager {
     });
   }
 
-  private async executeInProcess(code: string, options: SandboxExecutionOptions): Promise<SandboxResult> {
+  private async executeInProcess(
+    code: string,
+    options: SandboxExecutionOptions,
+  ): Promise<SandboxResult> {
     return new Promise((resolve) => {
       const timer = setTimeout(() => {
-        resolve({ success: false, error: 'Execution timeout exceeded' });
+        resolve({ success: false, error: "Execution timeout exceeded" });
       }, options.timeout);
       try {
         const fn = new Function(code);

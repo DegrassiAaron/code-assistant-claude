@@ -39,7 +39,7 @@ export interface MCPExample {
  * Generated code wrapper
  */
 export interface CodeWrapper {
-  language: 'typescript' | 'python';
+  language: "typescript" | "python";
   code: string;
   dependencies: string[];
   estimatedTokens: number;
@@ -49,17 +49,17 @@ export interface CodeWrapper {
  * Sandbox configuration
  */
 export interface SandboxConfig {
-  type: 'docker' | 'vm' | 'process';
-  image?: string;              // Docker image
-  vmId?: string;               // VM identifier
+  type: "docker" | "vm" | "process";
+  image?: string; // Docker image
+  vmId?: string; // VM identifier
   resourceLimits: {
-    cpu: number | string;      // CPU cores
-    memory: string;            // e.g., "512M"
-    disk?: string;             // e.g., "1G"
-    timeout: number;           // milliseconds
+    cpu: number | string; // CPU cores
+    memory: string; // e.g., "512M"
+    disk?: string; // e.g., "1G"
+    timeout: number; // milliseconds
   };
   networkPolicy?: {
-    mode: 'none' | 'whitelist' | 'blacklist';
+    mode: "none" | "whitelist" | "blacklist";
     allowed?: string[];
     blocked?: string[];
   };
@@ -77,7 +77,7 @@ export interface SandboxConfig {
 export interface ExecutionResult {
   success: boolean;
   output?: any;
-  summary: string;             // Always <500 tokens
+  summary: string; // Always <500 tokens
   error?: string;
   metrics: {
     executionTime: number;
@@ -92,13 +92,13 @@ export interface ExecutionResult {
  */
 export interface SecurityValidation {
   isSecure: boolean;
-  riskScore: number;           // 0-100
+  riskScore: number; // 0-100
   issues: SecurityIssue[];
   requiresApproval: boolean;
 }
 
 export interface SecurityIssue {
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  severity: "low" | "medium" | "high" | "critical";
   type: string;
   description: string;
   line?: number;
@@ -109,9 +109,9 @@ export interface SecurityIssue {
  * PII token mapping
  */
 export interface PIIToken {
-  token: string;               // e.g., "[EMAIL_1]"
-  type: 'email' | 'phone' | 'name' | 'ssn' | 'credit_card';
-  hashedValue: string;         // For lookup
+  token: string; // e.g., "[EMAIL_1]"
+  type: "email" | "phone" | "name" | "ssn" | "credit_card";
+  hashedValue: string; // For lookup
 }
 
 /**
@@ -120,7 +120,7 @@ export interface PIIToken {
 export interface DiscoveredTool {
   name: string;
   description: string;
-  relevanceScore: number;      // 0-1
+  relevanceScore: number; // 0-1
   schema: MCPToolSchema;
 }
 
@@ -132,8 +132,8 @@ export interface WorkspaceState {
   createdAt: Date;
   lastAccessedAt: Date;
   code: string;
-  language: 'typescript' | 'python';
-  status: 'pending' | 'running' | 'completed' | 'failed';
+  language: "typescript" | "python";
+  status: "pending" | "running" | "completed" | "failed";
   result?: ExecutionResult;
 }
 
@@ -142,8 +142,8 @@ export interface WorkspaceState {
  */
 export interface AuditLogEntry {
   timestamp: Date;
-  type: 'execution' | 'security' | 'discovery' | 'error';
-  severity: 'info' | 'warning' | 'error' | 'critical';
+  type: "execution" | "security" | "discovery" | "error";
+  severity: "info" | "warning" | "error" | "critical";
   message: string;
   metadata?: Record<string, any>;
 }
@@ -176,13 +176,17 @@ export interface ComplianceReport {
 export interface AnomalyDetection {
   detected: boolean;
   anomalies: Anomaly[];
-  riskLevel: 'low' | 'medium' | 'high' | 'critical';
+  riskLevel: "low" | "medium" | "high" | "critical";
 }
 
 export interface Anomaly {
-  type: 'resource_spike' | 'suspicious_pattern' | 'repeated_failure' | 'unusual_timing';
+  type:
+    | "resource_spike"
+    | "suspicious_pattern"
+    | "repeated_failure"
+    | "unusual_timing";
   description: string;
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  severity: "low" | "medium" | "high" | "critical";
   timestamp: Date;
 }
 

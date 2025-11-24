@@ -1,7 +1,11 @@
-import Docker from 'dockerode';
-import { SandboxConfig, ExecutionResult } from '../types';
-import * as tar from 'tar-stream';
-import { SandboxLogger, ConsoleLogger, ContainerMetricsTracker } from './sandbox-logger';
+import Docker from "dockerode";
+import { SandboxConfig, ExecutionResult } from "../types";
+import * as tar from "tar-stream";
+import {
+  SandboxLogger,
+  ConsoleLogger,
+  ContainerMetricsTracker,
+} from "./sandbox-logger";
 
 /**
  * Docker-based sandbox for isolated code execution
@@ -23,7 +27,10 @@ export class DockerSandbox {
   /**
    * Execute code in Docker container
    */
-  async execute(code: string, language: 'typescript' | 'python'): Promise<ExecutionResult> {
+  async execute(
+    code: string,
+    language: "typescript" | "python",
+  ): Promise<ExecutionResult> {
     const startTime = Date.now();
     let container: Docker.Container | null = null;
     let containerId: string | null = null;
@@ -36,7 +43,10 @@ export class DockerSandbox {
       // Track active container and metrics
       DockerSandbox.activeContainers.add(containerId);
       DockerSandbox.metricsTracker.incrementCreated();
-      this.logger.info('Container created', { containerId: containerId.substring(0, 12), language });
+      this.logger.info("Container created", {
+        containerId: containerId.substring(0, 12),
+        language,
+      });
 
       // Copy code to container
       await this.copyCodeToContainer(container, code, language);
@@ -56,25 +66,25 @@ export class DockerSandbox {
         summary: this.summarizeOutput(result.output),
         metrics: {
           executionTime: Date.now() - startTime,
-          memoryUsed: this.formatMemory((stats as any).memory_stats?.usage || 0),
-          tokensInSummary: this.estimateTokens(result.output)
+          memoryUsed: this.formatMemory(
+            (stats as any).memory_stats?.usage || 0,
+          ),
+          tokensInSummary: this.estimateTokens(result.output),
         },
-        piiTokenized: false
+        piiTokenized: false,
       };
-
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        summary: 'Execution failed',
+        error: error instanceof Error ? error.message : "Unknown error",
+        summary: "Execution failed",
         metrics: {
           executionTime: Date.now() - startTime,
-          memoryUsed: '0M',
-          tokensInSummary: 0
+          memoryUsed: "0M",
+          tokensInSummary: 0,
         },
-        piiTokenized: false
+        piiTokenized: false,
       };
-
     } finally {
       // GUARANTEED cleanup - runs whether try or catch executes
       if (container) {
@@ -86,9 +96,12 @@ export class DockerSandbox {
           await container.stop({ t: 0 });
         } catch (stopError) {
           // Log but don't fail - container might already be stopped
-          this.logger.warn('Failed to stop container', {
+          this.logger.warn("Failed to stop container", {
             containerId: containerId?.substring(0, 12),
-            error: stopError instanceof Error ? stopError.message : String(stopError)
+            error:
+              stopError instanceof Error
+                ? stopError.message
+                : String(stopError),
           });
         }
 
@@ -96,17 +109,21 @@ export class DockerSandbox {
           // Force remove even if container is running
           await container.remove({ force: true, v: true });
           DockerSandbox.metricsTracker.incrementCleanedSuccess();
-          this.logger.info('Container cleaned up', {
+          this.logger.info("Container cleaned up", {
             containerId: containerId?.substring(0, 12),
-            cleanupTimeMs: Date.now() - cleanupStartTime
+            cleanupTimeMs: Date.now() - cleanupStartTime,
           });
         } catch (removeError) {
           // Log but don't fail - critical that we tried
           cleanupSuccess = false;
           DockerSandbox.metricsTracker.incrementCleanedFailed();
-          this.logger.error('Failed to remove container', removeError instanceof Error ? removeError : undefined, {
-            containerId: containerId?.substring(0, 12)
-          });
+          this.logger.error(
+            "Failed to remove container",
+            removeError instanceof Error ? removeError : undefined,
+            {
+              containerId: containerId?.substring(0, 12),
+            },
+          );
         }
 
         // Remove from tracking
@@ -117,8 +134,8 @@ export class DockerSandbox {
         // Track cleanup metrics
         const cleanupTime = Date.now() - cleanupStartTime;
         DockerSandbox.metricsTracker.recordCleanupTime(cleanupTime);
-        this.logger.metric('container.cleanup.duration_ms', cleanupTime, {
-          success: cleanupSuccess
+        this.logger.metric("container.cleanup.duration_ms", cleanupTime, {
+          success: cleanupSuccess,
         });
       }
     }
@@ -128,7 +145,8 @@ export class DockerSandbox {
    * Create Docker container with resource limits
    */
   private async createContainer(language: string) {
-    const image = language === 'typescript' ? 'node:18-alpine' : 'python:3.11-alpine';
+    const image =
+      language === "typescript" ? "node:18-alpine" : "python:3.11-alpine";
 
     // Pull image if not exists
     try {
@@ -141,26 +159,30 @@ export class DockerSandbox {
     return this.docker.createContainer({
       Image: image,
       Tty: false,
-      NetworkDisabled: this.config.networkPolicy.mode === 'none',
-      WorkingDir: '/workspace',
+      NetworkDisabled: this.config.networkPolicy.mode === "none",
+      WorkingDir: "/workspace",
       Labels: {
-        'mcp.sandbox': 'true',
-        'mcp.sandbox.language': language,
-        'mcp.sandbox.created': new Date().toISOString()
+        "mcp.sandbox": "true",
+        "mcp.sandbox.language": language,
+        "mcp.sandbox.created": new Date().toISOString(),
       },
       HostConfig: {
         Memory: this.parseMemory(this.config.resourceLimits.memory),
         NanoCpus: this.config.resourceLimits.cpu * 1e9,
-        DiskQuota: this.parseDisk(this.config.resourceLimits.disk)
-      }
+        DiskQuota: this.parseDisk(this.config.resourceLimits.disk),
+      },
     });
   }
 
   /**
    * Copy code to container
    */
-  private async copyCodeToContainer(container: Docker.Container, code: string, language: string): Promise<void> {
-    const filename = language === 'typescript' ? 'script.ts' : 'script.py';
+  private async copyCodeToContainer(
+    container: Docker.Container,
+    code: string,
+    language: string,
+  ): Promise<void> {
+    const filename = language === "typescript" ? "script.ts" : "script.py";
 
     // Create tar archive with code file
     const pack = tar.pack();
@@ -170,28 +192,32 @@ export class DockerSandbox {
       pack.finalize();
     });
 
-    await container.putArchive(pack, { path: '/workspace' });
+    await container.putArchive(pack, { path: "/workspace" });
   }
 
   /**
    * Execute code inside container
    * Note: Container cleanup in finally block handles timeout/error cases
    */
-  private async executeInContainer(container: Docker.Container, language: string): Promise<{ output: string }> {
-    const command = language === 'typescript'
-      ? ['npx', 'ts-node', '/workspace/script.ts']
-      : ['python', '/workspace/script.py'];
+  private async executeInContainer(
+    container: Docker.Container,
+    language: string,
+  ): Promise<{ output: string }> {
+    const command =
+      language === "typescript"
+        ? ["npx", "ts-node", "/workspace/script.ts"]
+        : ["python", "/workspace/script.py"];
 
     const exec = await container.exec({
       Cmd: command,
       AttachStdout: true,
-      AttachStderr: true
+      AttachStderr: true,
     });
 
     const stream = await exec.start({ Detach: false });
 
     return new Promise((resolve, reject) => {
-      let output = '';
+      let output = "";
       let timeoutHandle: NodeJS.Timeout | null = null;
       let completed = false;
 
@@ -207,18 +233,18 @@ export class DockerSandbox {
         }
       };
 
-      stream.on('data', (chunk: Buffer) => {
+      stream.on("data", (chunk: Buffer) => {
         output += chunk.toString();
       });
 
-      stream.on('end', () => {
+      stream.on("end", () => {
         if (!completed) {
           cleanup();
           resolve({ output });
         }
       });
 
-      stream.on('error', (error) => {
+      stream.on("error", (error) => {
         if (!completed) {
           cleanup();
           reject(error);
@@ -228,11 +254,14 @@ export class DockerSandbox {
       // Timeout handling - cleanup will stop the stream, container cleanup in finally block handles the rest
       timeoutHandle = setTimeout(() => {
         if (!completed) {
-          this.logger.warn('Execution timeout - container will be force-stopped', {
-            timeout: this.config.resourceLimits.timeout
-          });
+          this.logger.warn(
+            "Execution timeout - container will be force-stopped",
+            {
+              timeout: this.config.resourceLimits.timeout,
+            },
+          );
           cleanup();
-          reject(new Error('Execution timeout'));
+          reject(new Error("Execution timeout"));
         }
       }, this.config.resourceLimits.timeout);
     });
@@ -242,7 +271,7 @@ export class DockerSandbox {
    * Summarize output to <500 tokens
    */
   private summarizeOutput(output: any): string {
-    const str = typeof output === 'string' ? output : JSON.stringify(output);
+    const str = typeof output === "string" ? output : JSON.stringify(output);
 
     if (str.length < 2000) {
       return str;
@@ -313,7 +342,10 @@ export class DockerSandbox {
     this.activeContainers.clear();
 
     if (failedCleanups.length > 0) {
-      console.error(`Failed to cleanup ${failedCleanups.length} containers:`, failedCleanups);
+      console.error(
+        `Failed to cleanup ${failedCleanups.length} containers:`,
+        failedCleanups,
+      );
     }
   }
 
@@ -330,7 +362,7 @@ export class DockerSandbox {
   static getMetrics() {
     return {
       ...this.metricsTracker.getMetrics(),
-      activeContainers: this.activeContainers.size
+      activeContainers: this.activeContainers.size,
     };
   }
 

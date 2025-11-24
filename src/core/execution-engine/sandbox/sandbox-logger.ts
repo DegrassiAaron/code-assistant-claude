@@ -24,23 +24,23 @@ export interface SandboxLogger {
  */
 export class ConsoleLogger implements SandboxLogger {
   info(message: string, metadata?: Record<string, any>): void {
-    const meta = metadata ? ` ${JSON.stringify(metadata)}` : '';
+    const meta = metadata ? ` ${JSON.stringify(metadata)}` : "";
     console.log(`[INFO] ${message}${meta}`);
   }
 
   warn(message: string, metadata?: Record<string, any>): void {
-    const meta = metadata ? ` ${JSON.stringify(metadata)}` : '';
+    const meta = metadata ? ` ${JSON.stringify(metadata)}` : "";
     console.warn(`[WARN] ${message}${meta}`);
   }
 
   error(message: string, error?: Error, metadata?: Record<string, any>): void {
-    const meta = metadata ? ` ${JSON.stringify(metadata)}` : '';
-    const err = error ? ` - ${error.message}` : '';
+    const meta = metadata ? ` ${JSON.stringify(metadata)}` : "";
+    const err = error ? ` - ${error.message}` : "";
     console.error(`[ERROR] ${message}${err}${meta}`);
   }
 
   metric(name: string, value: number, metadata?: Record<string, any>): void {
-    const meta = metadata ? ` ${JSON.stringify(metadata)}` : '';
+    const meta = metadata ? ` ${JSON.stringify(metadata)}` : "";
     console.log(`[METRIC] ${name}=${value}${meta}`);
   }
 }
@@ -54,7 +54,7 @@ export class ContainerMetricsTracker {
     containersCleanedSuccess: 0,
     containersCleanedFailed: 0,
     cleanupTimeMs: 0,
-    zombieContainersFound: 0
+    zombieContainersFound: 0,
   };
 
   incrementCreated(): void {
@@ -87,7 +87,7 @@ export class ContainerMetricsTracker {
       containersCleanedSuccess: 0,
       containersCleanedFailed: 0,
       cleanupTimeMs: 0,
-      zombieContainersFound: 0
+      zombieContainersFound: 0,
     };
   }
 }

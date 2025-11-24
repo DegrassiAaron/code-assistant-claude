@@ -26,19 +26,19 @@ export class ConsoleLogger implements Logger {
 
   debug(message: string, context?: LogContext): void {
     if (this.minLevel <= LogLevel.DEBUG) {
-      console.debug(`[DEBUG] ${message}`, context || '');
+      console.debug(`[DEBUG] ${message}`, context || "");
     }
   }
 
   info(message: string, context?: LogContext): void {
     if (this.minLevel <= LogLevel.INFO) {
-      console.info(`[INFO] ${message}`, context || '');
+      console.info(`[INFO] ${message}`, context || "");
     }
   }
 
   warn(message: string, context?: LogContext): void {
     if (this.minLevel <= LogLevel.WARN) {
-      console.warn(`[WARN] ${message}`, context || '');
+      console.warn(`[WARN] ${message}`, context || "");
     }
   }
 

@@ -20,7 +20,7 @@ export class PerformanceTracker {
   async measure<T>(
     operationName: string,
     fn: () => T | Promise<T>,
-    metadata?: Record<string, any>
+    metadata?: Record<string, any>,
   ): Promise<{ result: T; durationMs: number }> {
     const start = performance.now();
     const result = await fn();
@@ -30,7 +30,7 @@ export class PerformanceTracker {
       operationName,
       durationMs,
       timestamp: Date.now(),
-      metadata
+      metadata,
     });
 
     return { result, durationMs };
@@ -42,7 +42,7 @@ export class PerformanceTracker {
   measureSync<T>(
     operationName: string,
     fn: () => T,
-    metadata?: Record<string, any>
+    metadata?: Record<string, any>,
   ): { result: T; durationMs: number } {
     const start = performance.now();
     const result = fn();
@@ -52,7 +52,7 @@ export class PerformanceTracker {
       operationName,
       durationMs,
       timestamp: Date.now(),
-      metadata
+      metadata,
     });
 
     return { result, durationMs };
@@ -74,7 +74,7 @@ export class PerformanceTracker {
    */
   getMetrics(operationName?: string): PerformanceMetrics[] {
     if (operationName) {
-      return this.metrics.filter(m => m.operationName === operationName);
+      return this.metrics.filter((m) => m.operationName === operationName);
     }
     return [...this.metrics];
   }
@@ -106,7 +106,7 @@ export class PerformanceTracker {
       return { count: 0, avgMs: 0, minMs: 0, maxMs: 0, totalMs: 0 };
     }
 
-    const durations = metrics.map(m => m.durationMs);
+    const durations = metrics.map((m) => m.durationMs);
     const totalMs = durations.reduce((sum, d) => sum + d, 0);
 
     return {
@@ -114,7 +114,7 @@ export class PerformanceTracker {
       avgMs: totalMs / metrics.length,
       minMs: Math.min(...durations),
       maxMs: Math.max(...durations),
-      totalMs
+      totalMs,
     };
   }
 

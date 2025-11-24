@@ -74,7 +74,9 @@ export class ProjectAnalyzer {
         context.customInstructions = docContext.customInstructions;
 
         this.logger.verbose(`Found purpose: ${docContext.purpose || "none"}`);
-        this.logger.verbose(`Domains: ${docContext.domain.join(", ") || "none"}`);
+        this.logger.verbose(
+          `Domains: ${docContext.domain.join(", ") || "none"}`,
+        );
 
         // Merge conventions
         if (docContext.conventions) {
@@ -111,7 +113,9 @@ export class ProjectAnalyzer {
 
       // 4. Calculate confidence score
       context.confidence = this.calculateConfidence(context);
-      this.logger.verbose(`Analysis confidence: ${(context.confidence * 100).toFixed(0)}%`);
+      this.logger.verbose(
+        `Analysis confidence: ${(context.confidence * 100).toFixed(0)}%`,
+      );
       this.logger.debugObject("Final context", context);
 
       endTimer();

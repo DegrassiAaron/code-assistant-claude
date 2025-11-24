@@ -1,4 +1,4 @@
-import { CodeWrapper, ExecutionResult } from '../types';
+import { CodeWrapper, ExecutionResult } from "../types";
 
 /**
  * Runtime for executing generated MCP code
@@ -9,7 +9,10 @@ export class MCPCodeRuntime {
   /**
    * Execute generated code wrapper
    */
-  async execute(wrapper: CodeWrapper, context?: Record<string, any>): Promise<any> {
+  async execute(
+    wrapper: CodeWrapper,
+    context?: Record<string, any>,
+  ): Promise<any> {
     // Set up execution context
     if (context) {
       for (const [key, value] of Object.entries(context)) {
@@ -17,9 +20,9 @@ export class MCPCodeRuntime {
       }
     }
 
-    if (wrapper.language === 'typescript') {
+    if (wrapper.language === "typescript") {
       return this.executeTypeScript(wrapper.code);
-    } else if (wrapper.language === 'python') {
+    } else if (wrapper.language === "python") {
       return this.executePython(wrapper.code);
     } else {
       throw new Error(`Unsupported language: ${wrapper.language}`);
@@ -39,11 +42,13 @@ export class MCPCodeRuntime {
       // Actual execution would happen in a sandbox
       return {
         success: true,
-        message: 'TypeScript code validated successfully',
-        code
+        message: "TypeScript code validated successfully",
+        code,
       };
     } catch (error) {
-      throw new Error(`TypeScript execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `TypeScript execution failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 
@@ -60,11 +65,13 @@ export class MCPCodeRuntime {
       // Actual execution would happen in a sandbox
       return {
         success: true,
-        message: 'Python code validated successfully',
-        code
+        message: "Python code validated successfully",
+        code,
       };
     } catch (error) {
-      throw new Error(`Python execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Python execution failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 

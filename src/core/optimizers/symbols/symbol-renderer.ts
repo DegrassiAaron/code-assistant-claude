@@ -3,12 +3,12 @@
  * Renders symbols in human-readable format with context
  */
 
-import { CORE_SYMBOLS } from './core-symbols';
-import { BUSINESS_SYMBOLS } from './business-symbols';
-import { TECHNICAL_SYMBOLS } from './technical-symbols';
+import { CORE_SYMBOLS } from "./core-symbols";
+import { BUSINESS_SYMBOLS } from "./business-symbols";
+import { TECHNICAL_SYMBOLS } from "./technical-symbols";
 
 export interface RenderOptions {
-  mode: 'compact' | 'verbose' | 'hybrid';
+  mode: "compact" | "verbose" | "hybrid";
   colorize?: boolean;
   includeTooltips?: boolean;
 }
@@ -26,38 +26,41 @@ export class SymbolRenderer {
   /**
    * Render text with symbols in a readable format
    */
-  render(text: string, options: RenderOptions = { mode: 'hybrid' }): RenderedOutput {
+  render(
+    text: string,
+    options: RenderOptions = { mode: "hybrid" },
+  ): RenderedOutput {
     const symbolsUsed: string[] = [];
     let rendered = text;
 
     // In compact mode, keep symbols as-is
-    if (options.mode === 'compact') {
+    if (options.mode === "compact") {
       return {
         text,
         symbolsUsed: this.extractSymbols(text),
-        readabilityScore: 0.7
+        readabilityScore: 0.7,
       };
     }
 
     // In verbose mode, add explanations
-    if (options.mode === 'verbose') {
+    if (options.mode === "verbose") {
       rendered = this.addExplanations(text);
       return {
         text: rendered,
         symbolsUsed: this.extractSymbols(text),
-        readabilityScore: 1.0
+        readabilityScore: 1.0,
       };
     }
 
     // In hybrid mode, add tooltips for complex symbols
-    if (options.mode === 'hybrid' && options.includeTooltips) {
+    if (options.mode === "hybrid" && options.includeTooltips) {
       rendered = this.addTooltips(text);
     }
 
     return {
       text: rendered,
       symbolsUsed: this.extractSymbols(text),
-      readabilityScore: 0.85
+      readabilityScore: 0.85,
     };
   }
 
@@ -68,13 +71,17 @@ export class SymbolRenderer {
     let explained = text;
 
     // Add explanations for all symbols
-    const allSymbols = [...CORE_SYMBOLS, ...BUSINESS_SYMBOLS, ...TECHNICAL_SYMBOLS];
+    const allSymbols = [
+      ...CORE_SYMBOLS,
+      ...BUSINESS_SYMBOLS,
+      ...TECHNICAL_SYMBOLS,
+    ];
 
     for (const def of allSymbols) {
-      const pattern = new RegExp(def.symbol, 'g');
+      const pattern = new RegExp(def.symbol, "g");
       explained = explained.replace(
         pattern,
-        `${def.symbol} (${def.keywords[0]})`
+        `${def.symbol} (${def.keywords[0]})`,
       );
     }
 
@@ -87,14 +94,18 @@ export class SymbolRenderer {
   private addTooltips(text: string): string {
     let withTooltips = text;
 
-    const allSymbols = [...CORE_SYMBOLS, ...BUSINESS_SYMBOLS, ...TECHNICAL_SYMBOLS];
+    const allSymbols = [
+      ...CORE_SYMBOLS,
+      ...BUSINESS_SYMBOLS,
+      ...TECHNICAL_SYMBOLS,
+    ];
 
     for (const def of allSymbols) {
-      const pattern = new RegExp(def.symbol, 'g');
+      const pattern = new RegExp(def.symbol, "g");
       // Use markdown link syntax for tooltips
       withTooltips = withTooltips.replace(
         pattern,
-        `[${def.symbol}](# "${def.description}")`
+        `[${def.symbol}](# "${def.description}")`,
       );
     }
 
@@ -106,7 +117,11 @@ export class SymbolRenderer {
    */
   private extractSymbols(text: string): string[] {
     const symbols: string[] = [];
-    const allSymbols = [...CORE_SYMBOLS, ...BUSINESS_SYMBOLS, ...TECHNICAL_SYMBOLS];
+    const allSymbols = [
+      ...CORE_SYMBOLS,
+      ...BUSINESS_SYMBOLS,
+      ...TECHNICAL_SYMBOLS,
+    ];
 
     for (const def of allSymbols) {
       if (text.includes(def.symbol)) {
@@ -121,12 +136,16 @@ export class SymbolRenderer {
    * Create a symbol legend for documentation
    */
   createLegend(symbols?: string[]): string {
-    const allSymbols = [...CORE_SYMBOLS, ...BUSINESS_SYMBOLS, ...TECHNICAL_SYMBOLS];
+    const allSymbols = [
+      ...CORE_SYMBOLS,
+      ...BUSINESS_SYMBOLS,
+      ...TECHNICAL_SYMBOLS,
+    ];
     const symbolsToShow = symbols
-      ? allSymbols.filter(s => symbols.includes(s.symbol))
+      ? allSymbols.filter((s) => symbols.includes(s.symbol))
       : allSymbols;
 
-    let legend = '## Symbol Legend\n\n';
+    let legend = "## Symbol Legend\n\n";
 
     // Group by category
     const categories = new Map<string, typeof symbolsToShow>();
@@ -147,7 +166,7 @@ export class SymbolRenderer {
         legend += `- ${sym.symbol} **${sym.keywords[0]}** - ${sym.description}\n`;
       }
 
-      legend += '\n';
+      legend += "\n";
     }
 
     return legend;
@@ -177,23 +196,27 @@ export class SymbolRenderer {
    */
   renderSummary(text: string): string {
     const symbols = this.extractSymbols(text);
-    const allSymbols = [...CORE_SYMBOLS, ...BUSINESS_SYMBOLS, ...TECHNICAL_SYMBOLS];
+    const allSymbols = [
+      ...CORE_SYMBOLS,
+      ...BUSINESS_SYMBOLS,
+      ...TECHNICAL_SYMBOLS,
+    ];
 
-    let summary = '### Symbol Usage Summary\n\n';
+    let summary = "### Symbol Usage Summary\n\n";
     summary += `Total symbols used: ${symbols.length}\n\n`;
 
     // Count by category
     const categoryCounts = new Map<string, number>();
 
     for (const symbol of symbols) {
-      const def = allSymbols.find(s => s.symbol === symbol);
+      const def = allSymbols.find((s) => s.symbol === symbol);
       if (def) {
         const count = categoryCounts.get(def.category) || 0;
         categoryCounts.set(def.category, count + 1);
       }
     }
 
-    summary += '**By Category:**\n';
+    summary += "**By Category:**\n";
     for (const [category, count] of categoryCounts.entries()) {
       summary += `- ${this.capitalizeFirst(category)}: ${count}\n`;
     }

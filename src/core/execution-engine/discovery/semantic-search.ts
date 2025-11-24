@@ -1,4 +1,4 @@
-import { MCPToolSchema, SemanticSearchResult, ToolIndexEntry } from '../types';
+import { MCPToolSchema, SemanticSearchResult, ToolIndexEntry } from "../types";
 
 /**
  * Semantic search for MCP tools
@@ -11,13 +11,13 @@ export class SemanticSearch {
    * Build search index from schemas
    */
   buildIndex(schemas: MCPToolSchema[]): void {
-    this.index = schemas.map(schema => ({
+    this.index = schemas.map((schema) => ({
       name: schema.name,
       description: schema.description,
       keywords: this.extractKeywords(schema),
       category: this.inferCategory(schema),
-      filePath: '', // Would be set by filesystem discovery
-      schema
+      filePath: "", // Would be set by filesystem discovery
+      schema,
     }));
   }
 
@@ -35,7 +35,7 @@ export class SemanticSearch {
         results.push({
           tool: entry,
           score,
-          matches: this.findMatches(entry, queryTokens)
+          matches: this.findMatches(entry, queryTokens),
         });
       }
     }
@@ -53,21 +53,21 @@ export class SemanticSearch {
     const keywords = new Set<string>();
 
     // From name
-    const nameWords = schema.name.split(/[_-]/).filter(w => w.length > 2);
-    nameWords.forEach(w => keywords.add(w.toLowerCase()));
+    const nameWords = schema.name.split(/[_-]/).filter((w) => w.length > 2);
+    nameWords.forEach((w) => keywords.add(w.toLowerCase()));
 
     // From description
     const descWords = schema.description
       .toLowerCase()
       .split(/\W+/)
-      .filter(w => w.length > 3);
+      .filter((w) => w.length > 3);
 
-    descWords.forEach(w => keywords.add(w));
+    descWords.forEach((w) => keywords.add(w));
 
     // From parameters
-    schema.parameters.forEach(param => {
+    schema.parameters.forEach((param) => {
       keywords.add(param.name.toLowerCase());
-      param.description.split(/\W+/).forEach(w => {
+      param.description.split(/\W+/).forEach((w) => {
         if (w.length > 3) keywords.add(w.toLowerCase());
       });
     });
@@ -83,13 +83,13 @@ export class SemanticSearch {
     const desc = schema.description.toLowerCase();
 
     // Simple category inference
-    if (name.includes('git') || desc.includes('git')) return 'git';
-    if (name.includes('file') || desc.includes('file')) return 'filesystem';
-    if (name.includes('http') || desc.includes('http')) return 'network';
-    if (name.includes('db') || desc.includes('database')) return 'database';
-    if (name.includes('test') || desc.includes('test')) return 'testing';
+    if (name.includes("git") || desc.includes("git")) return "git";
+    if (name.includes("file") || desc.includes("file")) return "filesystem";
+    if (name.includes("http") || desc.includes("http")) return "network";
+    if (name.includes("db") || desc.includes("database")) return "database";
+    if (name.includes("test") || desc.includes("test")) return "testing";
 
-    return 'general';
+    return "general";
   }
 
   /**
@@ -99,29 +99,36 @@ export class SemanticSearch {
     return query
       .toLowerCase()
       .split(/\W+/)
-      .filter(w => w.length > 2);
+      .filter((w) => w.length > 2);
   }
 
   /**
    * Calculate semantic score between tool and query
    */
-  private calculateSemanticScore(entry: ToolIndexEntry, queryTokens: string[]): number {
+  private calculateSemanticScore(
+    entry: ToolIndexEntry,
+    queryTokens: string[],
+  ): number {
     let score = 0;
 
     // Exact name match (highest weight)
-    if (queryTokens.some(token => entry.name.toLowerCase().includes(token))) {
+    if (queryTokens.some((token) => entry.name.toLowerCase().includes(token))) {
       score += 0.5;
     }
 
     // Keyword matches
-    const keywordMatches = queryTokens.filter(token =>
-      entry.keywords.some(keyword => keyword.includes(token) || token.includes(keyword))
+    const keywordMatches = queryTokens.filter((token) =>
+      entry.keywords.some(
+        (keyword) => keyword.includes(token) || token.includes(keyword),
+      ),
     );
     score += (keywordMatches.length / queryTokens.length) * 0.3;
 
     // Description matches
     const descriptionText = entry.description.toLowerCase();
-    const descMatches = queryTokens.filter(token => descriptionText.includes(token));
+    const descMatches = queryTokens.filter((token) =>
+      descriptionText.includes(token),
+    );
     score += (descMatches.length / queryTokens.length) * 0.2;
 
     return Math.min(1, score);
@@ -132,29 +139,29 @@ export class SemanticSearch {
    */
   private findMatches(
     entry: ToolIndexEntry,
-    queryTokens: string[]
+    queryTokens: string[],
   ): { field: string; value: string; relevance: number }[] {
     const matches: { field: string; value: string; relevance: number }[] = [];
 
     // Name matches
-    queryTokens.forEach(token => {
+    queryTokens.forEach((token) => {
       if (entry.name.toLowerCase().includes(token)) {
         matches.push({
-          field: 'name',
+          field: "name",
           value: entry.name,
-          relevance: 1.0
+          relevance: 1.0,
         });
       }
     });
 
     // Keyword matches
-    entry.keywords.forEach(keyword => {
-      queryTokens.forEach(token => {
+    entry.keywords.forEach((keyword) => {
+      queryTokens.forEach((token) => {
         if (keyword.includes(token)) {
           matches.push({
-            field: 'keyword',
+            field: "keyword",
             value: keyword,
-            relevance: 0.8
+            relevance: 0.8,
           });
         }
       });
@@ -162,16 +169,16 @@ export class SemanticSearch {
 
     // Description matches
     const sentences = entry.description.split(/[.!?]/);
-    sentences.forEach(sentence => {
-      const matchCount = queryTokens.filter(token =>
-        sentence.toLowerCase().includes(token)
+    sentences.forEach((sentence) => {
+      const matchCount = queryTokens.filter((token) =>
+        sentence.toLowerCase().includes(token),
       ).length;
 
       if (matchCount > 0) {
         matches.push({
-          field: 'description',
+          field: "description",
           value: sentence.trim(),
-          relevance: matchCount / queryTokens.length
+          relevance: matchCount / queryTokens.length,
         });
       }
     });

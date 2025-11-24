@@ -30,7 +30,7 @@ export interface Logger {
  * Default console logger implementation
  */
 export class ConsoleLogger implements Logger {
-  constructor(private prefix: string = '[Skills]') {}
+  constructor(private prefix: string = "[Skills]") {}
 
   info(message: string, ...args: any[]): void {
     console.log(`${this.prefix} ${message}`, ...args);

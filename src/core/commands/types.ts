@@ -9,7 +9,7 @@ export type ProjectContext = Record<string, unknown>;
 export interface CommandMetadata {
   name: string;
   description: string;
-  category: 'workflow' | 'superclaude' | 'optimization' | 'git';
+  category: "workflow" | "superclaude" | "optimization" | "git";
   version: string;
 
   triggers: {
@@ -33,11 +33,11 @@ export interface CommandMetadata {
 
 export interface CommandParameter {
   name: string;
-  type: 'string' | 'number' | 'boolean' | 'array';
+  type: "string" | "number" | "boolean" | "array";
   required: boolean;
   description: string;
   default?: ParameterValue;
-  options?: string[];        // For enum-like parameters
+  options?: string[]; // For enum-like parameters
 }
 
 export interface Command {

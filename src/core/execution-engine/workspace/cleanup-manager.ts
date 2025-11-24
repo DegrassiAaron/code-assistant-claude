@@ -8,7 +8,10 @@ export class CleanupManager {
     if (this.autoCleanup) this.registerProcessHandlers();
   }
 
-  registerCleanup(resourceId: string, handler: () => Promise<void> | void): void {
+  registerCleanup(
+    resourceId: string,
+    handler: () => Promise<void> | void,
+  ): void {
     if (!this.cleanupHandlers.has(resourceId)) {
       this.cleanupHandlers.set(resourceId, []);
     }
@@ -16,8 +19,10 @@ export class CleanupManager {
   }
 
   hasCleanupHandler(resourceId: string): boolean {
-    return this.cleanupHandlers.has(resourceId) && 
-           this.cleanupHandlers.get(resourceId)!.length > 0;
+    return (
+      this.cleanupHandlers.has(resourceId) &&
+      this.cleanupHandlers.get(resourceId)!.length > 0
+    );
   }
 
   removeCleanupHandler(resourceId: string): void {
@@ -50,8 +55,8 @@ export class CleanupManager {
       await this.cleanup();
       process.exit(0);
     };
-    process.on('exit', () => console.log('Process exiting...'));
-    process.on('SIGINT', () => cleanupAndExit('SIGINT'));
-    process.on('SIGTERM', () => cleanupAndExit('SIGTERM'));
+    process.on("exit", () => console.log("Process exiting..."));
+    process.on("SIGINT", () => cleanupAndExit("SIGINT"));
+    process.on("SIGTERM", () => cleanupAndExit("SIGTERM"));
   }
 }

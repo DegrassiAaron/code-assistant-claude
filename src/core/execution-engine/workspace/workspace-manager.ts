@@ -1,5 +1,5 @@
-import * as fs from 'fs/promises';
-import * as path from 'path';
+import * as fs from "fs/promises";
+import * as path from "path";
 
 /**
  * WorkspaceManager - Manages workspace directories and session isolation
@@ -8,7 +8,7 @@ export class WorkspaceManager {
   private workspaceDir: string;
   private sessions: Map<string, string>;
 
-  constructor(workspaceDir: string = path.join(process.cwd(), '.workspace')) {
+  constructor(workspaceDir: string = path.join(process.cwd(), ".workspace")) {
     this.workspaceDir = workspaceDir;
     this.sessions = new Map();
   }
@@ -27,7 +27,7 @@ export class WorkspaceManager {
       await fs.access(sessionPath);
       throw new Error(`Session ${sessionId} already exists`);
     } catch (error: any) {
-      if (error.message?.includes('already exists')) throw error;
+      if (error.message?.includes("already exists")) throw error;
     }
     await fs.mkdir(sessionPath, { recursive: true });
     this.sessions.set(sessionId, sessionPath);

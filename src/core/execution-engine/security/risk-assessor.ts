@@ -1,4 +1,4 @@
-import { SecurityValidation, SecurityIssue } from '../types';
+import { SecurityValidation, SecurityIssue } from "../types";
 
 /**
  * Assesses risk level of code execution
@@ -33,7 +33,7 @@ export class RiskAssessor {
       riskScore: overallRisk,
       factors,
       recommendation: this.getRecommendation(overallRisk),
-      requiresApproval: overallRisk >= 70
+      requiresApproval: overallRisk >= 70,
     };
   }
 
@@ -41,28 +41,28 @@ export class RiskAssessor {
    * Assess code complexity
    */
   private assessComplexity(code: string): RiskFactor {
-    const lines = code.split('\n').length;
+    const lines = code.split("\n").length;
     const cyclomaticComplexity = this.calculateCyclomaticComplexity(code);
 
     let score = 0;
-    let description = 'Low complexity';
+    let description = "Low complexity";
 
     if (lines > 500 || cyclomaticComplexity > 20) {
       score = 30;
-      description = 'High complexity - difficult to review';
+      description = "High complexity - difficult to review";
     } else if (lines > 200 || cyclomaticComplexity > 10) {
       score = 15;
-      description = 'Medium complexity';
+      description = "Medium complexity";
     } else {
       score = 5;
-      description = 'Low complexity';
+      description = "Low complexity";
     }
 
     return {
-      name: 'Code Complexity',
+      name: "Code Complexity",
       score,
       description,
-      details: `${lines} lines, cyclomatic complexity: ${cyclomaticComplexity}`
+      details: `${lines} lines, cyclomatic complexity: ${cyclomaticComplexity}`,
     };
   }
 
@@ -78,9 +78,9 @@ export class RiskAssessor {
       /\bwhile\b/g,
       /\bcase\b/g,
       /\bcatch\b/g,
-      /\b\?\s*:/g,  // Ternary operator
-      /\b&&\b/g,    // Logical AND
-      /\b\|\|\b/g   // Logical OR
+      /\b\?\s*:/g, // Ternary operator
+      /\b&&\b/g, // Logical AND
+      /\b\|\|\b/g, // Logical OR
     ];
 
     let complexity = 1; // Base complexity
@@ -105,7 +105,7 @@ export class RiskAssessor {
       /WebSocket/g,
       /axios\./g,
       /http\./g,
-      /https\./g
+      /https\./g,
     ];
 
     let matches = 0;
@@ -115,21 +115,21 @@ export class RiskAssessor {
     }
 
     let score = 0;
-    let description = 'No network access detected';
+    let description = "No network access detected";
 
     if (matches > 5) {
       score = 40;
-      description = 'Extensive network access';
+      description = "Extensive network access";
     } else if (matches > 0) {
       score = 20;
-      description = 'Limited network access';
+      description = "Limited network access";
     }
 
     return {
-      name: 'Network Access',
+      name: "Network Access",
       score,
       description,
-      details: `${matches} network operations detected`
+      details: `${matches} network operations detected`,
     };
   }
 
@@ -143,7 +143,7 @@ export class RiskAssessor {
       /writeFile/g,
       /unlink/g,
       /mkdir/g,
-      /rmdir/g
+      /rmdir/g,
     ];
 
     let matches = 0;
@@ -153,24 +153,24 @@ export class RiskAssessor {
     }
 
     let score = 0;
-    let description = 'No file system access';
+    let description = "No file system access";
 
     if (matches > 10) {
       score = 50;
-      description = 'Extensive file system access';
+      description = "Extensive file system access";
     } else if (matches > 5) {
       score = 30;
-      description = 'Moderate file system access';
+      description = "Moderate file system access";
     } else if (matches > 0) {
       score = 15;
-      description = 'Limited file system access';
+      description = "Limited file system access";
     }
 
     return {
-      name: 'File System Access',
+      name: "File System Access",
       score,
       description,
-      details: `${matches} file system operations detected`
+      details: `${matches} file system operations detected`,
     };
   }
 
@@ -183,7 +183,7 @@ export class RiskAssessor {
       /exec\(/g,
       /spawn\(/g,
       /process\./g,
-      /os\./g
+      /os\./g,
     ];
 
     let matches = 0;
@@ -193,18 +193,18 @@ export class RiskAssessor {
     }
 
     let score = 0;
-    let description = 'No system access';
+    let description = "No system access";
 
     if (matches > 0) {
       score = 60;
-      description = 'System/process access detected - HIGH RISK';
+      description = "System/process access detected - HIGH RISK";
     }
 
     return {
-      name: 'System Access',
+      name: "System Access",
       score,
       description,
-      details: `${matches} system operations detected`
+      details: `${matches} system operations detected`,
     };
   }
 
@@ -212,14 +212,18 @@ export class RiskAssessor {
    * Assess security validation issues
    */
   private assessSecurityIssues(validation: SecurityValidation): RiskFactor {
-    const criticalCount = validation.issues.filter(i => i.severity === 'critical').length;
-    const highCount = validation.issues.filter(i => i.severity === 'high').length;
+    const criticalCount = validation.issues.filter(
+      (i) => i.severity === "critical",
+    ).length;
+    const highCount = validation.issues.filter(
+      (i) => i.severity === "high",
+    ).length;
 
     return {
-      name: 'Security Issues',
+      name: "Security Issues",
       score: validation.riskScore,
       description: `${validation.issues.length} security issues found`,
-      details: `${criticalCount} critical, ${highCount} high severity`
+      details: `${criticalCount} critical, ${highCount} high severity`,
     };
   }
 
@@ -229,11 +233,11 @@ export class RiskAssessor {
   private calculateOverallRisk(factors: RiskFactor[]): number {
     // Use weighted average, with security issues having highest weight
     const weights = {
-      'Security Issues': 0.4,
-      'System Access': 0.25,
-      'File System Access': 0.15,
-      'Network Access': 0.1,
-      'Code Complexity': 0.1
+      "Security Issues": 0.4,
+      "System Access": 0.25,
+      "File System Access": 0.15,
+      "Network Access": 0.1,
+      "Code Complexity": 0.1,
     };
 
     let totalScore = 0;
@@ -251,11 +255,11 @@ export class RiskAssessor {
   /**
    * Get risk level from score
    */
-  private getRiskLevel(score: number): 'low' | 'medium' | 'high' | 'critical' {
-    if (score >= 80) return 'critical';
-    if (score >= 60) return 'high';
-    if (score >= 40) return 'medium';
-    return 'low';
+  private getRiskLevel(score: number): "low" | "medium" | "high" | "critical" {
+    if (score >= 80) return "critical";
+    if (score >= 60) return "high";
+    if (score >= 40) return "medium";
+    return "low";
   }
 
   /**
@@ -263,15 +267,15 @@ export class RiskAssessor {
    */
   private getRecommendation(score: number): string {
     if (score >= 80) {
-      return 'DO NOT EXECUTE - Critical risk detected. Manual review required.';
+      return "DO NOT EXECUTE - Critical risk detected. Manual review required.";
     }
     if (score >= 60) {
-      return 'HIGH RISK - Requires approval before execution.';
+      return "HIGH RISK - Requires approval before execution.";
     }
     if (score >= 40) {
-      return 'MEDIUM RISK - Review recommended before execution.';
+      return "MEDIUM RISK - Review recommended before execution.";
     }
-    return 'LOW RISK - Safe to execute with standard safeguards.';
+    return "LOW RISK - Safe to execute with standard safeguards.";
   }
 }
 
@@ -279,7 +283,7 @@ export class RiskAssessor {
  * Risk assessment result
  */
 export interface RiskAssessment {
-  riskLevel: 'low' | 'medium' | 'high' | 'critical';
+  riskLevel: "low" | "medium" | "high" | "critical";
   riskScore: number;
   factors: RiskFactor[];
   recommendation: string;

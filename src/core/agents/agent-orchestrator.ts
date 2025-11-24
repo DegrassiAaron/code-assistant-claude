@@ -14,16 +14,16 @@ import type {
   ExecutionOptions,
   IAgentOrchestrator,
   MultiAgentResult,
-} from './types';
-import { AgentSelector } from './agent-selector';
-import { MultiAgentCoordinator } from './multi-agent-coordinator';
-import { Logger } from './logger';
-import { TokenCounter } from './token-counter';
+} from "./types";
+import { AgentSelector } from "./agent-selector";
+import { MultiAgentCoordinator } from "./multi-agent-coordinator";
+import { Logger } from "./logger";
+import { TokenCounter } from "./token-counter";
 
 export class AgentOrchestrator implements IAgentOrchestrator {
   private selector: AgentSelector;
   private coordinator: MultiAgentCoordinator;
-  private logger = new Logger('AgentOrchestrator');
+  private logger = new Logger("AgentOrchestrator");
   private tokenCounter = new TokenCounter();
   private availableAgents: Agent[] = [];
 
@@ -38,19 +38,19 @@ export class AgentOrchestrator implements IAgentOrchestrator {
    */
   registerAgents(agents: Agent[]): void {
     if (!agents || agents.length === 0) {
-      throw new Error('Cannot register empty agents array');
+      throw new Error("Cannot register empty agents array");
     }
 
     // Validate agents
     for (const agent of agents) {
       if (!agent.metadata || !agent.metadata.name) {
-        throw new Error('Invalid agent metadata');
+        throw new Error("Invalid agent metadata");
       }
     }
 
     this.availableAgents = agents;
 
-    this.logger.info('Agents registered', {
+    this.logger.info("Agents registered", {
       count: agents.length,
       agents: agents.map((a) => a.metadata.name),
     });
@@ -60,9 +60,9 @@ export class AgentOrchestrator implements IAgentOrchestrator {
    * Select appropriate agents for a query
    */
   async selectAgents(
-    criteria: AgentSelectionCriteria
+    criteria: AgentSelectionCriteria,
   ): Promise<AgentSelectionResult[]> {
-    this.logger.debug('Selecting agents', { criteria });
+    this.logger.debug("Selecting agents", { criteria });
 
     const results = this.selector.select(this.availableAgents, criteria);
 
@@ -75,12 +75,12 @@ export class AgentOrchestrator implements IAgentOrchestrator {
   async executeAgent(
     agent: Agent,
     context: AgentContext,
-    options?: ExecutionOptions
+    options?: ExecutionOptions,
   ): Promise<AgentExecutionResult> {
     const startTime = Date.now();
     const timeout = options?.timeout || 30000; // 30 second default
 
-    this.logger.info('Executing agent', {
+    this.logger.info("Executing agent", {
       agent: agent.metadata.name,
       query: context.query,
       timeout,
@@ -89,7 +89,7 @@ export class AgentOrchestrator implements IAgentOrchestrator {
     try {
       // Create timeout promise
       const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Agent execution timeout')), timeout)
+        setTimeout(() => reject(new Error("Agent execution timeout")), timeout),
       );
 
       // Create execution promise
@@ -101,7 +101,7 @@ export class AgentOrchestrator implements IAgentOrchestrator {
 
       const tokensUsed = this.tokenCounter.countTokens(output);
 
-      this.logger.info('Agent execution successful', {
+      this.logger.info("Agent execution successful", {
         agent: agent.metadata.name,
         duration,
         tokensUsed,
@@ -117,19 +117,19 @@ export class AgentOrchestrator implements IAgentOrchestrator {
     } catch (error) {
       const duration = Date.now() - startTime;
 
-      this.logger.error('Agent execution failed', {
+      this.logger.error("Agent execution failed", {
         agent: agent.metadata.name,
         duration,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : "Unknown error",
       });
 
       return {
         agent: agent.metadata.name,
         success: false,
-        output: '',
+        output: "",
         tokensUsed: 0,
         duration,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : "Unknown error",
       };
     }
   }
@@ -141,9 +141,9 @@ export class AgentOrchestrator implements IAgentOrchestrator {
     agents: Agent[],
     context: AgentContext,
     strategy: CoordinationStrategy,
-    options?: ExecutionOptions
+    options?: ExecutionOptions,
   ): Promise<MultiAgentResult> {
-    this.logger.info('Executing multi-agent workflow', {
+    this.logger.info("Executing multi-agent workflow", {
       agentCount: agents.length,
       strategy,
     });
@@ -158,7 +158,7 @@ export class AgentOrchestrator implements IAgentOrchestrator {
    */
   private async executeAgentInternal(
     agent: Agent,
-    context: AgentContext
+    context: AgentContext,
   ): Promise<string> {
     // In a full implementation, this would:
     // 1. Load agent template/instructions from agent.content
@@ -194,23 +194,30 @@ export class AgentOrchestrator implements IAgentOrchestrator {
 ${content.substring(0, 2000)} // Truncate for demo
 
 ## Task
-Category: ${context.category || 'general'}
-Complexity: ${context.complexity || 'moderate'}
+Category: ${context.category || "general"}
+Complexity: ${context.complexity || "moderate"}
 
 ## Query
 ${context.query}
 
-${context.attachments && context.attachments.length > 0 ? `
+${
+  context.attachments && context.attachments.length > 0
+    ? `
 ## Attachments
-${context.attachments.join('\n')}
-` : ''}
+${context.attachments.join("\n")}
+`
+    : ""
+}
 
 ## Required Output
 Provide analysis following your expertise in:
-${metadata.expertise.map((e) => `- ${e}`).join('\n')}
+${metadata.expertise.map((e) => `- ${e}`).join("\n")}
 
 Apply these capabilities:
-${metadata.capabilities.slice(0, 3).map((c) => `- ${c}`).join('\n')}
+${metadata.capabilities
+  .slice(0, 3)
+  .map((c) => `- ${c}`)
+  .join("\n")}
     `.trim();
   }
 
@@ -221,7 +228,7 @@ ${metadata.capabilities.slice(0, 3).map((c) => `- ${c}`).join('\n')}
   private simulateAgentExecution(
     prompt: string,
     agentName: string,
-    context: AgentContext
+    context: AgentContext,
   ): string {
     // This is a placeholder that generates structured output
     // Real implementation would call LLM with the prompt

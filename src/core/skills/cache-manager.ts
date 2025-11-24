@@ -1,5 +1,5 @@
-import { LRUCache } from 'lru-cache';
-import { Skill, LoadingStage, CacheStats } from './types';
+import { LRUCache } from "lru-cache";
+import { Skill, LoadingStage, CacheStats } from "./types";
 
 /**
  * Manages caching of loaded skills
@@ -19,7 +19,7 @@ export class CacheManager {
       max: maxSize,
       ttl, // 30 minutes default
       updateAgeOnGet: true,
-      updateAgeOnHas: true
+      updateAgeOnHas: true,
     });
   }
 
@@ -153,7 +153,7 @@ export class CacheManager {
       size: this.cache.size,
       max: this.cache.max || 0,
       hits: this.hits,
-      misses: this.misses
+      misses: this.misses,
     };
   }
 
@@ -205,7 +205,7 @@ export class CacheManager {
   getCachedSkillNames(): string[] {
     const names = new Set<string>();
     for (const key of this.cache.keys()) {
-      const parts = key.split(':');
+      const parts = key.split(":");
       if (parts[0]) {
         names.add(parts[0]);
       }

@@ -14,16 +14,16 @@
     "developer-tools",
     "typescript"
   ],
-  "homepage": "https://github.com/YOUR_USERNAME/code-assistant-claude#readme",
+  "homepage": "https://github.com/DegrassiAaron/code-assistant-claude#readme",
   "bugs": {
-    "url": "https://github.com/YOUR_USERNAME/code-assistant-claude/issues"
+    "url": "https://github.com/DegrassiAaron/code-assistant-claude/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/YOUR_USERNAME/code-assistant-claude.git"
+    "url": "git+https://github.com/DegrassiAaron/code-assistant-claude.git"
   },
   "license": "MIT",
-  "author": "Your Name <your.email@example.com>",
+  "author": "Aaron Degrassi <badsworm@gmail.com>",
   "main": "dist/index.js",
   "bin": {
     "code-assistant-claude": "dist/cli/index.js"

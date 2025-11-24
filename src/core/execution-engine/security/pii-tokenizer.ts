@@ -1,5 +1,5 @@
-import crypto from 'crypto';
-import { PIIToken } from '../types';
+import crypto from "crypto";
+import { PIIToken } from "../types";
 
 /**
  * Tokenizes PII data for privacy protection
@@ -18,25 +18,24 @@ export class PIITokenizer {
     // Tokenize emails
     tokenized = tokenized.replace(
       /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g,
-      (email) => this.getOrCreateToken(email, 'email')
+      (email) => this.getOrCreateToken(email, "email"),
     );
 
     // Tokenize phone numbers (various formats)
     tokenized = tokenized.replace(
       /\b(\+\d{1,3}[-.]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b/g,
-      (phone) => this.getOrCreateToken(phone, 'phone')
+      (phone) => this.getOrCreateToken(phone, "phone"),
     );
 
     // Tokenize credit cards (various formats)
     tokenized = tokenized.replace(
       /\b\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}\b/g,
-      (cc) => this.getOrCreateToken(cc, 'credit_card')
+      (cc) => this.getOrCreateToken(cc, "credit_card"),
     );
 
     // Tokenize SSN (US format)
-    tokenized = tokenized.replace(
-      /\b\d{3}-\d{2}-\d{4}\b/g,
-      (ssn) => this.getOrCreateToken(ssn, 'ssn')
+    tokenized = tokenized.replace(/\b\d{3}-\d{2}-\d{4}\b/g, (ssn) =>
+      this.getOrCreateToken(ssn, "ssn"),
     );
 
     // Tokenize common name patterns (simplified)
@@ -53,9 +52,9 @@ export class PIITokenizer {
    */
   detokenize(_text: string): string {
     throw new Error(
-      'detokenize() has been removed for security compliance. ' +
-      'Plaintext PII storage violates GDPR Article 32, HIPAA §164.312, and other regulations. ' +
-      'Tokenization is now one-way only. See ISSUE-001-pii-storage-vulnerability.md for details.'
+      "detokenize() has been removed for security compliance. " +
+        "Plaintext PII storage violates GDPR Article 32, HIPAA §164.312, and other regulations. " +
+        "Tokenization is now one-way only. See ISSUE-001-pii-storage-vulnerability.md for details.",
     );
   }
 
@@ -71,13 +70,13 @@ export class PIITokenizer {
       /\b\d{3}-\d{2}-\d{4}\b/, // SSN
     ];
 
-    return piiPatterns.some(pattern => pattern.test(text));
+    return piiPatterns.some((pattern) => pattern.test(text));
   }
 
   /**
    * Get or create token for PII value
    */
-  private getOrCreateToken(value: string, type: PIIToken['type']): string {
+  private getOrCreateToken(value: string, type: PIIToken["type"]): string {
     const hash = this.hash(value);
 
     // Check if already tokenized (same PII value gets same token)
@@ -96,7 +95,7 @@ export class PIITokenizer {
     const piiToken: PIIToken = {
       token,
       type,
-      hashedValue: hash
+      hashedValue: hash,
     };
 
     this.tokenMap.set(hash, piiToken);
@@ -112,10 +111,11 @@ export class PIITokenizer {
     // Real-world would use Named Entity Recognition (NER)
 
     // Pattern for "Mr./Mrs./Ms./Dr. FirstName LastName"
-    const titlePattern = /\b(Mr\.|Mrs\.|Ms\.|Dr\.)\s+([A-Z][a-z]+\s+[A-Z][a-z]+)\b/g;
+    const titlePattern =
+      /\b(Mr\.|Mrs\.|Ms\.|Dr\.)\s+([A-Z][a-z]+\s+[A-Z][a-z]+)\b/g;
 
-    let result = text.replace(titlePattern, (match, title, name) => {
-      return `${title} ${this.getOrCreateToken(name, 'name')}`;
+    const result = text.replace(titlePattern, (match, title, name) => {
+      return `${title} ${this.getOrCreateToken(name, "name")}`;
     });
 
     return result;
@@ -125,7 +125,7 @@ export class PIITokenizer {
    * Hash PII value for lookup
    */
   private hash(value: string): string {
-    return crypto.createHash('sha256').update(value).digest('hex');
+    return crypto.createHash("sha256").update(value).digest("hex");
   }
 
   /**

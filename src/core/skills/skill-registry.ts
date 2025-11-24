@@ -1,9 +1,9 @@
-import { promises as fs } from 'fs';
-import { glob } from 'glob';
-import { SkillMetadata, SkillRegistryEntry, LoadingStage } from './types';
-import { SkillParser } from './skill-parser';
-import { Logger, ConsoleLogger } from './logger';
-import { withRetry } from './retry-utils';
+import { promises as fs } from "fs";
+import { glob } from "glob";
+import { SkillMetadata, SkillRegistryEntry, LoadingStage } from "./types";
+import { SkillParser } from "./skill-parser";
+import { Logger, ConsoleLogger } from "./logger";
+import { withRetry } from "./retry-utils";
 
 /**
  * Manages skill discovery and indexing
@@ -17,7 +17,10 @@ export class SkillRegistry {
   private skillsDir: string;
   private logger: Logger;
 
-  constructor(skillsDir: string, logger: Logger = new ConsoleLogger('[SkillRegistry]')) {
+  constructor(
+    skillsDir: string,
+    logger: Logger = new ConsoleLogger("[SkillRegistry]"),
+  ) {
     this.skillsDir = skillsDir;
     this.logger = logger;
     this.parser = new SkillParser(logger);
@@ -27,9 +30,9 @@ export class SkillRegistry {
    * Index all skills in the skills directory
    */
   async indexSkills(): Promise<void> {
-    const skillFiles = await glob('**/SKILL.md', {
+    const skillFiles = await glob("**/SKILL.md", {
       cwd: this.skillsDir,
-      absolute: true
+      absolute: true,
     });
 
     for (const skillPath of skillFiles) {
@@ -50,19 +53,18 @@ export class SkillRegistry {
     // Parse metadata only for indexing
     const skill = await this.parser.parseSkill(
       skillPath,
-      LoadingStage.METADATA_ONLY
+      LoadingStage.METADATA_ONLY,
     );
 
-    const stat = await withRetry(
-      () => fs.stat(skillPath),
-      { logger: this.logger }
-    );
+    const stat = await withRetry(() => fs.stat(skillPath), {
+      logger: this.logger,
+    });
 
     this.entries.set(skill.metadata.name, {
       metadata: skill.metadata,
       path: skillPath,
       lastModified: stat.mtime,
-      indexed: true
+      indexed: true,
     });
   }
 
@@ -83,7 +85,9 @@ export class SkillRegistry {
   /**
    * Find skills matching criteria
    */
-  find(predicate: (entry: SkillRegistryEntry) => boolean): SkillRegistryEntry[] {
+  find(
+    predicate: (entry: SkillRegistryEntry) => boolean,
+  ): SkillRegistryEntry[] {
     return Array.from(this.entries.values()).filter(predicate);
   }
 
@@ -92,26 +96,28 @@ export class SkillRegistry {
    */
   findByKeyword(keyword: string): SkillRegistryEntry[] {
     const lowerKeyword = keyword.toLowerCase();
-    return this.find(entry =>
-      entry.metadata.triggers.keywords?.some(k =>
-        k.toLowerCase().includes(lowerKeyword)
-      ) ?? false
+    return this.find(
+      (entry) =>
+        entry.metadata.triggers.keywords?.some((k) =>
+          k.toLowerCase().includes(lowerKeyword),
+        ) ?? false,
     );
   }
 
   /**
    * Find skills by category
    */
-  findByCategory(category: SkillMetadata['category']): SkillRegistryEntry[] {
-    return this.find(entry => entry.metadata.category === category);
+  findByCategory(category: SkillMetadata["category"]): SkillRegistryEntry[] {
+    return this.find((entry) => entry.metadata.category === category);
   }
 
   /**
    * Find skills by project type
    */
   findByProjectType(projectType: string): SkillRegistryEntry[] {
-    return this.find(entry =>
-      entry.metadata.context?.projectTypes?.includes(projectType) ?? false
+    return this.find(
+      (entry) =>
+        entry.metadata.context?.projectTypes?.includes(projectType) ?? false,
     );
   }
 
@@ -119,8 +125,8 @@ export class SkillRegistry {
    * Find skills by command trigger
    */
   findByCommand(command: string): SkillRegistryEntry[] {
-    return this.find(entry =>
-      entry.metadata.triggers.commands?.includes(command) ?? false
+    return this.find(
+      (entry) => entry.metadata.triggers.commands?.includes(command) ?? false,
     );
   }
 
@@ -128,8 +134,8 @@ export class SkillRegistry {
    * Find skills by event trigger
    */
   findByEvent(eventType: string): SkillRegistryEntry[] {
-    return this.find(entry =>
-      entry.metadata.triggers.events?.includes(eventType) ?? false
+    return this.find(
+      (entry) => entry.metadata.triggers.events?.includes(eventType) ?? false,
     );
   }
 
@@ -139,7 +145,7 @@ export class SkillRegistry {
   getTotalMetadataTokens(): number {
     return Array.from(this.entries.values()).reduce(
       (total, entry) => total + entry.metadata.tokenCost.metadata,
-      0
+      0,
     );
   }
 
@@ -153,16 +159,18 @@ export class SkillRegistry {
       totalSkills: this.entries.size,
       metadataTokens: this.getTotalMetadataTokens(),
       categories: {
-        core: entries.filter(e => e.metadata.category === 'core').length,
-        domain: entries.filter(e => e.metadata.category === 'domain').length,
-        superclaude: entries.filter(e => e.metadata.category === 'superclaude').length,
-        meta: entries.filter(e => e.metadata.category === 'meta').length
+        core: entries.filter((e) => e.metadata.category === "core").length,
+        domain: entries.filter((e) => e.metadata.category === "domain").length,
+        superclaude: entries.filter(
+          (e) => e.metadata.category === "superclaude",
+        ).length,
+        meta: entries.filter((e) => e.metadata.category === "meta").length,
       },
       priority: {
-        high: entries.filter(e => e.metadata.priority === 'high').length,
-        medium: entries.filter(e => e.metadata.priority === 'medium').length,
-        low: entries.filter(e => e.metadata.priority === 'low').length
-      }
+        high: entries.filter((e) => e.metadata.priority === "high").length,
+        medium: entries.filter((e) => e.metadata.priority === "medium").length,
+        low: entries.filter((e) => e.metadata.priority === "low").length,
+      },
     };
   }
 }

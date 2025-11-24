@@ -32,13 +32,15 @@ export class HierarchicalDisclosure {
   private defaultOptions: DisclosureOptions = {
     maxDepth: 3,
     includeSummaries: true,
-    collapseThreshold: 5
+    collapseThreshold: 5,
   };
 
   /**
    * Create hierarchical content from flat structure
    */
-  createHierarchy(sections: Array<{ title: string; content: string; level: number }>): DisclosureLevel[] {
+  createHierarchy(
+    sections: Array<{ title: string; content: string; level: number }>,
+  ): DisclosureLevel[] {
     const root: DisclosureLevel[] = [];
     const stack: DisclosureLevel[] = [];
 
@@ -48,7 +50,7 @@ export class HierarchicalDisclosure {
         title: section.title,
         summary: this.generateSummary(section.content),
         details: section.content,
-        children: []
+        children: [],
       };
 
       // Find parent
@@ -76,19 +78,23 @@ export class HierarchicalDisclosure {
   disclose(
     hierarchy: DisclosureLevel[],
     depth: number,
-    options?: Partial<DisclosureOptions>
+    options?: Partial<DisclosureOptions>,
   ): DisclosedContent {
     const opts = { ...this.defaultOptions, ...options };
     const rendered = this.renderHierarchy(hierarchy, depth, opts);
     const tokensUsed = this.estimateTokens(rendered);
-    const totalContent = this.renderHierarchy(hierarchy, Number.MAX_SAFE_INTEGER, opts);
+    const totalContent = this.renderHierarchy(
+      hierarchy,
+      Number.MAX_SAFE_INTEGER,
+      opts,
+    );
     const totalAvailable = this.estimateTokens(totalContent);
 
     return {
       rendered,
       tokensUsed,
       totalAvailable,
-      compressionRatio: 1 - tokensUsed / totalAvailable
+      compressionRatio: 1 - tokensUsed / totalAvailable,
     };
   }
 
@@ -99,13 +105,13 @@ export class HierarchicalDisclosure {
     nodes: DisclosureLevel[],
     maxDepth: number,
     options: DisclosureOptions,
-    currentDepth = 0
+    currentDepth = 0,
   ): string {
-    let output = '';
+    let output = "";
 
     for (const node of nodes) {
-      const indent = '  '.repeat(currentDepth);
-      const prefix = '#'.repeat(node.level);
+      const indent = "  ".repeat(currentDepth);
+      const prefix = "#".repeat(node.level);
 
       // Render title
       output += `${indent}${prefix} ${node.title}\n\n`;
@@ -118,11 +124,19 @@ export class HierarchicalDisclosure {
 
         // Render children
         if (node.children && node.children.length > 0) {
-          if (node.children.length > options.collapseThreshold && currentDepth === maxDepth - 1) {
+          if (
+            node.children.length > options.collapseThreshold &&
+            currentDepth === maxDepth - 1
+          ) {
             // Collapse if too many children
             output += `${indent}*[${node.children.length} subsections collapsed]*\n\n`;
           } else {
-            output += this.renderHierarchy(node.children, maxDepth, options, currentDepth + 1);
+            output += this.renderHierarchy(
+              node.children,
+              maxDepth,
+              options,
+              currentDepth + 1,
+            );
           }
         }
       } else {
@@ -151,11 +165,11 @@ export class HierarchicalDisclosure {
     // Try to break at sentence boundary
     const sentences = content.split(/[.!?]\s+/);
     if (sentences.length > 0 && sentences[0].length <= maxLength) {
-      return sentences[0] + '.';
+      return sentences[0] + ".";
     }
 
     // Otherwise truncate
-    return content.substring(0, maxLength - 3) + '...';
+    return content.substring(0, maxLength - 3) + "...";
   }
 
   /**
@@ -170,7 +184,7 @@ export class HierarchicalDisclosure {
    * Create table of contents
    */
   createTOC(hierarchy: DisclosureLevel[], maxDepth = 3): string {
-    let toc = '## Table of Contents\n\n';
+    let toc = "## Table of Contents\n\n";
     toc += this.renderTOC(hierarchy, maxDepth);
     return toc;
   }
@@ -178,13 +192,17 @@ export class HierarchicalDisclosure {
   /**
    * Render TOC recursively
    */
-  private renderTOC(nodes: DisclosureLevel[], maxDepth: number, currentDepth = 0): string {
-    if (currentDepth >= maxDepth) return '';
+  private renderTOC(
+    nodes: DisclosureLevel[],
+    maxDepth: number,
+    currentDepth = 0,
+  ): string {
+    if (currentDepth >= maxDepth) return "";
 
-    let toc = '';
+    let toc = "";
 
     for (const node of nodes) {
-      const indent = '  '.repeat(currentDepth);
+      const indent = "  ".repeat(currentDepth);
       toc += `${indent}- ${node.title}\n`;
 
       if (node.children && node.children.length > 0) {
@@ -201,7 +219,7 @@ export class HierarchicalDisclosure {
   expandSection(
     hierarchy: DisclosureLevel[],
     path: number[],
-    options?: Partial<DisclosureOptions>
+    options?: Partial<DisclosureOptions>,
   ): DisclosedContent {
     const opts = { ...this.defaultOptions, ...options };
     let current = hierarchy;
@@ -216,10 +234,10 @@ export class HierarchicalDisclosure {
 
     if (!selectedNode) {
       return {
-        rendered: '',
+        rendered: "",
         tokensUsed: 0,
         totalAvailable: 0,
-        compressionRatio: 0
+        compressionRatio: 0,
       };
     }
 
@@ -231,7 +249,7 @@ export class HierarchicalDisclosure {
       rendered,
       tokensUsed,
       totalAvailable: tokensUsed,
-      compressionRatio: 0
+      compressionRatio: 0,
     };
   }
 
@@ -267,7 +285,8 @@ export class HierarchicalDisclosure {
     return {
       totalSections,
       maxDepth,
-      avgChildrenPerSection: sectionsWithChildren > 0 ? totalChildren / sectionsWithChildren : 0
+      avgChildrenPerSection:
+        sectionsWithChildren > 0 ? totalChildren / sectionsWithChildren : 0,
     };
   }
 }

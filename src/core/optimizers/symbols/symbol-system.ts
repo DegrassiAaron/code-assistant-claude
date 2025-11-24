@@ -8,11 +8,17 @@
  * - Symbol detection pattern caching
  */
 
-import { CORE_SYMBOLS, getSymbolByKeyword } from './core-symbols';
-import { BUSINESS_SYMBOLS, getBusinessSymbolByKeyword } from './business-symbols';
-import { TECHNICAL_SYMBOLS, getTechnicalSymbolByKeyword } from './technical-symbols';
-import { escapeRegex, createWordBoundaryPattern } from '../../utils/regex';
-import { performanceTracker } from '../../utils/performance';
+import { CORE_SYMBOLS, getSymbolByKeyword } from "./core-symbols";
+import {
+  BUSINESS_SYMBOLS,
+  getBusinessSymbolByKeyword,
+} from "./business-symbols";
+import {
+  TECHNICAL_SYMBOLS,
+  getTechnicalSymbolByKeyword,
+} from "./technical-symbols";
+import { escapeRegex, createWordBoundaryPattern } from "../../utils/regex";
+import { performanceTracker } from "../../utils/performance";
 
 export interface CompressionResult {
   original: string;
@@ -114,14 +120,14 @@ export class SymbolSystem {
   private compileRegexPatterns(): void {
     // Compile compression patterns (keyword -> symbol)
     for (const [keyword, symbol] of this.symbolMap.entries()) {
-      const pattern = createWordBoundaryPattern(keyword, 'gi');
+      const pattern = createWordBoundaryPattern(keyword, "gi");
       this.regexCache.set(keyword, pattern);
     }
 
     // Compile expansion patterns (symbol -> keyword)
     for (const [symbol, keyword] of this.reverseMap.entries()) {
       const escapedSymbol = escapeRegex(symbol);
-      const pattern = new RegExp(escapedSymbol, 'g');
+      const pattern = new RegExp(escapedSymbol, "g");
       this.reverseRegexCache.set(symbol, pattern);
     }
   }
@@ -131,7 +137,7 @@ export class SymbolSystem {
    */
   private sortKeywords(): void {
     this.sortedKeywords = Array.from(this.symbolMap.keys()).sort(
-      (a, b) => b.length - a.length
+      (a, b) => b.length - a.length,
     );
   }
 
@@ -143,7 +149,7 @@ export class SymbolSystem {
     if (symbols.length === 0) return;
 
     const escapedSymbols = symbols.map(escapeRegex);
-    this.symbolDetectionPattern = new RegExp(escapedSymbols.join('|'));
+    this.symbolDetectionPattern = new RegExp(escapedSymbols.join("|"));
   }
 
   /**
@@ -164,7 +170,7 @@ export class SymbolSystem {
         compressed: text,
         tokensReduced: 0,
         compressionRatio: 0,
-        performanceMs: 0
+        performanceMs: 0,
       };
     }
 
@@ -186,32 +192,36 @@ export class SymbolSystem {
     }
 
     const compressedLength = compressed.length;
-    const tokensReduced = this.estimateTokenReduction(originalLength, compressedLength);
+    const tokensReduced = this.estimateTokenReduction(
+      originalLength,
+      compressedLength,
+    );
 
     // BUG FIX: Handle division by zero
-    const compressionRatio = originalLength > 0
-      ? (originalLength - compressedLength) / originalLength
-      : 0;
+    const compressionRatio =
+      originalLength > 0
+        ? (originalLength - compressedLength) / originalLength
+        : 0;
 
     const result: CompressionResult = {
       original: text,
       compressed,
       tokensReduced,
-      compressionRatio
+      compressionRatio,
     };
 
     if (options.trackPerformance) {
       result.performanceMs = performance.now() - startTime;
       performanceTracker.record({
-        operationName: 'symbol-compression',
+        operationName: "symbol-compression",
         durationMs: result.performanceMs,
         timestamp: Date.now(),
         metadata: {
           originalLength,
           compressedLength,
           compressionRatio,
-          tokensReduced
-        }
+          tokensReduced,
+        },
       });
     }
 
@@ -248,7 +258,10 @@ export class SymbolSystem {
    * @param compressedLength - Compressed text length
    * @returns Estimated tokens reduced
    */
-  private estimateTokenReduction(originalLength: number, compressedLength: number): number {
+  private estimateTokenReduction(
+    originalLength: number,
+    compressedLength: number,
+  ): number {
     const charsReduced = originalLength - compressedLength;
     return Math.floor(charsReduced / SymbolSystem.CHARS_PER_TOKEN);
   }
@@ -297,7 +310,7 @@ export class SymbolSystem {
       coreSymbols: CORE_SYMBOLS.length,
       businessSymbols: BUSINESS_SYMBOLS.length,
       technicalSymbols: TECHNICAL_SYMBOLS.length,
-      categories
+      categories,
     };
   }
 
@@ -323,7 +336,7 @@ export class SymbolSystem {
   getAllSymbols(): Array<{ keyword: string; symbol: string }> {
     return Array.from(this.symbolMap.entries()).map(([keyword, symbol]) => ({
       keyword,
-      symbol
+      symbol,
     }));
   }
 
@@ -338,7 +351,7 @@ export class SymbolSystem {
     maxMs: number;
     count: number;
   } {
-    return performanceTracker.getStats('symbol-compression');
+    return performanceTracker.getStats("symbol-compression");
   }
 }
 

@@ -74,7 +74,10 @@ export class Logger {
   /**
    * Configure global logging settings
    */
-  static configure(options: { level?: LogLevel; showTimestamps?: boolean }): void {
+  static configure(options: {
+    level?: LogLevel;
+    showTimestamps?: boolean;
+  }): void {
     const config = LoggerConfig.getInstance();
     if (options.level) {
       config.setLevel(options.level);
@@ -147,7 +150,8 @@ export class Logger {
    * Log error message (always shown)
    */
   error(message: string, error?: Error | unknown): void {
-    const errorDetails = error instanceof Error ? error.stack || error.message : error;
+    const errorDetails =
+      error instanceof Error ? error.stack || error.message : error;
     console.error(
       `${this.getTimestamp()}${this.getPrefix()}${chalk.red("✖")} ${chalk.red(message)}`,
       errorDetails ? "\n" + errorDetails : "",

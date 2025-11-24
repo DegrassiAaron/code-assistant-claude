@@ -1,4 +1,4 @@
-import type { Tool } from '../types';
+import type { Tool } from "../types";
 
 export class ToolIndexer {
   private tools: Map<string, Tool>;
@@ -29,7 +29,7 @@ export class ToolIndexer {
     const toolNames = this.categoryIndex.get(category);
     if (!toolNames) return [];
     return Array.from(toolNames)
-      .map(name => this.tools.get(name))
+      .map((name) => this.tools.get(name))
       .filter((tool): tool is Tool => tool !== undefined);
   }
 
