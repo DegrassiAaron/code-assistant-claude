@@ -128,27 +128,27 @@ describe('ToolIndexer', () => {
     });
 
     it('should find tools by keyword in name', () => {
-      const results = toolIndexer.searchTools('file');
+      const results = toolIndexer.search('file');
 
       expect(results.length).toBeGreaterThan(0);
       expect(results.some(t => t.name === 'readFile')).toBe(true);
     });
 
     it('should find tools by keyword in description', () => {
-      const results = toolIndexer.searchTools('HTTP');
+      const results = toolIndexer.search('HTTP');
 
       expect(results.length).toBeGreaterThan(0);
       expect(results.some(t => t.name === 'httpGet')).toBe(true);
     });
 
     it('should return empty array for no matches', () => {
-      const results = toolIndexer.searchTools('database');
+      const results = toolIndexer.search('database');
 
       expect(results).toEqual([]);
     });
 
     it('should handle case-insensitive search', () => {
-      const results = toolIndexer.searchTools('FILE');
+      const results = toolIndexer.search('FILE');
 
       expect(results.length).toBeGreaterThan(0);
     });

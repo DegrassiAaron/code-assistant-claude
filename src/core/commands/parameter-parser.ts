@@ -124,7 +124,9 @@ export class ParameterParser {
         inQuotes = true;
         quoteChar = char;
         wasQuoted = true;
+        current += char; // Include the quote in the token
       } else if (char === quoteChar && inQuotes) {
+        current += char; // Include the closing quote
         inQuotes = false;
         quoteChar = "";
         // Keep wasQuoted true - we'll check it when adding token
