@@ -49,19 +49,39 @@ interface GlobCacheEntry {
 }
 
 export class MonorepoDetector {
+  // Costanti di configurazione
+  private static readonly DEFAULT_TIMEOUT_MS = 30000; // 30 secondi
+  private static readonly DEFAULT_MAX_WORKSPACES = 1000;
+  private static readonly MAX_TIMEOUT_MS = 300000; // 5 minuti massimo
+  private static readonly MIN_PYTHON_PACKAGES = 3;
+  private static readonly MIN_DOTNET_PROJECTS = 2;
+  private static readonly CACHE_TTL_MS = 60000; // 1 minuto
+  private static readonly MAX_CACHE_ENTRIES = 100; // Limite LRU cache
+  private static readonly MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
+
   private readonly logger = createLogger("MonorepoDetector");
   private readonly maxWorkspaces: number;
   private readonly timeoutMs: number;
   private readonly enableCache: boolean;
   private globCache: Map<string, GlobCacheEntry> = new Map();
-  private readonly CACHE_TTL_MS = 60000; // 1 minuto
 
   constructor(
     private projectRoot: string,
     options: MonorepoDetectorOptions = {}
   ) {
-    this.maxWorkspaces = options.maxWorkspaces ?? 1000;
-    this.timeoutMs = options.timeoutMs ?? 30000; // 30 secondi default
+    // Validazione configurazione
+    if (options.maxWorkspaces !== undefined && options.maxWorkspaces <= 0) {
+      throw new Error("maxWorkspaces must be greater than 0");
+    }
+    if (options.timeoutMs !== undefined && options.timeoutMs <= 0) {
+      throw new Error("timeoutMs must be greater than 0");
+    }
+
+    this.maxWorkspaces = options.maxWorkspaces ?? MonorepoDetector.DEFAULT_MAX_WORKSPACES;
+    this.timeoutMs = Math.min(
+      options.timeoutMs ?? MonorepoDetector.DEFAULT_TIMEOUT_MS,
+      MonorepoDetector.MAX_TIMEOUT_MS
+    );
     this.enableCache = options.enableCache ?? true;
   }
 
@@ -83,7 +103,9 @@ export class MonorepoDetector {
         this.detectLernaMonorepo.bind(this),
         this.detectPnpmWorkspaces.bind(this),
         this.detectYarnWorkspaces.bind(this),
-        this.detectNpmWorkspaces.bind(this),
+        this.detectNxMonorepo.bind(this),
+        this.detectTurborepo.bind(this),
+        this.detectRushMonorepo.bind(this),
         this.detectGoWorkspace.bind(this),
         this.detectRustWorkspace.bind(this),
         this.detectMavenMultiModule.bind(this),
@@ -138,11 +160,33 @@ export class MonorepoDetector {
     }
   }
 
-  // Helper: validazione path sicura
-  private isPathSafe(relativePath: string): boolean {
-    const resolved = path.resolve(this.projectRoot, relativePath);
-    const normalized = path.normalize(resolved);
-    return normalized.startsWith(this.projectRoot);
+  // Helper: lettura file sicura con limite dimensione
+  private async readFileSafe(
+    filePath: string,
+    maxSizeBytes: number = MonorepoDetector.MAX_FILE_SIZE_BYTES
+  ): Promise<string> {
+    const stats = await fs.stat(filePath);
+    if (stats.size > maxSizeBytes) {
+      throw new Error(
+        `File too large: ${filePath} (${stats.size} bytes, max ${maxSizeBytes})`
+      );
+    }
+    return fs.readFile(filePath, "utf-8");
+  }
+
+  // Helper: validazione path sicura (protegge da symlink attacks)
+  private async isPathSafe(relativePath: string): Promise<boolean> {
+    try {
+      const resolved = path.resolve(this.projectRoot, relativePath);
+
+      // Risolvi symlink per prevenire path traversal
+      const realPath = await fs.realpath(resolved).catch(() => resolved);
+      const realRoot = await fs.realpath(this.projectRoot).catch(() => this.projectRoot);
+
+      return realPath.startsWith(realRoot);
+    } catch {
+      return false;
+    }
   }
 
   // Helper: timeout wrapper
@@ -159,7 +203,7 @@ export class MonorepoDetector {
     ]);
   }
 
-  // Helper: glob con cache
+  // Helper: glob con cache LRU
   private async cachedGlob(
     pattern: string,
     options: { cwd: string; absolute?: boolean; ignore?: string[] }
@@ -172,7 +216,7 @@ export class MonorepoDetector {
     const cached = this.globCache.get(cacheKey);
     const now = Date.now();
 
-    if (cached && now - cached.timestamp < this.CACHE_TTL_MS) {
+    if (cached && now - cached.timestamp < MonorepoDetector.CACHE_TTL_MS) {
       this.logger.verbose(`Cache hit for pattern: ${pattern}`);
       return cached.results;
     }
@@ -183,6 +227,18 @@ export class MonorepoDetector {
       results,
       timestamp: now,
     });
+
+    // Implementazione LRU: rimuovi entry più vecchia se superato limite
+    if (this.globCache.size > MonorepoDetector.MAX_CACHE_ENTRIES) {
+      const entries = Array.from(this.globCache.entries())
+        .sort((a, b) => a[1].timestamp - b[1].timestamp);
+      const oldestEntry = entries[0];
+      if (oldestEntry) {
+        const oldestKey = oldestEntry[0];
+        this.globCache.delete(oldestKey);
+        this.logger.verbose(`Cache evicted oldest entry: ${oldestKey}`);
+      }
+    }
 
     return results;
   }
@@ -198,21 +254,28 @@ export class MonorepoDetector {
     return workspaces;
   }
 
-  // Helper: parse XML semplice per Maven (sostituzione regex)
+  // Helper: parse XML semplice per Maven (migliorato per gestire commenti)
   private parseSimpleXml(
     content: string,
     tagName: string
   ): string[] | null {
+    // Rimuovi commenti XML prima del parsing
+    const cleanContent = content.replace(/<!--[\s\S]*?-->/g, "");
+
     const results: string[] = [];
+    // Pattern più robusto che gestisce whitespace e newlines
     const tagPattern = new RegExp(
-      `<${tagName}>([^<]+)</${tagName}>`,
+      `<${tagName}>\\s*([^<]+?)\\s*</${tagName}>`,
       "g"
     );
     let match;
 
-    while ((match = tagPattern.exec(content)) !== null) {
+    while ((match = tagPattern.exec(cleanContent)) !== null) {
       if (match[1]) {
-        results.push(match[1].trim());
+        const value = match[1].trim();
+        if (value) {
+          results.push(value);
+        }
       }
     }
 
@@ -226,7 +289,7 @@ export class MonorepoDetector {
         return this.emptyResult();
       }
 
-      const lernaConfig = JSON.parse(await fs.readFile(lernaPath, "utf-8"));
+      const lernaConfig = JSON.parse(await this.readFileSafe(lernaPath));
       const packages =
         lernaConfig.packages || lernaConfig.workspaces || ["packages/*"];
 
@@ -253,9 +316,17 @@ export class MonorepoDetector {
         return this.emptyResult();
       }
 
-      const content = await fs.readFile(pnpmPath, "utf-8");
-      const config = yaml.load(content) as PnpmWorkspaceConfig;
-      const packages = config.packages || [];
+      const content = await this.readFileSafe(pnpmPath);
+      const rawConfig = yaml.load(content);
+
+      // Validazione type-safe
+      if (!rawConfig || typeof rawConfig !== "object") {
+        this.logger.warn("Invalid pnpm-workspace.yaml format");
+        return this.emptyResult();
+      }
+
+      const config = rawConfig as PnpmWorkspaceConfig;
+      const packages = Array.isArray(config.packages) ? config.packages : [];
 
       const workspaces = await this.findWorkspaces(packages);
 
@@ -281,7 +352,7 @@ export class MonorepoDetector {
       }
 
       const packageJson: PackageJson = JSON.parse(
-        await fs.readFile(packageJsonPath, "utf-8")
+        await this.readFileSafe(packageJsonPath)
       );
       const workspacesField = packageJson.workspaces;
 
@@ -316,12 +387,6 @@ export class MonorepoDetector {
     }
   }
 
-  private async detectNpmWorkspaces(): Promise<MonorepoInfo> {
-    // NPM workspaces usa lo stesso formato di yarn nel package.json
-    // Questo metodo è già gestito da detectYarnWorkspaces
-    return this.emptyResult();
-  }
-
   private async detectGoWorkspace(): Promise<MonorepoInfo> {
     const goWorkPath = path.join(this.projectRoot, "go.work");
     try {
@@ -329,14 +394,19 @@ export class MonorepoDetector {
         return this.emptyResult();
       }
 
-      const content = await fs.readFile(goWorkPath, "utf-8");
+      const content = await this.readFileSafe(goWorkPath);
       const useModules: string[] = [];
 
-      // Parse go.work file (formato semplice)
+      // Parse go.work file (formato semplice, migliore gestione commenti)
       const lines = content.split("\n");
       let inUseBlock = false;
       for (const line of lines) {
         const trimmed = line.trim();
+        // Ignora commenti
+        if (trimmed.startsWith("//") || trimmed.startsWith("#")) {
+          continue;
+        }
+
         if (trimmed.startsWith("use")) {
           inUseBlock = true;
           // Gestisci "use ./path"
@@ -344,7 +414,7 @@ export class MonorepoDetector {
           if (match && match[1]) {
             const modulePath = match[1].replace(/[()]/g, "").trim();
             if (modulePath && !modulePath.startsWith("(")) {
-              if (this.isPathSafe(modulePath)) {
+              if (await this.isPathSafe(modulePath)) {
                 useModules.push(modulePath);
               }
               continue;
@@ -356,7 +426,7 @@ export class MonorepoDetector {
             inUseBlock = false;
           } else if (trimmed && !trimmed.startsWith("//")) {
             const modulePath = trimmed.replace(/[()]/g, "").trim();
-            if (this.isPathSafe(modulePath)) {
+            if (modulePath && (await this.isPathSafe(modulePath))) {
               useModules.push(modulePath);
             }
           }
@@ -369,7 +439,7 @@ export class MonorepoDetector {
         const goModPath = path.join(fullPath, "go.mod");
 
         if (await this.fileExists(goModPath)) {
-          const goModContent = await fs.readFile(goModPath, "utf-8");
+          const goModContent = await this.readFileSafe(goModPath);
           const moduleMatch = goModContent.match(/module\s+(.+)/);
           const moduleName =
             moduleMatch && moduleMatch[1] ? moduleMatch[1].trim() : modulePath;
@@ -411,7 +481,7 @@ export class MonorepoDetector {
         return this.emptyResult();
       }
 
-      const content = await fs.readFile(cargoTomlPath, "utf-8");
+      const content = await this.readFileSafe(cargoTomlPath);
 
       // Check per [workspace] section
       if (!content.includes("[workspace]")) {
@@ -450,11 +520,11 @@ export class MonorepoDetector {
       }
 
       const workspacePromises = allMatches.map(async (match) => {
-        if (!this.isPathSafe(match)) return null;
+        if (!(await this.isPathSafe(match))) return null;
 
         const cargoPath = path.join(this.projectRoot, match, "Cargo.toml");
         if (await this.fileExists(cargoPath)) {
-          const cargoContent = await fs.readFile(cargoPath, "utf-8");
+          const cargoContent = await this.readFileSafe(cargoPath);
           const nameMatch = cargoContent.match(/name\s*=\s*"(.+?)"/);
           const name =
             nameMatch && nameMatch[1] ? nameMatch[1] : path.basename(match);
@@ -496,7 +566,7 @@ export class MonorepoDetector {
         return this.emptyResult();
       }
 
-      const content = await fs.readFile(pomPath, "utf-8");
+      const content = await this.readFileSafe(pomPath);
 
       // Parse XML per trovare <modules>
       const modulesMatch = content.match(/<modules>([\s\S]*?)<\/modules>/);
@@ -513,7 +583,7 @@ export class MonorepoDetector {
 
       // Parallelizza lettura moduli Maven
       const workspacePromises = modules.map(async (modulePath) => {
-        if (!this.isPathSafe(modulePath)) return null;
+        if (!(await this.isPathSafe(modulePath))) return null;
 
         const modulePomPath = path.join(
           this.projectRoot,
@@ -522,7 +592,7 @@ export class MonorepoDetector {
         );
 
         if (await this.fileExists(modulePomPath)) {
-          const moduleContent = await fs.readFile(modulePomPath, "utf-8");
+          const moduleContent = await this.readFileSafe(modulePomPath);
           const artifactIds = this.parseSimpleXml(moduleContent, "artifactId");
           const artifactId = artifactIds?.[0] || path.basename(modulePath);
 
@@ -564,9 +634,9 @@ export class MonorepoDetector {
       let content = "";
 
       if (await this.fileExists(settingsPath)) {
-        content = await fs.readFile(settingsPath, "utf-8");
+        content = await this.readFileSafe(settingsPath);
       } else if (await this.fileExists(settingsKtsPath)) {
-        content = await fs.readFile(settingsKtsPath, "utf-8");
+        content = await this.readFileSafe(settingsKtsPath);
       }
 
       if (!content) {
@@ -592,7 +662,7 @@ export class MonorepoDetector {
         // Converti ":subproject" in "subproject"
         const relativePath = projectPath.replace(/^:/, "").replace(/:/g, "/");
 
-        if (!this.isPathSafe(relativePath)) return null;
+        if (!(await this.isPathSafe(relativePath))) return null;
 
         const fullPath = path.join(this.projectRoot, relativePath);
 
@@ -641,7 +711,7 @@ export class MonorepoDetector {
         return this.emptyResult();
       }
 
-      const content = await fs.readFile(pyprojectPath, "utf-8");
+      const content = await this.readFileSafe(pyprojectPath);
 
       // Poetry workspace support (experimental)
       if (content.includes("[tool.poetry.workspace]")) {
@@ -670,7 +740,7 @@ export class MonorepoDetector {
 
             // Parallelizza verifica package Python
             const workspacePromises = allMatches.map(async (match) => {
-              if (!this.isPathSafe(match)) return null;
+              if (!(await this.isPathSafe(match))) return null;
 
               const pyprojectExists = await this.fileExists(
                 path.join(this.projectRoot, match, "pyproject.toml")
@@ -719,15 +789,14 @@ export class MonorepoDetector {
         }
       );
 
-      // Almeno 3 package per considerarlo monorepo (configurabile)
-      const minPackages = 3;
-      if (potentialPackages.length >= minPackages) {
+      // Usa costante per minimo packages
+      if (potentialPackages.length >= MonorepoDetector.MIN_PYTHON_PACKAGES) {
         const workspaces: WorkspaceInfo[] = [];
         const seen = new Set<string>();
 
         for (const pkg of potentialPackages) {
           const dirName = path.dirname(pkg);
-          if (!seen.has(dirName) && this.isPathSafe(dirName)) {
+          if (!seen.has(dirName) && (await this.isPathSafe(dirName))) {
             seen.add(dirName);
             workspaces.push({
               name: dirName,
@@ -768,7 +837,7 @@ export class MonorepoDetector {
       }
 
       const slnPath = path.join(this.projectRoot, slnFiles[0]);
-      const content = await fs.readFile(slnPath, "utf-8");
+      const content = await this.readFileSafe(slnPath);
 
       // Parse .sln file per trovare progetti
       const projectPattern =
@@ -785,7 +854,7 @@ export class MonorepoDetector {
         // Verifica che sia un progetto C# (.csproj)
         if (projectPath.endsWith(".csproj")) {
           const projectDir = path.dirname(projectPath);
-          if (this.isPathSafe(projectDir)) {
+          if (await this.isPathSafe(projectDir)) {
             projects.push({
               name: projectName,
               path: projectDir,
@@ -794,8 +863,8 @@ export class MonorepoDetector {
         }
       }
 
-      // Deve avere almeno 2 progetti per essere considerato monorepo
-      if (projects.length < 2) {
+      // Usa costante per minimo progetti
+      if (projects.length < MonorepoDetector.MIN_DOTNET_PROJECTS) {
         return this.emptyResult();
       }
 
@@ -821,6 +890,164 @@ export class MonorepoDetector {
     }
   }
 
+  private async detectNxMonorepo(): Promise<MonorepoInfo> {
+    const nxPath = path.join(this.projectRoot, "nx.json");
+    try {
+      if (!(await this.fileExists(nxPath))) {
+        return this.emptyResult();
+      }
+
+      // Verifica che nx.json esista (configurazione validata implicitamente)
+      await this.readFileSafe(nxPath);
+      const packageJsonPath = path.join(this.projectRoot, "package.json");
+
+      if (!(await this.fileExists(packageJsonPath))) {
+        return this.emptyResult();
+      }
+
+      const packageJson: PackageJson = JSON.parse(
+        await this.readFileSafe(packageJsonPath)
+      );
+      const workspacesField = packageJson.workspaces;
+
+      if (!workspacesField) {
+        // Nx può usare project.json in ogni directory
+        return this.emptyResult();
+      }
+
+      const packages = Array.isArray(workspacesField)
+        ? workspacesField
+        : workspacesField.packages || [];
+
+      const workspaces = await this.findWorkspaces(packages);
+
+      return {
+        isMonorepo: true,
+        tool: "nx",
+        rootPath: this.projectRoot,
+        workspaces: this.limitWorkspaces(workspaces),
+        rootTechnologies: ["JavaScript", "TypeScript"],
+        crossLanguage: false,
+      };
+    } catch (error) {
+      this.logger.debug("Nx monorepo detection failed", error);
+      return this.emptyResult();
+    }
+  }
+
+  private async detectTurborepo(): Promise<MonorepoInfo> {
+    const turboPath = path.join(this.projectRoot, "turbo.json");
+    try {
+      if (!(await this.fileExists(turboPath))) {
+        return this.emptyResult();
+      }
+
+      const packageJsonPath = path.join(this.projectRoot, "package.json");
+
+      if (!(await this.fileExists(packageJsonPath))) {
+        return this.emptyResult();
+      }
+
+      const packageJson: PackageJson = JSON.parse(
+        await this.readFileSafe(packageJsonPath)
+      );
+      const workspacesField = packageJson.workspaces;
+
+      if (!workspacesField) {
+        return this.emptyResult();
+      }
+
+      const packages = Array.isArray(workspacesField)
+        ? workspacesField
+        : workspacesField.packages || [];
+
+      const workspaces = await this.findWorkspaces(packages);
+
+      return {
+        isMonorepo: true,
+        tool: "turborepo",
+        rootPath: this.projectRoot,
+        workspaces: this.limitWorkspaces(workspaces),
+        rootTechnologies: ["JavaScript", "TypeScript"],
+        crossLanguage: false,
+      };
+    } catch (error) {
+      this.logger.debug("Turborepo detection failed", error);
+      return this.emptyResult();
+    }
+  }
+
+  private async detectRushMonorepo(): Promise<MonorepoInfo> {
+    const rushPath = path.join(this.projectRoot, "rush.json");
+    try {
+      if (!(await this.fileExists(rushPath))) {
+        return this.emptyResult();
+      }
+
+      const rushConfig = JSON.parse(await this.readFileSafe(rushPath));
+      const projects = rushConfig.projects || [];
+
+      if (projects.length === 0) {
+        return this.emptyResult();
+      }
+
+      // Parallelizza lettura progetti Rush
+      const workspacePromises = projects.map(async (project: any) => {
+        const projectPath = project.projectFolder;
+        if (!projectPath || !(await this.isPathSafe(projectPath))) {
+          return null;
+        }
+
+        const packageJsonPath = path.join(
+          this.projectRoot,
+          projectPath,
+          "package.json"
+        );
+
+        if (await this.fileExists(packageJsonPath)) {
+          try {
+            const packageJson: PackageJson = JSON.parse(
+              await this.readFileSafe(packageJsonPath)
+            );
+            const name = packageJson.name || project.packageName || path.basename(projectPath);
+
+            const technologies =
+              this.detectTechnologiesFromPackageJson(packageJson);
+
+            return {
+              name,
+              path: projectPath,
+              type: "NPM Package",
+              technologies,
+              hasOwnPackageManager: true,
+            };
+          } catch (error) {
+            this.logger.debug(`Failed to parse package.json at ${projectPath}`, error);
+            return null;
+          }
+        }
+        return null;
+      });
+
+      const workspaceResults = await Promise.all(workspacePromises);
+      const workspaces = workspaceResults.filter(
+        (w): w is WorkspaceInfo => w !== null
+      );
+
+      return {
+        isMonorepo: true,
+        tool: "rush",
+        rootPath: this.projectRoot,
+        workspaces: this.limitWorkspaces(workspaces),
+        rootTechnologies: ["JavaScript", "TypeScript"],
+        crossLanguage: false,
+      };
+    } catch (error) {
+      this.logger.debug("Rush monorepo detection failed", error);
+      return this.emptyResult();
+    }
+  }
+
   private async findWorkspaces(patterns: string[]): Promise<WorkspaceInfo[]> {
     const allMatches: string[] = [];
 
@@ -838,7 +1065,7 @@ export class MonorepoDetector {
 
     // Parallelizza lettura package.json
     const workspacePromises = allMatches.map(async (match) => {
-      if (!this.isPathSafe(match)) return null;
+      if (!(await this.isPathSafe(match))) return null;
 
       const packageJsonPath = path.join(
         this.projectRoot,
@@ -849,7 +1076,7 @@ export class MonorepoDetector {
       if (await this.fileExists(packageJsonPath)) {
         try {
           const packageJson: PackageJson = JSON.parse(
-            await fs.readFile(packageJsonPath, "utf-8")
+            await this.readFileSafe(packageJsonPath)
           );
           const name = packageJson.name || path.basename(match);
 
@@ -893,15 +1120,35 @@ export class MonorepoDetector {
       technologies.add("JavaScript");
     }
 
-    // Frameworks
+    // Frameworks Frontend
     if (allDeps.react) technologies.add("React");
     if (allDeps.vue) technologies.add("Vue");
     if (allDeps.angular || allDeps["@angular/core"])
       technologies.add("Angular");
     if (allDeps.next) technologies.add("Next.js");
     if (allDeps.svelte) technologies.add("Svelte");
+    if (allDeps["solid-js"]) technologies.add("SolidJS");
+    if (allDeps["@solidjs/start"]) technologies.add("SolidStart");
+    if (allDeps["@remix-run/react"]) technologies.add("Remix");
+    if (allDeps.astro) technologies.add("Astro");
+    if (allDeps.nuxt) technologies.add("Nuxt");
+    if (allDeps.qwik) technologies.add("Qwik");
+    if (allDeps["@builder.io/qwik-city"]) technologies.add("Qwik City");
+
+    // Frameworks Backend
     if (allDeps.express) technologies.add("Express");
     if (allDeps["@nestjs/core"]) technologies.add("NestJS");
+    if (allDeps.fastify) technologies.add("Fastify");
+    if (allDeps.koa) technologies.add("Koa");
+    if (allDeps.hapi || allDeps["@hapi/hapi"]) technologies.add("Hapi");
+    if (allDeps["@trpc/server"]) technologies.add("tRPC");
+
+    // Meta-frameworks & Tools
+    if (allDeps.vite) technologies.add("Vite");
+    if (allDeps.webpack) technologies.add("Webpack");
+    if (allDeps.turbopack) technologies.add("Turbopack");
+    if (allDeps.gatsby) technologies.add("Gatsby");
+    if (allDeps["@11ty/eleventy"]) technologies.add("Eleventy");
 
     return Array.from(technologies);
   }
