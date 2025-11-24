@@ -5,7 +5,10 @@ import { promises as fs } from "fs";
 import path from "path";
 import { spawn, ChildProcess } from "child_process";
 import { z } from "zod";
-import type { MCPServerConfig, MCPToolSchema } from "../../core/execution-engine/types";
+import type {
+  MCPServerConfig,
+  MCPToolSchema,
+} from "../../core/execution-engine/types";
 import { Logger } from "../../core/utils/logger";
 
 // Configuration constants
@@ -39,19 +42,23 @@ const MCPRegistryEntrySchema = z.object({
     requiresInstall: z.boolean(),
   }),
   env: z.object({
-    required: z.array(z.object({
-      name: z.string(),
-      description: z.string(),
-      type: z.string(),
-      secret: z.boolean().optional(),
-      example: z.string().optional(),
-    })),
-    optional: z.array(z.object({
-      name: z.string(),
-      description: z.string(),
-      default: z.string(),
-      type: z.string(),
-    })),
+    required: z.array(
+      z.object({
+        name: z.string(),
+        description: z.string(),
+        type: z.string(),
+        secret: z.boolean().optional(),
+        example: z.string().optional(),
+      }),
+    ),
+    optional: z.array(
+      z.object({
+        name: z.string(),
+        description: z.string(),
+        default: z.string(),
+        type: z.string(),
+      }),
+    ),
   }),
   features: z.array(z.string()),
   docs: z.string(),
@@ -65,29 +72,35 @@ const MCPRegistryEntrySchema = z.object({
 const MCPRegistrySchema = z.object({
   version: z.string(),
   servers: z.record(MCPRegistryEntrySchema),
-  categories: z.record(z.object({
-    name: z.string(),
-    description: z.string(),
-    icon: z.string(),
-  })),
+  categories: z.record(
+    z.object({
+      name: z.string(),
+      description: z.string(),
+      icon: z.string(),
+    }),
+  ),
 });
 
 const JSONRPCResponseSchema = z.object({
   jsonrpc: z.literal("2.0"),
   id: z.number(),
   result: z.any().optional(),
-  error: z.object({
-    code: z.number(),
-    message: z.string(),
-  }).optional(),
+  error: z
+    .object({
+      code: z.number(),
+      message: z.string(),
+    })
+    .optional(),
 });
 
 const MCPConfigSchema = z.object({
-  mcpServers: z.record(z.object({
-    command: z.string(),
-    args: z.array(z.string()),
-    env: z.record(z.string()).optional(),
-  })),
+  mcpServers: z.record(
+    z.object({
+      command: z.string(),
+      args: z.array(z.string()),
+      env: z.record(z.string()).optional(),
+    }),
+  ),
 });
 
 // Types
@@ -120,7 +133,9 @@ interface JSONRPCRequest {
 /**
  * Main command: Add new MCP server
  */
-export async function mcpAddCommand(options: AddMCPOptions = {}): Promise<void> {
+export async function mcpAddCommand(
+  options: AddMCPOptions = {},
+): Promise<void> {
   logger.info("Starting MCP add command");
   console.log(chalk.blue.bold("\n🔌 Add MCP Server\n"));
 
@@ -158,12 +173,10 @@ export async function mcpAddCommand(options: AddMCPOptions = {}): Promise<void> 
       process.exit(0);
     }
 
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
     logger.error("Failed to add MCP server", { error: errorMessage });
-    console.error(
-      chalk.red("\n❌ Failed to add MCP server:"),
-      errorMessage
-    );
+    console.error(chalk.red("\n❌ Failed to add MCP server:"), errorMessage);
     process.exit(1);
   }
 }
@@ -172,21 +185,29 @@ export async function mcpAddCommand(options: AddMCPOptions = {}): Promise<void> 
  * Load MCP registry from JSON file with validation
  */
 async function loadMCPRegistry(): Promise<MCPRegistry> {
-  const registryPath = path.join(__dirname, "../../core/configurators/mcp-registry.json");
+  const registryPath = path.join(
+    __dirname,
+    "../../core/configurators/mcp-registry.json",
+  );
 
   try {
     logger.debug("Loading MCP registry", { path: registryPath });
     const content = await fs.readFile(registryPath, "utf-8");
     const parsed = JSON.parse(content);
     const validated = MCPRegistrySchema.parse(parsed);
-    logger.debug("MCP registry loaded", { serverCount: Object.keys(validated.servers).length });
+    logger.debug("MCP registry loaded", {
+      serverCount: Object.keys(validated.servers).length,
+    });
     return validated;
   } catch (error) {
     if (error instanceof z.ZodError) {
       logger.error("Invalid registry format", { errors: error.errors });
-      throw new Error(`Invalid MCP registry format: ${error.errors[0].message}`);
+      throw new Error(
+        `Invalid MCP registry format: ${error.errors[0].message}`,
+      );
     }
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
     logger.error("Failed to load MCP registry", { error: errorMessage });
     throw new Error(`Failed to load MCP registry: ${errorMessage}`);
   }
@@ -197,7 +218,7 @@ async function loadMCPRegistry(): Promise<MCPRegistry> {
  */
 async function selectMCPServer(
   registry: MCPRegistry,
-  providedName?: string
+  providedName?: string,
 ): Promise<MCPRegistryEntry> {
   // If name provided, find in registry
   if (providedName) {
@@ -207,7 +228,9 @@ async function selectMCPServer(
       return entry;
     }
     logger.warn("Provided MCP not found in registry", { name: providedName });
-    console.log(chalk.yellow(`\n⚠️  MCP "${providedName}" not found in registry`));
+    console.log(
+      chalk.yellow(`\n⚠️  MCP "${providedName}" not found in registry`),
+    );
   }
 
   // Build choices grouped by category
@@ -221,7 +244,9 @@ async function selectMCPServer(
     }
 
     const verified = server.verified ? chalk.green("✓") : chalk.gray("○");
-    const official = server.official ? chalk.blue("[Official]") : chalk.gray("[Community]");
+    const official = server.official
+      ? chalk.blue("[Official]")
+      : chalk.gray("[Community]");
 
     choicesByCategory[category].push({
       name: `${verified} ${server.displayName} - ${server.description} ${official}`,
@@ -237,7 +262,9 @@ async function selectMCPServer(
   const recommended = Object.entries(registry.servers)
     .filter(([, server]) => server.recommended)
     .map(([key, server]) => ({
-      name: chalk.bold.green(`⭐ ${server.displayName} - ${server.description}`),
+      name: chalk.bold.green(
+        `⭐ ${server.displayName} - ${server.description}`,
+      ),
       value: key,
       short: server.displayName,
     }));
@@ -245,30 +272,31 @@ async function selectMCPServer(
   if (recommended.length > 0) {
     choices.push(
       new inquirer.Separator(chalk.bold.cyan("\n━━━ Recommended ━━━")),
-      ...recommended
+      ...recommended,
     );
   }
 
   // Add categories
-  for (const [categoryKey, categoryServers] of Object.entries(choicesByCategory)) {
+  for (const [categoryKey, categoryServers] of Object.entries(
+    choicesByCategory,
+  )) {
     const categoryInfo = registry.categories[categoryKey];
     if (categoryInfo && categoryServers.length > 0) {
       choices.push(
-        new inquirer.Separator(chalk.bold(`\n${categoryInfo.icon}  ${categoryInfo.name}`)),
-        ...categoryServers
+        new inquirer.Separator(
+          chalk.bold(`\n${categoryInfo.icon}  ${categoryInfo.name}`),
+        ),
+        ...categoryServers,
       );
     }
   }
 
   // Add custom option
-  choices.push(
-    new inquirer.Separator(chalk.bold.yellow("\n━━━ Custom ━━━")),
-    {
-      name: chalk.yellow("🔧 Custom MCP Server (manual configuration)"),
-      value: "__custom__",
-      short: "Custom",
-    }
-  );
+  choices.push(new inquirer.Separator(chalk.bold.yellow("\n━━━ Custom ━━━")), {
+    name: chalk.yellow("🔧 Custom MCP Server (manual configuration)"),
+    value: "__custom__",
+    short: "Custom",
+  });
 
   // Prompt for selection
   const { selectedMCP } = await inquirer.prompt<{ selectedMCP: string }>([
@@ -298,7 +326,7 @@ function parseArguments(input: string): string[] {
   const matches = input.match(regex) || [];
 
   // Remove quotes from matched strings
-  return matches.map(arg => arg.replace(/^"(.*)"$/, "$1"));
+  return matches.map((arg) => arg.replace(/^"(.*)"$/, "$1"));
 }
 
 /**
@@ -339,7 +367,9 @@ async function validateScriptPath(scriptPath: string): Promise<string> {
 /**
  * Custom MCP configuration wizard
  */
-async function customMCPConfiguration(registry: MCPRegistry): Promise<MCPRegistryEntry> {
+async function customMCPConfiguration(
+  registry: MCPRegistry,
+): Promise<MCPRegistryEntry> {
   logger.info("Starting custom MCP configuration");
   console.log(chalk.cyan("\n🔧 Custom MCP Configuration\n"));
 
@@ -350,7 +380,8 @@ async function customMCPConfiguration(registry: MCPRegistry): Promise<MCPRegistr
       message: "MCP server name (lowercase, no spaces):",
       validate: (input: string) => {
         if (!input) return "Name is required";
-        if (!/^[a-z0-9-]+$/.test(input)) return "Use lowercase letters, numbers, and hyphens only";
+        if (!/^[a-z0-9-]+$/.test(input))
+          return "Use lowercase letters, numbers, and hyphens only";
         if (registry.servers[input]) return `MCP "${input}" already exists`;
         return true;
       },
@@ -359,15 +390,17 @@ async function customMCPConfiguration(registry: MCPRegistry): Promise<MCPRegistr
       type: "input",
       name: "displayName",
       message: "Display name:",
-      default: (answers: any) => answers.name.split("-").map((w: string) =>
-        w.charAt(0).toUpperCase() + w.slice(1)
-      ).join(" "),
+      default: (answers: any) =>
+        answers.name
+          .split("-")
+          .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(" "),
     },
     {
       type: "input",
       name: "description",
       message: "Description:",
-      validate: (input: string) => input ? true : "Description is required",
+      validate: (input: string) => (input ? true : "Description is required"),
     },
     {
       type: "list",
@@ -427,12 +460,13 @@ async function customMCPConfiguration(registry: MCPRegistry): Promise<MCPRegistr
         type: "input",
         name: "customCommand",
         message: "Command:",
-        validate: (input: string) => input ? true : "Command is required",
+        validate: (input: string) => (input ? true : "Command is required"),
       },
       {
         type: "input",
         name: "customArgs",
-        message: "Arguments (space-separated, use quotes for args with spaces):",
+        message:
+          "Arguments (space-separated, use quotes for args with spaces):",
       },
     ]);
     command = customCommand;
@@ -471,7 +505,7 @@ async function customMCPConfiguration(registry: MCPRegistry): Promise<MCPRegistr
  * Configure environment variables
  */
 async function configureEnvironmentVariables(
-  mcpEntry: MCPRegistryEntry
+  mcpEntry: MCPRegistryEntry,
 ): Promise<Record<string, string>> {
   const envConfig: Record<string, string> = {};
 
@@ -485,7 +519,8 @@ async function configureEnvironmentVariables(
           type: envVar.secret ? "password" : "input",
           name: "value",
           message: `${envVar.name}: ${envVar.description}${envVar.example ? `\n   Example: ${chalk.gray(envVar.example)}` : ""}`,
-          validate: (input: string) => input ? true : `${envVar.name} is required`,
+          validate: (input: string) =>
+            input ? true : `${envVar.name} is required`,
         },
       ]);
 
@@ -520,7 +555,9 @@ async function configureEnvironmentVariables(
 
         if (value !== envVar.default) {
           envConfig[envVar.name] = value;
-          logger.debug("Optional environment variable configured", { name: envVar.name });
+          logger.debug("Optional environment variable configured", {
+            name: envVar.name,
+          });
         }
       }
     }
@@ -534,7 +571,7 @@ async function configureEnvironmentVariables(
  */
 async function testMCPConnection(
   mcpEntry: MCPRegistryEntry,
-  envConfig: Record<string, string>
+  envConfig: Record<string, string>,
 ): Promise<MCPToolSchema[]> {
   let attempt = 0;
 
@@ -542,13 +579,16 @@ async function testMCPConnection(
     const spinner = ora("Testing MCP connection...").start();
 
     try {
-      logger.debug("Attempting MCP connection", { attempt: attempt + 1, server: mcpEntry.name });
+      logger.debug("Attempting MCP connection", {
+        attempt: attempt + 1,
+        server: mcpEntry.name,
+      });
 
       // Spawn MCP server process
       const client = new MCPClient(
         mcpEntry.installation.command,
         mcpEntry.installation.args,
-        envConfig
+        envConfig,
       );
 
       await client.connect();
@@ -558,7 +598,9 @@ async function testMCPConnection(
       // Get tools list
       const tools = await client.listTools();
 
-      spinner.succeed(`Connection successful! Found ${chalk.bold(tools.length)} tools`);
+      spinner.succeed(
+        `Connection successful! Found ${chalk.bold(tools.length)} tools`,
+      );
       logger.info("MCP connection successful", { toolCount: tools.length });
 
       await client.disconnect();
@@ -568,7 +610,8 @@ async function testMCPConnection(
       spinner.fail("Connection test failed");
       attempt++;
 
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       logger.error("Connection test failed", { attempt, error: errorMessage });
 
       if (attempt >= CONFIG.MAX_RETRIES) {
@@ -625,11 +668,14 @@ async function testMCPConnection(
 class MCPClient {
   private process: ChildProcess | null = null;
   private requestId = 0;
-  private pendingRequests = new Map<number, {
-    resolve: (value: any) => void;
-    reject: (error: Error) => void;
-    timeout: NodeJS.Timeout;
-  }>();
+  private pendingRequests = new Map<
+    number,
+    {
+      resolve: (value: any) => void;
+      reject: (error: Error) => void;
+      timeout: NodeJS.Timeout;
+    }
+  >();
   private stdoutHandler?: (data: Buffer) => void;
   private stderrHandler?: (data: Buffer) => void;
   private errorHandler?: (error: Error) => void;
@@ -640,7 +686,7 @@ class MCPClient {
   constructor(
     private command: string,
     private args: string[],
-    private env: Record<string, string>
+    private env: Record<string, string>,
   ) {}
 
   async connect(): Promise<void> {
@@ -671,7 +717,9 @@ class MCPClient {
               resolved = true;
               clearTimeout(timeoutHandle);
               this.cleanup();
-              reject(new Error("Buffer overflow: MCP server sent too much data"));
+              reject(
+                new Error("Buffer overflow: MCP server sent too much data"),
+              );
             }
             return;
           }
@@ -709,7 +757,9 @@ class MCPClient {
 
           // Buffer size limit
           if (this.errorBuffer.length > CONFIG.MAX_BUFFER_SIZE) {
-            this.errorBuffer = this.errorBuffer.substring(0, CONFIG.MAX_BUFFER_SIZE) + "\n[Buffer limit reached]";
+            this.errorBuffer =
+              this.errorBuffer.substring(0, CONFIG.MAX_BUFFER_SIZE) +
+              "\n[Buffer limit reached]";
           }
         };
 
@@ -734,7 +784,11 @@ class MCPClient {
               resolved = true;
               clearTimeout(timeoutHandle);
               this.cleanup();
-              reject(new Error(`MCP server exited with code ${code}\n${this.errorBuffer}`));
+              reject(
+                new Error(
+                  `MCP server exited with code ${code}\n${this.errorBuffer}`,
+                ),
+              );
             }
           }
         };
@@ -826,7 +880,10 @@ class MCPClient {
     }));
   }
 
-  private async request<T = unknown>(method: string, params: unknown = {}): Promise<T> {
+  private async request<T = unknown>(
+    method: string,
+    params: unknown = {},
+  ): Promise<T> {
     return new Promise((resolve, reject) => {
       if (!this.process || !this.process.stdin) {
         reject(new Error("MCP client not connected"));
@@ -874,7 +931,10 @@ class MCPClient {
     this.pendingRequests.delete(response.id);
 
     if (response.error) {
-      logger.error("JSON-RPC error", { id: response.id, error: response.error });
+      logger.error("JSON-RPC error", {
+        id: response.id,
+        error: response.error,
+      });
       pending.reject(new Error(`JSON-RPC error: ${response.error.message}`));
     } else {
       logger.debug("JSON-RPC response received", { id: response.id });
@@ -888,13 +948,13 @@ class MCPClient {
  */
 async function generateToolSchema(
   mcpName: string,
-  tools: MCPToolSchema[]
+  tools: MCPToolSchema[],
 ): Promise<void> {
   const schemaPath = path.join(
     process.cwd(),
     "templates",
     "mcp-tools",
-    `${mcpName}-tools.json`
+    `${mcpName}-tools.json`,
   );
 
   // Ensure directory exists
@@ -915,8 +975,15 @@ async function generateToolSchema(
 
   await fs.writeFile(schemaPath, JSON.stringify(schema, null, 2));
 
-  console.log(chalk.green(`\n✓ Generated schema: ${chalk.bold(path.relative(process.cwd(), schemaPath))}`));
-  logger.info("Schema generated", { path: schemaPath, toolCount: tools.length });
+  console.log(
+    chalk.green(
+      `\n✓ Generated schema: ${chalk.bold(path.relative(process.cwd(), schemaPath))}`,
+    ),
+  );
+  logger.info("Schema generated", {
+    path: schemaPath,
+    toolCount: tools.length,
+  });
 }
 
 /**
@@ -924,7 +991,7 @@ async function generateToolSchema(
  */
 async function saveMCPConfiguration(
   mcpEntry: MCPRegistryEntry,
-  envConfig: Record<string, string>
+  envConfig: Record<string, string>,
 ): Promise<void> {
   const configPath = path.join(process.cwd(), ".claude", ".mcp.json");
 
@@ -936,7 +1003,9 @@ async function saveMCPConfiguration(
     config = MCPConfigSchema.parse(parsed);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      logger.warn("Existing config invalid, creating new", { errors: error.errors });
+      logger.warn("Existing config invalid, creating new", {
+        errors: error.errors,
+      });
     }
     config = { mcpServers: {} };
   }
@@ -954,8 +1023,15 @@ async function saveMCPConfiguration(
   // Write config
   await fs.writeFile(configPath, JSON.stringify(config, null, 2));
 
-  console.log(chalk.green(`\n✓ Configuration saved: ${chalk.bold(path.relative(process.cwd(), configPath))}`));
-  logger.info("Configuration saved", { path: configPath, server: mcpEntry.name });
+  console.log(
+    chalk.green(
+      `\n✓ Configuration saved: ${chalk.bold(path.relative(process.cwd(), configPath))}`,
+    ),
+  );
+  logger.info("Configuration saved", {
+    path: configPath,
+    server: mcpEntry.name,
+  });
 }
 
 /**
@@ -963,7 +1039,7 @@ async function saveMCPConfiguration(
  */
 function displaySuccessMessage(
   mcpEntry: MCPRegistryEntry,
-  tools: MCPToolSchema[]
+  tools: MCPToolSchema[],
 ): void {
   console.log(chalk.green.bold("\n✨ MCP Server Added Successfully!\n"));
 
@@ -992,8 +1068,12 @@ function displaySuccessMessage(
   }
 
   console.log(chalk.cyan("\n💡 Next steps:"));
-  console.log(chalk.gray("  • The MCP server is now available in your project"));
-  console.log(chalk.gray("  • Claude will automatically discover and use the tools"));
+  console.log(
+    chalk.gray("  • The MCP server is now available in your project"),
+  );
+  console.log(
+    chalk.gray("  • Claude will automatically discover and use the tools"),
+  );
   console.log(chalk.gray("  • Check .claude/.mcp.json for configuration"));
 
   console.log();

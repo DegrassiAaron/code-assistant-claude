@@ -67,7 +67,7 @@ export class MonorepoDetector {
 
   constructor(
     private projectRoot: string,
-    options: MonorepoDetectorOptions = {}
+    options: MonorepoDetectorOptions = {},
   ) {
     // Validazione configurazione
     if (options.maxWorkspaces !== undefined && options.maxWorkspaces <= 0) {
@@ -77,10 +77,11 @@ export class MonorepoDetector {
       throw new Error("timeoutMs must be greater than 0");
     }
 
-    this.maxWorkspaces = options.maxWorkspaces ?? MonorepoDetector.DEFAULT_MAX_WORKSPACES;
+    this.maxWorkspaces =
+      options.maxWorkspaces ?? MonorepoDetector.DEFAULT_MAX_WORKSPACES;
     this.timeoutMs = Math.min(
       options.timeoutMs ?? MonorepoDetector.DEFAULT_TIMEOUT_MS,
-      MonorepoDetector.MAX_TIMEOUT_MS
+      MonorepoDetector.MAX_TIMEOUT_MS,
     );
     this.enableCache = options.enableCache ?? true;
   }
@@ -118,12 +119,12 @@ export class MonorepoDetector {
         const detected = await this.withTimeout(
           detector(),
           this.timeoutMs,
-          "Detector timeout"
+          "Detector timeout",
         );
         if (detected.isMonorepo) {
           Object.assign(result, detected);
           this.logger.verbose(
-            `Detected ${detected.tool} monorepo with ${detected.workspaces.length} workspaces`
+            `Detected ${detected.tool} monorepo with ${detected.workspaces.length} workspaces`,
           );
           break;
         }
@@ -133,7 +134,7 @@ export class MonorepoDetector {
       if (result.isMonorepo) {
         result.crossLanguage = this.isCrossLanguage(result.workspaces);
         this.logger.verbose(
-          `Cross-language: ${result.crossLanguage ? "yes" : "no"}`
+          `Cross-language: ${result.crossLanguage ? "yes" : "no"}`,
         );
       }
 
@@ -163,12 +164,12 @@ export class MonorepoDetector {
   // Helper: lettura file sicura con limite dimensione
   private async readFileSafe(
     filePath: string,
-    maxSizeBytes: number = MonorepoDetector.MAX_FILE_SIZE_BYTES
+    maxSizeBytes: number = MonorepoDetector.MAX_FILE_SIZE_BYTES,
   ): Promise<string> {
     const stats = await fs.stat(filePath);
     if (stats.size > maxSizeBytes) {
       throw new Error(
-        `File too large: ${filePath} (${stats.size} bytes, max ${maxSizeBytes})`
+        `File too large: ${filePath} (${stats.size} bytes, max ${maxSizeBytes})`,
       );
     }
     return fs.readFile(filePath, "utf-8");
@@ -181,7 +182,9 @@ export class MonorepoDetector {
 
       // Risolvi symlink per prevenire path traversal
       const realPath = await fs.realpath(resolved).catch(() => resolved);
-      const realRoot = await fs.realpath(this.projectRoot).catch(() => this.projectRoot);
+      const realRoot = await fs
+        .realpath(this.projectRoot)
+        .catch(() => this.projectRoot);
 
       return realPath.startsWith(realRoot);
     } catch {
@@ -193,12 +196,12 @@ export class MonorepoDetector {
   private async withTimeout<T>(
     promise: Promise<T>,
     timeoutMs: number,
-    errorMessage: string
+    errorMessage: string,
   ): Promise<T> {
     return Promise.race([
       promise,
       new Promise<T>((_, reject) =>
-        setTimeout(() => reject(new Error(errorMessage)), timeoutMs)
+        setTimeout(() => reject(new Error(errorMessage)), timeoutMs),
       ),
     ]);
   }
@@ -206,7 +209,7 @@ export class MonorepoDetector {
   // Helper: glob con cache LRU
   private async cachedGlob(
     pattern: string,
-    options: { cwd: string; absolute?: boolean; ignore?: string[] }
+    options: { cwd: string; absolute?: boolean; ignore?: string[] },
   ): Promise<string[]> {
     if (!this.enableCache) {
       return glob(pattern, options);
@@ -230,8 +233,9 @@ export class MonorepoDetector {
 
     // Implementazione LRU: rimuovi entry più vecchia se superato limite
     if (this.globCache.size > MonorepoDetector.MAX_CACHE_ENTRIES) {
-      const entries = Array.from(this.globCache.entries())
-        .sort((a, b) => a[1].timestamp - b[1].timestamp);
+      const entries = Array.from(this.globCache.entries()).sort(
+        (a, b) => a[1].timestamp - b[1].timestamp,
+      );
       const oldestEntry = entries[0];
       if (oldestEntry) {
         const oldestKey = oldestEntry[0];
@@ -247,7 +251,7 @@ export class MonorepoDetector {
   private limitWorkspaces(workspaces: WorkspaceInfo[]): WorkspaceInfo[] {
     if (workspaces.length > this.maxWorkspaces) {
       this.logger.warn(
-        `Limiting workspaces from ${workspaces.length} to ${this.maxWorkspaces}`
+        `Limiting workspaces from ${workspaces.length} to ${this.maxWorkspaces}`,
       );
       return workspaces.slice(0, this.maxWorkspaces);
     }
@@ -255,10 +259,7 @@ export class MonorepoDetector {
   }
 
   // Helper: parse XML semplice per Maven (migliorato per gestire commenti)
-  private parseSimpleXml(
-    content: string,
-    tagName: string
-  ): string[] | null {
+  private parseSimpleXml(content: string, tagName: string): string[] | null {
     // Rimuovi commenti XML prima del parsing
     const cleanContent = content.replace(/<!--[\s\S]*?-->/g, "");
 
@@ -266,7 +267,7 @@ export class MonorepoDetector {
     // Pattern più robusto che gestisce whitespace e newlines
     const tagPattern = new RegExp(
       `<${tagName}>\\s*([^<]+?)\\s*</${tagName}>`,
-      "g"
+      "g",
     );
     let match;
 
@@ -290,8 +291,8 @@ export class MonorepoDetector {
       }
 
       const lernaConfig = JSON.parse(await this.readFileSafe(lernaPath));
-      const packages =
-        lernaConfig.packages || lernaConfig.workspaces || ["packages/*"];
+      const packages = lernaConfig.packages ||
+        lernaConfig.workspaces || ["packages/*"];
 
       const workspaces = await this.findWorkspaces(packages);
 
@@ -352,7 +353,7 @@ export class MonorepoDetector {
       }
 
       const packageJson: PackageJson = JSON.parse(
-        await this.readFileSafe(packageJsonPath)
+        await this.readFileSafe(packageJsonPath),
       );
       const workspacesField = packageJson.workspaces;
 
@@ -369,7 +370,7 @@ export class MonorepoDetector {
 
       // Determina il tool (yarn o npm) in base al lockfile
       const yarnLock = await this.fileExists(
-        path.join(this.projectRoot, "yarn.lock")
+        path.join(this.projectRoot, "yarn.lock"),
       );
       const tool = yarnLock ? "yarn" : "npm";
 
@@ -457,7 +458,7 @@ export class MonorepoDetector {
 
       const workspaceResults = await Promise.all(workspacePromises);
       const workspaces = workspaceResults.filter(
-        (w): w is WorkspaceInfo => w !== null
+        (w): w is WorkspaceInfo => w !== null,
       );
 
       return {
@@ -489,16 +490,14 @@ export class MonorepoDetector {
       }
 
       // Parse TOML semplice per trovare members
-      const workspaceMatch = content.match(
-        /\[workspace\]([\s\S]*?)(?=\n\[|$)/
-      );
+      const workspaceMatch = content.match(/\[workspace\]([\s\S]*?)(?=\n\[|$)/);
       if (!workspaceMatch || !workspaceMatch[1]) {
         return this.emptyResult();
       }
 
       const workspaceSection = workspaceMatch[1];
       const membersMatch = workspaceSection.match(
-        /members\s*=\s*\[([\s\S]*?)\]/
+        /members\s*=\s*\[([\s\S]*?)\]/,
       );
       if (!membersMatch || !membersMatch[1]) {
         return this.emptyResult();
@@ -542,7 +541,7 @@ export class MonorepoDetector {
 
       const workspaceResults = await Promise.all(workspacePromises);
       const workspaces = workspaceResults.filter(
-        (w): w is WorkspaceInfo => w !== null
+        (w): w is WorkspaceInfo => w !== null,
       );
 
       return {
@@ -588,7 +587,7 @@ export class MonorepoDetector {
         const modulePomPath = path.join(
           this.projectRoot,
           modulePath,
-          "pom.xml"
+          "pom.xml",
         );
 
         if (await this.fileExists(modulePomPath)) {
@@ -609,7 +608,7 @@ export class MonorepoDetector {
 
       const workspaceResults = await Promise.all(workspacePromises);
       const workspaces = workspaceResults.filter(
-        (w): w is WorkspaceInfo => w !== null
+        (w): w is WorkspaceInfo => w !== null,
       );
 
       return {
@@ -667,10 +666,10 @@ export class MonorepoDetector {
         const fullPath = path.join(this.projectRoot, relativePath);
 
         const buildGradle = await this.fileExists(
-          path.join(fullPath, "build.gradle")
+          path.join(fullPath, "build.gradle"),
         );
         const buildGradleKts = await this.fileExists(
-          path.join(fullPath, "build.gradle.kts")
+          path.join(fullPath, "build.gradle.kts"),
         );
 
         if (buildGradle || buildGradleKts) {
@@ -687,7 +686,7 @@ export class MonorepoDetector {
 
       const workspaceResults = await Promise.all(workspacePromises);
       const workspaces = workspaceResults.filter(
-        (w): w is WorkspaceInfo => w !== null
+        (w): w is WorkspaceInfo => w !== null,
       );
 
       return {
@@ -716,12 +715,12 @@ export class MonorepoDetector {
       // Poetry workspace support (experimental)
       if (content.includes("[tool.poetry.workspace]")) {
         const workspaceMatch = content.match(
-          /\[tool\.poetry\.workspace\]([\s\S]*?)(?=\n\[|$)/
+          /\[tool\.poetry\.workspace\]([\s\S]*?)(?=\n\[|$)/,
         );
         if (workspaceMatch && workspaceMatch[1]) {
           const workspaceSection = workspaceMatch[1];
           const membersMatch = workspaceSection.match(
-            /members\s*=\s*\[([\s\S]*?)\]/
+            /members\s*=\s*\[([\s\S]*?)\]/,
           );
           if (membersMatch && membersMatch[1]) {
             const members = membersMatch[1]
@@ -743,10 +742,10 @@ export class MonorepoDetector {
               if (!(await this.isPathSafe(match))) return null;
 
               const pyprojectExists = await this.fileExists(
-                path.join(this.projectRoot, match, "pyproject.toml")
+                path.join(this.projectRoot, match, "pyproject.toml"),
               );
               const setupExists = await this.fileExists(
-                path.join(this.projectRoot, match, "setup.py")
+                path.join(this.projectRoot, match, "setup.py"),
               );
 
               if (pyprojectExists || setupExists) {
@@ -763,7 +762,7 @@ export class MonorepoDetector {
 
             const workspaceResults = await Promise.all(workspacePromises);
             const workspaces = workspaceResults.filter(
-              (w): w is WorkspaceInfo => w !== null
+              (w): w is WorkspaceInfo => w !== null,
             );
 
             if (workspaces.length > 0) {
@@ -786,7 +785,7 @@ export class MonorepoDetector {
         {
           cwd: this.projectRoot,
           absolute: false,
-        }
+        },
       );
 
       // Usa costante per minimo packages
@@ -906,7 +905,7 @@ export class MonorepoDetector {
       }
 
       const packageJson: PackageJson = JSON.parse(
-        await this.readFileSafe(packageJsonPath)
+        await this.readFileSafe(packageJsonPath),
       );
       const workspacesField = packageJson.workspaces;
 
@@ -949,7 +948,7 @@ export class MonorepoDetector {
       }
 
       const packageJson: PackageJson = JSON.parse(
-        await this.readFileSafe(packageJsonPath)
+        await this.readFileSafe(packageJsonPath),
       );
       const workspacesField = packageJson.workspaces;
 
@@ -1001,15 +1000,18 @@ export class MonorepoDetector {
         const packageJsonPath = path.join(
           this.projectRoot,
           projectPath,
-          "package.json"
+          "package.json",
         );
 
         if (await this.fileExists(packageJsonPath)) {
           try {
             const packageJson: PackageJson = JSON.parse(
-              await this.readFileSafe(packageJsonPath)
+              await this.readFileSafe(packageJsonPath),
             );
-            const name = packageJson.name || project.packageName || path.basename(projectPath);
+            const name =
+              packageJson.name ||
+              project.packageName ||
+              path.basename(projectPath);
 
             const technologies =
               this.detectTechnologiesFromPackageJson(packageJson);
@@ -1022,7 +1024,10 @@ export class MonorepoDetector {
               hasOwnPackageManager: true,
             };
           } catch (error) {
-            this.logger.debug(`Failed to parse package.json at ${projectPath}`, error);
+            this.logger.debug(
+              `Failed to parse package.json at ${projectPath}`,
+              error,
+            );
             return null;
           }
         }
@@ -1031,7 +1036,7 @@ export class MonorepoDetector {
 
       const workspaceResults = await Promise.all(workspacePromises);
       const workspaces = workspaceResults.filter(
-        (w): w is WorkspaceInfo => w !== null
+        (w): w is WorkspaceInfo => w !== null,
       );
 
       return {
@@ -1057,7 +1062,7 @@ export class MonorepoDetector {
         cwd: this.projectRoot,
         absolute: false,
         ignore: ["**/node_modules/**"],
-      })
+      }),
     );
 
     const results = await Promise.all(globPromises);
@@ -1070,13 +1075,13 @@ export class MonorepoDetector {
       const packageJsonPath = path.join(
         this.projectRoot,
         match,
-        "package.json"
+        "package.json",
       );
 
       if (await this.fileExists(packageJsonPath)) {
         try {
           const packageJson: PackageJson = JSON.parse(
-            await this.readFileSafe(packageJsonPath)
+            await this.readFileSafe(packageJsonPath),
           );
           const name = packageJson.name || path.basename(match);
 
@@ -1104,7 +1109,7 @@ export class MonorepoDetector {
   }
 
   private detectTechnologiesFromPackageJson(
-    packageJson: PackageJson
+    packageJson: PackageJson,
   ): string[] {
     const technologies = new Set<string>();
 
