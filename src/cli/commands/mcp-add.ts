@@ -5,10 +5,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import { spawn, ChildProcess } from "child_process";
 import { z } from "zod";
-import type {
-  MCPServerConfig,
-  MCPToolSchema,
-} from "../../core/execution-engine/types";
+import type { MCPToolSchema } from "../../core/execution-engine/types";
 import { Logger } from "../../core/utils/logger";
 
 // Configuration constants
@@ -22,7 +19,8 @@ const CONFIG = {
 
 const logger = new Logger("mcp-add");
 
-// Zod schemas for validation
+// Zod schemas for validation (used for type inference)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const JSONSchemaSchema = z.object({
   type: z.string(),
   properties: z.record(z.any()).optional(),
@@ -203,7 +201,7 @@ async function loadMCPRegistry(): Promise<MCPRegistry> {
     if (error instanceof z.ZodError) {
       logger.error("Invalid registry format", { errors: error.errors });
       throw new Error(
-        `Invalid MCP registry format: ${error.errors[0].message}`,
+        `Invalid MCP registry format: ${error.errors[0]?.message || "Unknown validation error"}`,
       );
     }
     const errorMessage =
@@ -314,7 +312,12 @@ async function selectMCPServer(
     return await customMCPConfiguration(registry);
   }
 
-  return registry.servers[selectedMCP];
+  const selectedServer = registry.servers[selectedMCP];
+  if (!selectedServer) {
+    throw new Error(`Selected MCP server "${selectedMCP}" not found in registry`);
+  }
+
+  return selectedServer;
 }
 
 /**
@@ -741,7 +744,7 @@ class MCPClient {
                   clearTimeout(timeoutHandle);
                   resolve();
                 }
-              } catch (e) {
+              } catch (_e) {
                 // Ignore non-JSON lines or validation errors
                 logger.debug("Ignored non-JSON line from stdout", { line });
               }
