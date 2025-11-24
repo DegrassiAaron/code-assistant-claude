@@ -21,5 +21,5 @@ git status
 
 Write-Host "`n✅ Line endings normalized!" -ForegroundColor Green
 Write-Host "Now you can commit the changes with:" -ForegroundColor Cyan
-$commitCmd = '  git commit -m "fix: normalize line endings to LF"'
-Write-Host $commitCmd -ForegroundColor White
+Write-Host "  git commit -m " -NoNewline -ForegroundColor White
+Write-Host '"fix: normalize line endings to LF"' -ForegroundColor White
