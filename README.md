@@ -74,6 +74,50 @@ Try it:
 • "/sc:business-panel @strategy.pdf" → 9-expert strategic analysis
 ```
 
+### Debug & Verbose Modes
+
+**See exactly what's happening under the hood**:
+
+```bash
+# Normal mode (default)
+code-assistant-claude init
+
+# Verbose mode - detailed progress + timing
+code-assistant-claude init --verbose
+
+# Debug mode - full internal operations + JSON dumps
+code-assistant-claude init --debug
+
+# With timestamps
+code-assistant-claude init --debug --timestamps
+
+# Quiet mode - errors only (for CI/CD)
+code-assistant-claude init --quiet
+```
+
+**Debug Output Example**:
+```
+[CLI] 🐛 Log level: debug
+[CLI] 🐛 Node version: v22.21.1
+[CLI] 🐛 CWD: /tmp/my-project
+
+[ProjectAnalyzer] 🐛 Starting project analysis
+[ProjectAnalyzer] [1/3] Detecting tech stack
+[ProjectAnalyzer] ◆ Detected: React Application
+[ProjectAnalyzer] 🐛 Tech stack: {
+  "languages": ["typescript"],
+  "frameworks": ["react"],
+  "tools": ["vite", "vitest"]
+}
+[ProjectAnalyzer] ◆ Project analysis completed in 28ms
+```
+
+**When to Use**:
+- 🟢 **Normal**: Everyday use
+- 🔵 **Verbose** (`--verbose`): Understanding what the framework is doing
+- 🟣 **Debug** (`--debug`): Troubleshooting, development, or learning internals
+- ⚪ **Quiet** (`--quiet`): CI/CD pipelines, automated scripts
+
 ---
 
 ## 💡 Key Features
