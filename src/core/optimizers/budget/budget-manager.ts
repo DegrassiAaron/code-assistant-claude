@@ -31,7 +31,7 @@ export interface BudgetStatus {
   remaining: number;
   allocation: BudgetAllocation;
   percentage: number;
-  status: "healthy" | "warning" | "critical";
+  status: 'healthy' | 'warning' | 'critical';
 }
 
 export interface UsageSnapshot {
@@ -76,7 +76,7 @@ export class BudgetManager {
   private validateConfig(config: BudgetConfig): void {
     // Validate total is positive
     if (config.total <= 0) {
-      throw new Error("Budget total must be positive");
+      throw new Error('Budget total must be positive');
     }
 
     // Validate allocation sums to 1.0 (within tolerance)
@@ -84,7 +84,7 @@ export class BudgetManager {
     if (Math.abs(sum - 1.0) > BudgetManager.ALLOCATION_TOLERANCE) {
       throw new Error(
         `Allocation must sum to 1.0, got ${sum.toFixed(4)}. ` +
-          `Individual allocations: ${JSON.stringify(config.allocation)}`,
+          `Individual allocations: ${JSON.stringify(config.allocation)}`
       );
     }
 
@@ -92,7 +92,7 @@ export class BudgetManager {
     for (const [category, percentage] of Object.entries(config.allocation)) {
       if (percentage < 0) {
         throw new Error(
-          `Allocation for ${category} cannot be negative: ${percentage}`,
+          `Allocation for ${category} cannot be negative: ${percentage}`
         );
       }
     }
@@ -102,10 +102,10 @@ export class BudgetManager {
    * Initialize category tracking
    */
   private initializeCategories(): void {
-    this.categoryUsage.set("reserved", 0);
-    this.categoryUsage.set("system", 0);
-    this.categoryUsage.set("dynamic", 0);
-    this.categoryUsage.set("working", 0);
+    this.categoryUsage.set('reserved', 0);
+    this.categoryUsage.set('system', 0);
+    this.categoryUsage.set('dynamic', 0);
+    this.categoryUsage.set('working', 0);
   }
 
   /**
@@ -115,9 +115,9 @@ export class BudgetManager {
     const allocation = this.calculateAllocation();
     const percentage = (this.currentUsage / this.config.total) * 100;
 
-    let status: "healthy" | "warning" | "critical" = "healthy";
-    if (percentage > BudgetManager.CRITICAL_THRESHOLD) status = "critical";
-    else if (percentage > BudgetManager.WARNING_THRESHOLD) status = "warning";
+    let status: 'healthy' | 'warning' | 'critical' = 'healthy';
+    if (percentage > BudgetManager.CRITICAL_THRESHOLD) status = 'critical';
+    else if (percentage > BudgetManager.WARNING_THRESHOLD) status = 'warning';
 
     return {
       total: this.config.total,
@@ -176,7 +176,7 @@ export class BudgetManager {
     const current = this.categoryUsage.get(category) || 0;
     if (current < tokens) {
       throw new Error(
-        `Cannot untrack ${tokens} tokens from ${category}. Only ${current} tokens tracked.`,
+        `Cannot untrack ${tokens} tokens from ${category}. Only ${current} tokens tracked.`
       );
     }
 
@@ -242,7 +242,7 @@ export class BudgetManager {
    */
   hasBudgetAvailable(
     category: keyof BudgetAllocation,
-    tokens: number,
+    tokens: number
   ): boolean {
     const allocation = this.calculateAllocation();
     const currentCategoryUsage = this.categoryUsage.get(category) || 0;
@@ -322,13 +322,13 @@ export class BudgetManager {
    * Allocate budget dynamically based on usage patterns
    */
   reallocate(
-    priorities: Partial<Record<keyof BudgetAllocation, number>>,
+    priorities: Partial<Record<keyof BudgetAllocation, number>>
   ): void {
     // Normalize priorities
     const total = Object.values(priorities).reduce((sum, val) => sum + val, 0);
 
     if (total === 0) {
-      throw new Error("Cannot reallocate with zero total priority");
+      throw new Error('Cannot reallocate with zero total priority');
     }
 
     const newAllocation = { ...this.config.allocation };
@@ -358,12 +358,12 @@ export class BudgetManager {
     if (status.percentage > BudgetManager.CRITICAL_THRESHOLD) {
       recommendations.push(
         `Critical: Token usage above ${BudgetManager.CRITICAL_THRESHOLD}%. ` +
-          "Consider optimizing prompts or increasing budget.",
+          'Consider optimizing prompts or increasing budget.'
       );
     } else if (status.percentage > BudgetManager.WARNING_THRESHOLD) {
       recommendations.push(
         `Warning: Token usage above ${BudgetManager.WARNING_THRESHOLD}%. ` +
-          "Monitor closely to avoid hitting limits.",
+          'Monitor closely to avoid hitting limits.'
       );
     }
 
@@ -372,23 +372,23 @@ export class BudgetManager {
       if (stats.percentage > 90) {
         recommendations.push(
           `${category} category is at ${stats.percentage.toFixed(1)}% capacity. ` +
-            "Consider reallocating budget.",
+            'Consider reallocating budget.'
         );
       }
     }
 
     // Reallocation suggestions
     const underutilized = Object.entries(breakdown).filter(
-      ([_, stats]) => stats.percentage < 50,
+      ([_, stats]) => stats.percentage < 50
     );
     const overutilized = Object.entries(breakdown).filter(
-      ([_, stats]) => stats.percentage > 80,
+      ([_, stats]) => stats.percentage > 80
     );
 
     if (underutilized.length > 0 && overutilized.length > 0) {
       recommendations.push(
-        `Consider reallocating budget from ${underutilized.map(([c]) => c).join(", ")} ` +
-          `to ${overutilized.map(([c]) => c).join(", ")}`,
+        `Consider reallocating budget from ${underutilized.map(([c]) => c).join(', ')} ` +
+          `to ${overutilized.map(([c]) => c).join(', ')}`
       );
     }
 
@@ -412,7 +412,7 @@ export const budgetManager = new BudgetManager();
  * Factory function for creating new instances (useful for testing)
  */
 export function createBudgetManager(
-  config?: Partial<BudgetConfig>,
+  config?: Partial<BudgetConfig>
 ): BudgetManager {
   return new BudgetManager(config);
 }

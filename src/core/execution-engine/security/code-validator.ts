@@ -1,6 +1,6 @@
-import { SecurityValidation, SecurityIssue } from "../types";
-import { promises as fs } from "fs";
-import path from "path";
+import { SecurityValidation, SecurityIssue } from '../types';
+import { promises as fs } from 'fs';
+import path from 'path';
 
 /**
  * Validates generated code for security issues
@@ -89,9 +89,7 @@ export class CodeValidator {
     const timeoutPromise = new Promise<never>((_, reject) => {
       timeoutId = setTimeout(() => {
         reject(
-          new Error(
-            `Pattern loading timed out after ${this.INIT_TIMEOUT_MS}ms`,
-          ),
+          new Error(`Pattern loading timed out after ${this.INIT_TIMEOUT_MS}ms`)
         );
       }, this.INIT_TIMEOUT_MS);
     });
@@ -114,7 +112,7 @@ export class CodeValidator {
 
       // Intentionally using console.warn for critical security initialization failures
       // This ensures visibility in all environments before logging infrastructure is ready
-      console.warn("Pattern loading failed, using hardcoded patterns:", error);
+      console.warn('Pattern loading failed, using hardcoded patterns:', error);
     }
   }
 
@@ -125,15 +123,15 @@ export class CodeValidator {
     try {
       const dangerousPath = path.join(
         __dirname,
-        "patterns/dangerous-patterns.json",
+        'patterns/dangerous-patterns.json'
       );
 
       // Try to load from files
       try {
-        const dangerousData = await fs.readFile(dangerousPath, "utf-8");
+        const dangerousData = await fs.readFile(dangerousPath, 'utf-8');
         const dangerous = JSON.parse(dangerousData);
         this.dangerousPatterns = dangerous.patterns.map(
-          (p: string) => new RegExp(p, "g"),
+          (p: string) => new RegExp(p, 'g')
         );
       } catch {
         // Use hardcoded patterns
@@ -207,11 +205,11 @@ export class CodeValidator {
 
       for (const match of matches) {
         issues.push({
-          severity: "critical",
-          type: "dangerous_pattern",
+          severity: 'critical',
+          type: 'dangerous_pattern',
           description: `Blocked pattern detected: ${pattern.source}`,
           line: this.getLineNumber(code, match.index || 0),
-          suggestion: "Remove or replace with safe alternative",
+          suggestion: 'Remove or replace with safe alternative',
         });
       }
     }
@@ -231,11 +229,11 @@ export class CodeValidator {
 
       for (const match of matches) {
         issues.push({
-          severity: "medium",
-          type: "suspicious_pattern",
+          severity: 'medium',
+          type: 'suspicious_pattern',
           description: `Suspicious pattern detected: ${pattern.source}`,
           line: this.getLineNumber(code, match.index || 0),
-          suggestion: "Review for security implications",
+          suggestion: 'Review for security implications',
         });
       }
     }
@@ -256,7 +254,7 @@ export class CodeValidator {
 
     const totalScore = issues.reduce(
       (sum, issue) => sum + severityScores[issue.severity],
-      0,
+      0
     );
 
     // Normalize to 0-100
@@ -267,6 +265,6 @@ export class CodeValidator {
    * Get line number from character index
    */
   private getLineNumber(code: string, index: number): number {
-    return code.substring(0, index).split("\n").length;
+    return code.substring(0, index).split('\n').length;
   }
 }

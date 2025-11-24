@@ -37,7 +37,7 @@ describe('validation', () => {
 
     it('should reject paths outside cwd', () => {
       expect(() => validateProjectRoot('/tmp/outside'))
-        .toThrow('must be within current working directory');
+        .toThrow('must be within the repository or the system temporary directory');
     });
   });
 

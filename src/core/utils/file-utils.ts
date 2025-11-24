@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { promises as fs } from "fs";
-import path from "path";
+import { promises as fs } from 'fs';
+import path from 'path';
 
 /**
  * Check if a file or directory exists
@@ -25,7 +25,7 @@ export async function fileExists(filePath: string): Promise<boolean> {
  */
 export async function readFileSafe(filePath: string): Promise<string | null> {
   try {
-    return await fs.readFile(filePath, "utf-8");
+    return await fs.readFile(filePath, 'utf-8');
   } catch {
     return null;
   }
@@ -38,10 +38,10 @@ export async function readFileSafe(filePath: string): Promise<string | null> {
  * @returns Parsed object or null if not found/invalid
  */
 export async function readJsonSafe<T = any>(
-  filePath: string,
+  filePath: string
 ): Promise<T | null> {
   try {
-    const content = await fs.readFile(filePath, "utf-8");
+    const content = await fs.readFile(filePath, 'utf-8');
     return JSON.parse(content) as T;
   } catch {
     return null;
@@ -65,9 +65,9 @@ export async function ensureDir(dirPath: string): Promise<void> {
  */
 export async function writeFileSafe(
   filePath: string,
-  content: string,
+  content: string
 ): Promise<void> {
   const dir = path.dirname(filePath);
   await ensureDir(dir);
-  await fs.writeFile(filePath, content, "utf-8");
+  await fs.writeFile(filePath, content, 'utf-8');
 }

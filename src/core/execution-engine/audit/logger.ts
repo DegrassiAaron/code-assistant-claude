@@ -1,6 +1,6 @@
-import { AuditLogEntry, ExecutionResult } from "../types";
-import { promises as fs } from "fs";
-import path from "path";
+import { AuditLogEntry, ExecutionResult } from '../types';
+import { promises as fs } from 'fs';
+import path from 'path';
 
 /**
  * Execution audit logger
@@ -12,17 +12,17 @@ export class AuditLogger {
   private maxLogsInMemory: number = 1000;
 
   constructor(logFile?: string) {
-    this.logFile = logFile || path.join(process.cwd(), "logs/mcp-audit.log");
+    this.logFile = logFile || path.join(process.cwd(), 'logs/mcp-audit.log');
   }
 
   /**
    * Log an entry
    */
   async log(
-    type: AuditLogEntry["type"],
-    severity: AuditLogEntry["severity"],
+    type: AuditLogEntry['type'],
+    severity: AuditLogEntry['severity'],
     message: string,
-    metadata?: Record<string, unknown>,
+    metadata?: Record<string, unknown>
   ): Promise<void> {
     const entry: AuditLogEntry = {
       timestamp: new Date(),
@@ -50,9 +50,9 @@ export class AuditLogger {
     workspaceId: string,
     code: string,
     result: ExecutionResult,
-    metadata?: Record<string, unknown>,
+    metadata?: Record<string, unknown>
   ): Promise<void> {
-    await this.log("execution", "info", "Code execution completed", {
+    await this.log('execution', 'info', 'Code execution completed', {
       workspaceId,
       codeLength: code.length,
       success: result.success,
@@ -65,11 +65,11 @@ export class AuditLogger {
    * Log security event
    */
   async logSecurity(
-    severity: AuditLogEntry["severity"],
+    severity: AuditLogEntry['severity'],
     message: string,
-    metadata?: Record<string, unknown>,
+    metadata?: Record<string, unknown>
   ): Promise<void> {
-    await this.log("security", severity, message, metadata);
+    await this.log('security', severity, message, metadata);
   }
 
   /**
@@ -78,9 +78,9 @@ export class AuditLogger {
   async logDiscovery(
     query: string,
     toolsFound: number,
-    metadata?: Record<string, unknown>,
+    metadata?: Record<string, unknown>
   ): Promise<void> {
-    await this.log("discovery", "info", "Tool discovery completed", {
+    await this.log('discovery', 'info', 'Tool discovery completed', {
       query,
       toolsFound,
       ...metadata,
@@ -93,9 +93,9 @@ export class AuditLogger {
   async logError(
     error: Error,
     context?: string,
-    metadata?: Record<string, unknown>,
+    metadata?: Record<string, unknown>
   ): Promise<void> {
-    await this.log("error", "error", error.message, {
+    await this.log('error', 'error', error.message, {
       stack: error.stack,
       context,
       ...metadata,
@@ -112,7 +112,7 @@ export class AuditLogger {
   /**
    * Get logs by type
    */
-  getLogsByType(type: AuditLogEntry["type"], limit?: number): AuditLogEntry[] {
+  getLogsByType(type: AuditLogEntry['type'], limit?: number): AuditLogEntry[] {
     const filtered = this.logs.filter((log) => log.type === type);
     return limit ? filtered.slice(-limit) : filtered;
   }
@@ -121,8 +121,8 @@ export class AuditLogger {
    * Get logs by severity
    */
   getLogsBySeverity(
-    severity: AuditLogEntry["severity"],
-    limit?: number,
+    severity: AuditLogEntry['severity'],
+    limit?: number
   ): AuditLogEntry[] {
     const filtered = this.logs.filter((log) => log.severity === severity);
     return limit ? filtered.slice(-limit) : filtered;
@@ -138,12 +138,12 @@ export class AuditLogger {
       await fs.mkdir(logDir, { recursive: true });
 
       // Format log entry
-      const logLine = JSON.stringify(entry) + "\n";
+      const logLine = JSON.stringify(entry) + '\n';
 
       // Append to file
       await fs.appendFile(this.logFile, logLine);
     } catch (error) {
-      console.error("Failed to write to audit log:", error);
+      console.error('Failed to write to audit log:', error);
     }
   }
 

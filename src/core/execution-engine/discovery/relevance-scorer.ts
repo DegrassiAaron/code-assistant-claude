@@ -1,4 +1,4 @@
-import type { MCPToolSchema } from "../types";
+import type { MCPToolSchema } from '../types';
 
 interface ScoredTool {
   tool: MCPToolSchema;
@@ -17,7 +17,7 @@ export class RelevanceScorer {
   getTopNTools(
     tools: MCPToolSchema[],
     query: string,
-    n: number,
+    n: number
   ): MCPToolSchema[] {
     if (n <= 0) return [];
     const scored = this.scoreTools(tools, query);
@@ -27,7 +27,7 @@ export class RelevanceScorer {
   scoreTool(tool: MCPToolSchema, query: string): number {
     const lowerQuery = query.toLowerCase();
     const lowerName = tool.name.toLowerCase();
-    const lowerDesc = (tool.description || "").toLowerCase();
+    const lowerDesc = (tool.description || '').toLowerCase();
     let score = 0;
 
     if (lowerName === lowerQuery) score += 1.0;
@@ -51,7 +51,7 @@ export class RelevanceScorer {
 
   filterByThreshold(
     scoredTools: ScoredTool[],
-    threshold: number,
+    threshold: number
   ): ScoredTool[] {
     return scoredTools.filter((st) => st.score >= threshold);
   }

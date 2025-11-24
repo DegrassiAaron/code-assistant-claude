@@ -39,7 +39,7 @@ export class HierarchicalDisclosure {
    * Create hierarchical content from flat structure
    */
   createHierarchy(
-    sections: Array<{ title: string; content: string; level: number }>,
+    sections: Array<{ title: string; content: string; level: number }>
   ): DisclosureLevel[] {
     const root: DisclosureLevel[] = [];
     const stack: DisclosureLevel[] = [];
@@ -83,7 +83,7 @@ export class HierarchicalDisclosure {
   disclose(
     hierarchy: DisclosureLevel[],
     depth: number,
-    options?: Partial<DisclosureOptions>,
+    options?: Partial<DisclosureOptions>
   ): DisclosedContent {
     const opts = { ...this.defaultOptions, ...options };
     const rendered = this.renderHierarchy(hierarchy, depth, opts);
@@ -91,7 +91,7 @@ export class HierarchicalDisclosure {
     const totalContent = this.renderHierarchy(
       hierarchy,
       Number.MAX_SAFE_INTEGER,
-      opts,
+      opts
     );
     const totalAvailable = this.estimateTokens(totalContent);
 
@@ -110,13 +110,13 @@ export class HierarchicalDisclosure {
     nodes: DisclosureLevel[],
     maxDepth: number,
     options: DisclosureOptions,
-    currentDepth = 0,
+    currentDepth = 0
   ): string {
-    let output = "";
+    let output = '';
 
     for (const node of nodes) {
-      const indent = "  ".repeat(currentDepth);
-      const prefix = "#".repeat(node.level);
+      const indent = '  '.repeat(currentDepth);
+      const prefix = '#'.repeat(node.level);
 
       // Render title
       output += `${indent}${prefix} ${node.title}\n\n`;
@@ -140,7 +140,7 @@ export class HierarchicalDisclosure {
               node.children,
               maxDepth,
               options,
-              currentDepth + 1,
+              currentDepth + 1
             );
           }
         }
@@ -170,11 +170,11 @@ export class HierarchicalDisclosure {
     // Try to break at sentence boundary
     const sentences = content.split(/[.!?]\s+/);
     if (sentences.length > 0 && (sentences[0]?.length || 0) <= maxLength) {
-      return (sentences[0] || "") + ".";
+      return (sentences[0] || '') + '.';
     }
 
     // Otherwise truncate
-    return content.substring(0, maxLength - 3) + "...";
+    return content.substring(0, maxLength - 3) + '...';
   }
 
   /**
@@ -189,7 +189,7 @@ export class HierarchicalDisclosure {
    * Create table of contents
    */
   createTOC(hierarchy: DisclosureLevel[], maxDepth = 3): string {
-    let toc = "## Table of Contents\n\n";
+    let toc = '## Table of Contents\n\n';
     toc += this.renderTOC(hierarchy, maxDepth);
     return toc;
   }
@@ -200,14 +200,14 @@ export class HierarchicalDisclosure {
   private renderTOC(
     nodes: DisclosureLevel[],
     maxDepth: number,
-    currentDepth = 0,
+    currentDepth = 0
   ): string {
-    if (currentDepth >= maxDepth) return "";
+    if (currentDepth >= maxDepth) return '';
 
-    let toc = "";
+    let toc = '';
 
     for (const node of nodes) {
-      const indent = "  ".repeat(currentDepth);
+      const indent = '  '.repeat(currentDepth);
       toc += `${indent}- ${node.title}\n`;
 
       if (node.children && node.children.length > 0) {
@@ -224,7 +224,7 @@ export class HierarchicalDisclosure {
   expandSection(
     hierarchy: DisclosureLevel[],
     path: number[],
-    options?: Partial<DisclosureOptions>,
+    options?: Partial<DisclosureOptions>
   ): DisclosedContent {
     const opts = { ...this.defaultOptions, ...options };
     let current = hierarchy;
@@ -239,7 +239,7 @@ export class HierarchicalDisclosure {
 
     if (!selectedNode) {
       return {
-        rendered: "",
+        rendered: '',
         tokensUsed: 0,
         totalAvailable: 0,
         compressionRatio: 0,

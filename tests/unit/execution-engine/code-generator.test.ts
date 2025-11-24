@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+/// <reference types="vitest" />
 import { CodeAPIGenerator } from '../../../src/core/execution-engine/mcp-code-api/generator';
 import { MCPToolSchema } from '../../../src/core/execution-engine/types';
 
@@ -35,7 +35,7 @@ describe('CodeAPIGenerator', () => {
     expect(wrapper.code).toContain('testFunction');
     expect(wrapper.code).toContain('param1: string');
     expect(wrapper.code).toContain('param2?: number');
-    expect(wrapper.code).toContain('Promise<Record<string, any>>');
+    expect(wrapper.code).toContain('Promise<Record<string, unknown>>');
   });
 
   it('should generate Python wrapper code', async () => {

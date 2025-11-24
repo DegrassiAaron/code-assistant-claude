@@ -1,15 +1,15 @@
-import inquirer from "inquirer";
-import ora from "ora";
-import chalk from "chalk";
-import { promises as fs } from "fs";
-import path from "path";
-import os from "os";
-import AsyncLock from "async-lock";
+import inquirer from 'inquirer';
+import ora from 'ora';
+import chalk from 'chalk';
+import { promises as fs } from 'fs';
+import path from 'path';
+import os from 'os';
+import AsyncLock from 'async-lock';
 import {
   ProjectAnalyzer,
   type ProjectContext,
-} from "../../core/analyzers/project-analyzer";
-import { ConfigurationGenerator } from "../../core/configurators/config-generator";
+} from '../../core/analyzers/project-analyzer';
+import { ConfigurationGenerator } from '../../core/configurators/config-generator';
 
 // Global lock to prevent race conditions
 const initLock = new AsyncLock();
@@ -32,16 +32,16 @@ interface InitOptions {
 }
 
 interface SetupAnswers {
-  installType: "local" | "global" | "both";
-  verbosity: "verbose" | "balanced" | "compressed";
+  installType: 'local' | 'global' | 'both';
+  verbosity: 'verbose' | 'balanced' | 'compressed';
   enableSkills: string[];
   enableMCPs: string[];
 }
 
 export async function initCommand(options: InitOptions): Promise<void> {
-  console.log(chalk.blue.bold("\n🚀 Code Assistant Claude Setup\n"));
+  console.log(chalk.blue.bold('\n🚀 Code Assistant Claude Setup\n'));
   console.log(
-    chalk.gray("Intelligent framework for Claude Code CLI optimization\n"),
+    chalk.gray('Intelligent framework for Claude Code CLI optimization\n')
   );
 
   try {
@@ -49,10 +49,10 @@ export async function initCommand(options: InitOptions): Promise<void> {
     await checkExistingInstallation(options);
 
     // Step 2: Analyze project
-    const spinner = ora("Analyzing project...").start();
+    const spinner = ora('Analyzing project...').start();
     const analyzer = new ProjectAnalyzer();
     const projectContext = await analyzer.analyze(process.cwd());
-    spinner.succeed("Project analysis complete");
+    spinner.succeed('Project analysis complete');
 
     // Display detected project information
     displayProjectInfo(projectContext);
@@ -63,7 +63,7 @@ export async function initCommand(options: InitOptions): Promise<void> {
     // Step 4: Generate configuration
     if (options.dryRun) {
       console.log(
-        chalk.yellow("\n📋 Dry run mode - No changes will be made\n"),
+        chalk.yellow('\n📋 Dry run mode - No changes will be made\n')
       );
       await previewConfiguration(projectContext, answers);
     } else {
@@ -74,16 +74,16 @@ export async function initCommand(options: InitOptions): Promise<void> {
     displaySuccessMessage(answers, options.dryRun);
   } catch (error) {
     console.error(
-      chalk.red("\n❌ Setup failed:"),
-      error instanceof Error ? error.message : "Unknown error",
+      chalk.red('\n❌ Setup failed:'),
+      error instanceof Error ? error.message : 'Unknown error'
     );
     process.exit(1);
   }
 }
 
 async function checkExistingInstallation(options: InitOptions): Promise<void> {
-  const localConfigPath = path.join(process.cwd(), ".claude");
-  const globalConfigPath = path.join(os.homedir(), ".claude");
+  const localConfigPath = path.join(process.cwd(), '.claude');
+  const globalConfigPath = path.join(os.homedir(), '.claude');
 
   const localExists = await fs
     .access(localConfigPath)
@@ -95,7 +95,7 @@ async function checkExistingInstallation(options: InitOptions): Promise<void> {
     .catch(() => false);
 
   if ((localExists || globalExists) && !options.force) {
-    console.log(chalk.yellow("\n⚠️  Existing installation detected\n"));
+    console.log(chalk.yellow('\n⚠️  Existing installation detected\n'));
 
     if (localExists) {
       console.log(chalk.gray(`  Local:  ${localConfigPath}`));
@@ -106,15 +106,15 @@ async function checkExistingInstallation(options: InitOptions): Promise<void> {
 
     const { proceed } = await inquirer.prompt([
       {
-        type: "confirm",
-        name: "proceed",
-        message: "Overwrite existing configuration?",
+        type: 'confirm',
+        name: 'proceed',
+        message: 'Overwrite existing configuration?',
         default: false,
       },
     ]);
 
     if (!proceed) {
-      console.log(chalk.gray("\nSetup cancelled.\n"));
+      console.log(chalk.gray('\nSetup cancelled.\n'));
       process.exit(0);
     }
   }
@@ -124,26 +124,26 @@ async function checkExistingInstallation(options: InitOptions): Promise<void> {
  * Display detected project information to user
  */
 function displayProjectInfo(projectContext: ProjectContext): void {
-  console.log(chalk.green("\n✓ Project detected:\n"));
+  console.log(chalk.green('\n✓ Project detected:\n'));
 
-  console.log(chalk.cyan("  Type:"), projectContext.type || "Unknown");
+  console.log(chalk.cyan('  Type:'), projectContext.type || 'Unknown');
 
   if (projectContext.techStack && projectContext.techStack.length > 0) {
     console.log(
-      chalk.cyan("  Tech Stack:"),
-      projectContext.techStack.join(", "),
+      chalk.cyan('  Tech Stack:'),
+      projectContext.techStack.join(', ')
     );
   }
 
   if (projectContext.domain && projectContext.domain.length > 0) {
-    console.log(chalk.cyan("  Domain:"), projectContext.domain.join(", "));
+    console.log(chalk.cyan('  Domain:'), projectContext.domain.join(', '));
   }
 
   if (projectContext.gitWorkflow) {
-    console.log(chalk.cyan("  Git Workflow:"), projectContext.gitWorkflow);
+    console.log(chalk.cyan('  Git Workflow:'), projectContext.gitWorkflow);
   }
 
-  console.log("");
+  console.log('');
 }
 
 /**
@@ -151,47 +151,47 @@ function displayProjectInfo(projectContext: ProjectContext): void {
  */
 async function promptSetupQuestions(
   projectContext: ProjectContext,
-  options: InitOptions,
+  options: InitOptions
 ): Promise<SetupAnswers> {
   const questions = [];
 
   // Installation scope
   if (!options.local && !options.global) {
     questions.push({
-      type: "list",
-      name: "installType",
-      message: "Installation scope:",
+      type: 'list',
+      name: 'installType',
+      message: 'Installation scope:',
       choices: [
-        { name: "Project only (.claude/)", value: "local" },
-        { name: "Global only (~/.claude/)", value: "global" },
-        { name: "Both (recommended)", value: "both" },
+        { name: 'Project only (.claude/)', value: 'local' },
+        { name: 'Global only (~/.claude/)', value: 'global' },
+        { name: 'Both (recommended)', value: 'both' },
       ],
-      default: "both",
+      default: 'both',
     });
   }
 
   // Verbosity mode
   questions.push({
-    type: "list",
-    name: "verbosity",
-    message: "Default verbosity mode:",
+    type: 'list',
+    name: 'verbosity',
+    message: 'Default verbosity mode:',
     choices: [
-      { name: "Verbose (detailed, full context)", value: "verbose" },
+      { name: 'Verbose (detailed, full context)', value: 'verbose' },
       {
-        name: "Balanced (moderate, optimized) - recommended",
-        value: "balanced",
+        name: 'Balanced (moderate, optimized) - recommended',
+        value: 'balanced',
       },
-      { name: "Compressed (minimal, efficient)", value: "compressed" },
+      { name: 'Compressed (minimal, efficient)', value: 'compressed' },
     ],
-    default: "balanced",
+    default: 'balanced',
   });
 
   // Skills selection
   const recommendedSkills = getRecommendedSkills(projectContext);
   questions.push({
-    type: "checkbox",
-    name: "enableSkills",
-    message: "Select skills to enable:",
+    type: 'checkbox',
+    name: 'enableSkills',
+    message: 'Select skills to enable:',
     choices: recommendedSkills.map((skill) => ({
       name: `${skill.name} - ${skill.description}`,
       value: skill.name,
@@ -202,9 +202,9 @@ async function promptSetupQuestions(
   // MCPs selection
   const recommendedMCPs = getRecommendedMCPs(projectContext);
   questions.push({
-    type: "checkbox",
-    name: "enableMCPs",
-    message: "Select MCP servers to enable:",
+    type: 'checkbox',
+    name: 'enableMCPs',
+    message: 'Select MCP servers to enable:',
     choices: recommendedMCPs.map((mcp) => ({
       name: `${mcp.name} - ${mcp.description}`,
       value: mcp.name,
@@ -216,9 +216,9 @@ async function promptSetupQuestions(
 
   // Determine installation type from options if provided
   if (options.local) {
-    answers.installType = "local";
+    answers.installType = 'local';
   } else if (options.global) {
-    answers.installType = "global";
+    answers.installType = 'global';
   }
 
   return answers as SetupAnswers;
@@ -228,59 +228,59 @@ async function promptSetupQuestions(
  * Get recommended skills based on project context
  */
 function getRecommendedSkills(
-  projectContext: ProjectContext,
+  projectContext: ProjectContext
 ): Array<{ name: string; description: string; recommended: boolean }> {
   const allSkills = [
     {
-      name: "code-reviewer",
-      description: "Automatic code review on save",
+      name: 'code-reviewer',
+      description: 'Automatic code review on save',
       recommended: true,
     },
     {
-      name: "test-generator",
-      description: "Generate comprehensive tests",
+      name: 'test-generator',
+      description: 'Generate comprehensive tests',
       recommended: true,
     },
     {
-      name: "git-commit-helper",
-      description: "Conventional commit messages",
+      name: 'git-commit-helper',
+      description: 'Conventional commit messages',
       recommended: true,
     },
     {
-      name: "security-auditor",
-      description: "Vulnerability scanning",
+      name: 'security-auditor',
+      description: 'Vulnerability scanning',
       recommended: true,
     },
     {
-      name: "frontend-design",
-      description: "UI best practices",
+      name: 'frontend-design',
+      description: 'UI best practices',
       recommended: false,
     },
     {
-      name: "api-designer",
-      description: "RESTful API patterns",
+      name: 'api-designer',
+      description: 'RESTful API patterns',
       recommended: false,
     },
     {
-      name: "business-panel",
-      description: "Strategic analysis (9 experts)",
+      name: 'business-panel',
+      description: 'Strategic analysis (9 experts)',
       recommended: false,
     },
   ];
 
   // Customize recommendations based on project type
   if (
-    projectContext.techStack?.includes("react") ||
-    projectContext.techStack?.includes("vue")
+    projectContext.techStack?.includes('react') ||
+    projectContext.techStack?.includes('vue')
   ) {
-    allSkills.find((s) => s.name === "frontend-design")!.recommended = true;
+    allSkills.find((s) => s.name === 'frontend-design')!.recommended = true;
   }
 
   if (
-    projectContext.type?.includes("api") ||
-    projectContext.techStack?.includes("express")
+    projectContext.type?.includes('api') ||
+    projectContext.techStack?.includes('express')
   ) {
-    allSkills.find((s) => s.name === "api-designer")!.recommended = true;
+    allSkills.find((s) => s.name === 'api-designer')!.recommended = true;
   }
 
   return allSkills;
@@ -290,48 +290,48 @@ function getRecommendedSkills(
  * Get recommended MCP servers based on project context
  */
 function getRecommendedMCPs(
-  projectContext: ProjectContext,
+  projectContext: ProjectContext
 ): Array<{ name: string; description: string; recommended: boolean }> {
   const allMCPs = [
     {
-      name: "serena",
-      description: "Project memory & symbol operations",
+      name: 'serena',
+      description: 'Project memory & symbol operations',
       recommended: true,
     },
     {
-      name: "sequential",
-      description: "Multi-step reasoning",
+      name: 'sequential',
+      description: 'Multi-step reasoning',
       recommended: true,
     },
     {
-      name: "tavily",
-      description: "Web search & real-time info",
+      name: 'tavily',
+      description: 'Web search & real-time info',
       recommended: true,
     },
     {
-      name: "magic",
-      description: "UI components from 21st.dev",
+      name: 'magic',
+      description: 'UI components from 21st.dev',
       recommended: false,
     },
     {
-      name: "playwright",
-      description: "Browser automation & testing",
+      name: 'playwright',
+      description: 'Browser automation & testing',
       recommended: false,
     },
     {
-      name: "context7",
-      description: "Official documentation lookup",
+      name: 'context7',
+      description: 'Official documentation lookup',
       recommended: false,
     },
   ];
 
   // Customize recommendations
   if (
-    projectContext.techStack?.includes("react") ||
-    projectContext.techStack?.includes("vue")
+    projectContext.techStack?.includes('react') ||
+    projectContext.techStack?.includes('vue')
   ) {
-    allMCPs.find((m) => m.name === "magic")!.recommended = true;
-    allMCPs.find((m) => m.name === "playwright")!.recommended = true;
+    allMCPs.find((m) => m.name === 'magic')!.recommended = true;
+    allMCPs.find((m) => m.name === 'playwright')!.recommended = true;
   }
 
   return allMCPs;
@@ -342,28 +342,28 @@ function getRecommendedMCPs(
  */
 async function previewConfiguration(
   _projectContext: ProjectContext,
-  answers: SetupAnswers,
+  answers: SetupAnswers
 ): Promise<void> {
-  console.log(chalk.yellow("\n📋 Configuration Preview:\n"));
-  console.log(chalk.gray("  Installation:"), answers.installType);
-  console.log(chalk.gray("  Verbosity:"), answers.verbosity);
-  console.log(chalk.gray("  Skills:"), answers.enableSkills.join(", "));
-  console.log(chalk.gray("  MCPs:"), answers.enableMCPs.join(", "));
+  console.log(chalk.yellow('\n📋 Configuration Preview:\n'));
+  console.log(chalk.gray('  Installation:'), answers.installType);
+  console.log(chalk.gray('  Verbosity:'), answers.verbosity);
+  console.log(chalk.gray('  Skills:'), answers.enableSkills.join(', '));
+  console.log(chalk.gray('  MCPs:'), answers.enableMCPs.join(', '));
 
-  console.log(chalk.yellow("\n📊 Estimated Token Savings:\n"));
+  console.log(chalk.yellow('\n📊 Estimated Token Savings:\n'));
   const savings = calculateTokenSavings(answers);
   console.log(
-    chalk.gray("  MCP Code Execution:"),
-    chalk.green("98.7% reduction"),
+    chalk.gray('  MCP Code Execution:'),
+    chalk.green('98.7% reduction')
   );
   console.log(
-    chalk.gray("  Progressive Skills:"),
-    chalk.green("95% reduction"),
+    chalk.gray('  Progressive Skills:'),
+    chalk.green('95% reduction')
   );
-  console.log(chalk.gray("  Symbol System:"), chalk.green("30-50% reduction"));
+  console.log(chalk.gray('  Symbol System:'), chalk.green('30-50% reduction'));
   console.log(
-    chalk.gray("  Total Average:"),
-    chalk.green.bold(`${savings}% per session`),
+    chalk.gray('  Total Average:'),
+    chalk.green.bold(`${savings}% per session`)
   );
 }
 
@@ -373,30 +373,30 @@ async function previewConfiguration(
 async function generateConfiguration(
   projectContext: ProjectContext,
   answers: SetupAnswers,
-  _options: InitOptions,
+  _options: InitOptions
 ): Promise<void> {
-  const spinner = ora("Generating configuration...").start();
+  const spinner = ora('Generating configuration...').start();
 
   try {
     const generator = new ConfigurationGenerator();
 
     // Acquire lock to prevent concurrent init operations
-    await initLock.acquire("init-operation", async () => {
+    await initLock.acquire('init-operation', async () => {
       // Generate configuration based on installation type
-      if (answers.installType === "local" || answers.installType === "both") {
+      if (answers.installType === 'local' || answers.installType === 'both') {
         await generator.generateLocal(process.cwd(), projectContext, answers);
-        spinner.text = "Generated local configuration (.claude/)";
+        spinner.text = 'Generated local configuration (.claude/)';
       }
 
-      if (answers.installType === "global" || answers.installType === "both") {
+      if (answers.installType === 'global' || answers.installType === 'both') {
         await generator.generateGlobal(projectContext, answers);
-        spinner.text = "Generated global configuration (~/.claude/)";
+        spinner.text = 'Generated global configuration (~/.claude/)';
       }
     });
 
-    spinner.succeed("Configuration generated successfully");
+    spinner.succeed('Configuration generated successfully');
   } catch (error) {
-    spinner.fail("Configuration generation failed");
+    spinner.fail('Configuration generation failed');
     throw error;
   }
 }
@@ -412,7 +412,7 @@ function calculateTokenSavings(answers: SetupAnswers): number {
     savings += TOKEN_SAVINGS.MANY_SKILLS;
   }
 
-  if (answers.verbosity === "compressed") {
+  if (answers.verbosity === 'compressed') {
     savings += TOKEN_SAVINGS.COMPRESSED_MODE;
   }
 
@@ -424,40 +424,40 @@ function calculateTokenSavings(answers: SetupAnswers): number {
  */
 function displaySuccessMessage(_answers: SetupAnswers, dryRun?: boolean): void {
   if (dryRun) {
-    console.log(chalk.yellow("\n✅ Dry run complete - No changes made\n"));
+    console.log(chalk.yellow('\n✅ Dry run complete - No changes made\n'));
     return;
   }
 
   console.log(
-    chalk.green.bold("\n✅ Code Assistant Claude configured successfully!\n"),
+    chalk.green.bold('\n✅ Code Assistant Claude configured successfully!\n')
   );
 
-  console.log(chalk.cyan("Token Savings Estimate:"));
-  console.log(chalk.gray("  • MCP Code Execution: 98.7% reduction"));
-  console.log(chalk.gray("  • Progressive Skills: 95% reduction"));
-  console.log(chalk.gray("  • Symbol System: 30-50% reduction"));
-  console.log(chalk.gray("  • Total Average: 60-70% per session\n"));
+  console.log(chalk.cyan('Token Savings Estimate:'));
+  console.log(chalk.gray('  • MCP Code Execution: 98.7% reduction'));
+  console.log(chalk.gray('  • Progressive Skills: 95% reduction'));
+  console.log(chalk.gray('  • Symbol System: 30-50% reduction'));
+  console.log(chalk.gray('  • Total Average: 60-70% per session\n'));
 
-  console.log(chalk.cyan("Try it:"));
+  console.log(chalk.cyan('Try it:'));
   console.log(
     chalk.gray(
-      '  • "Create a login form" → Auto-activates frontend-design + Magic MCP',
-    ),
-  );
-  console.log(
-    chalk.gray(
-      '  • "/sc:research microservices" → Deep research with Tavily + Sequential',
-    ),
+      '  • "Create a login form" → Auto-activates frontend-design + Magic MCP'
+    )
   );
   console.log(
     chalk.gray(
-      '  • "/sc:business-panel @strategy.pdf" → 9-expert strategic analysis\n',
-    ),
+      '  • "/sc:research microservices" → Deep research with Tavily + Sequential'
+    )
+  );
+  console.log(
+    chalk.gray(
+      '  • "/sc:business-panel @strategy.pdf" → 9-expert strategic analysis\n'
+    )
   );
 
   console.log(
-    chalk.gray("Run"),
-    chalk.cyan("code-assistant-claude --help"),
-    chalk.gray("for more commands.\n"),
+    chalk.gray('Run'),
+    chalk.cyan('code-assistant-claude --help'),
+    chalk.gray('for more commands.\n')
   );
 }

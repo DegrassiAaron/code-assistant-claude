@@ -21,9 +21,9 @@
  */
 export async function {{methodName}}(
   {{#each parameters}}
-  {{name}}{{#unless required}}?{{/unless}}: {{toTSType type}}{{#unless @last}},{{/unless}}
+  {{name}}{{#unless required}}?{{/unless}}: {{{toTSType type}}}{{#unless @last}},{{/unless}}
   {{/each}}
-): Promise<{{returnType}}> {
+): Promise<{{{returnType}}}> {
   // Implementation connects to actual MCP server
   const result = await mcpClient.call('{{name}}', {
     {{#each parameters}}

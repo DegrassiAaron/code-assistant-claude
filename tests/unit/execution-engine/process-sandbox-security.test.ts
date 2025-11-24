@@ -1,9 +1,55 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+/// <reference types="vitest" />
 import { ProcessSandbox } from '../../../src/core/execution-engine/sandbox/process-sandbox';
 import { SandboxConfig } from '../../../src/core/execution-engine/types';
+import { vi } from 'vitest';
+import type { ChildProcess } from 'child_process';
+import { EventEmitter } from 'events';
+
+vi.mock('child_process', () => {
+  class MockChildProcess extends EventEmitter {
+    stdout = new EventEmitter();
+    stderr = new EventEmitter();
+  }
+
+  return {
+    spawn: vi.fn(
+      (
+        _command: string,
+        _args: readonly string[],
+        options?: { env?: NodeJS.ProcessEnv }
+      ): ChildProcess => {
+        const proc = new MockChildProcess() as unknown as ChildProcess & {
+          stdout: EventEmitter;
+          stderr: EventEmitter;
+        };
+
+        setImmediate(() => {
+          const envSnapshot = { ...(options?.env ?? {}) };
+          const payload = JSON.stringify({ envSnapshot });
+          proc.stdout.emit('data', Buffer.from(payload));
+          proc.emit('close', 0, null);
+        });
+
+        return proc;
+      }
+    ),
+  };
+});
 
 describe('ProcessSandbox Security - Environment Variable Protection', () => {
   let sandbox: ProcessSandbox;
+  type SandboxResult = Awaited<ReturnType<ProcessSandbox['execute']>>;
+  const getOutput = (result: SandboxResult): string =>
+    typeof result.output === 'string' ? result.output : '';
+  const getEnvSnapshot = (
+    result: SandboxResult
+  ): Record<string, string> => {
+    const parsed = JSON.parse(getOutput(result) || '{}') as {
+      envSnapshot?: Record<string, string>;
+    };
+    return parsed.envSnapshot ?? {};
+  };
+
   const defaultConfig: SandboxConfig = {
     type: 'process',
     resourceLimits: {
@@ -54,9 +100,10 @@ print(json.dumps({'hasAWSKey': hasAWSKey, 'hasAWSSecret': hasAWSSecret}))
     const result = await sandbox.execute(code, 'python');
 
     expect(result.success).toBe(true);
-    expect(result.output).toBeTruthy();
-    expect(result.output).toContain('"hasAWSKey": false');
-    expect(result.output).toContain('"hasAWSSecret": false');
+    const output = getOutput(result);
+    expect(output).toBeTruthy();
+    expect(output).toContain('"hasAWSKey": false');
+    expect(output).toContain('"hasAWSSecret": false');
   });
 
   it('should NOT expose database credentials', async () => {
@@ -72,8 +119,9 @@ print(json.dumps({'hasDBPassword': hasDBPassword, 'hasDBUrl': hasDBUrl}))
     const result = await sandbox.execute(code, 'python');
 
     expect(result.success).toBe(true);
-    expect(result.output).toContain('"hasDBPassword": false');
-    expect(result.output).toContain('"hasDBUrl": false');
+    const output = getOutput(result);
+    expect(output).toContain('"hasDBPassword": false');
+    expect(output).toContain('"hasDBUrl": false');
   });
 
   it('should NOT expose API keys and tokens', async () => {
@@ -96,10 +144,11 @@ print(json.dumps({
     const result = await sandbox.execute(code, 'python');
 
     expect(result.success).toBe(true);
-    expect(result.output).toContain('"hasStripeKey": false');
-    expect(result.output).toContain('"hasGitHubToken": false');
-    expect(result.output).toContain('"hasAPIKey": false');
-    expect(result.output).toContain('"hasOpenAIKey": false');
+    const output = getOutput(result);
+    expect(output).toContain('"hasStripeKey": false');
+    expect(output).toContain('"hasGitHubToken": false');
+    expect(output).toContain('"hasAPIKey": false');
+    expect(output).toContain('"hasOpenAIKey": false');
   });
 
   it('should NOT expose JWT secrets', async () => {
@@ -114,7 +163,7 @@ print(json.dumps({'hasJWTSecret': hasJWTSecret}))
     const result = await sandbox.execute(code, 'python');
 
     expect(result.success).toBe(true);
-    expect(result.output).toContain('"hasJWTSecret": false');
+    expect(getOutput(result)).toContain('"hasJWTSecret": false');
   });
 
   it('should NOT expose any secret-like variables', async () => {
@@ -131,7 +180,7 @@ print(json.dumps({'count': len(secrets), 'secrets': secrets}))
     const result = await sandbox.execute(code, 'python');
 
     expect(result.success).toBe(true);
-    const parsed = JSON.parse(result.output!.trim());
+    const parsed = JSON.parse(getOutput(result).trim());
     expect(parsed.count).toBe(0);
     expect(parsed.secrets).toEqual([]);
   });
@@ -156,7 +205,7 @@ print(json.dumps({
     const result = await sandbox.execute(code, 'python');
 
     expect(result.success).toBe(true);
-    const parsed = JSON.parse(result.output!.trim());
+    const parsed = JSON.parse(getOutput(result).trim());
 
     // Safe variables should be present
     expect(parsed.hasNodeEnv).toBe(true);
@@ -194,7 +243,7 @@ print(json.dumps({
     const result = await sandbox.execute(maliciousCode, 'python');
 
     expect(result.success).toBe(true);
-    const parsed = JSON.parse(result.output!.trim());
+    const parsed = JSON.parse(getOutput(result).trim());
 
     // No credentials should be found
     expect(parsed.attemptedExfiltration).toBe(0);
@@ -230,7 +279,7 @@ print(json.dumps({
     const result = await sandbox.execute(code, 'python');
 
     expect(result.success).toBe(true);
-    const parsed = JSON.parse(result.output!.trim());
+    const parsed = JSON.parse(getOutput(result).trim());
 
     // All credential access attempts should return None
     expect(parsed.allNone).toBe(true);
@@ -253,7 +302,7 @@ print(json.dumps({
     const result = await sandbox.execute(code, 'python');
 
     expect(result.success).toBe(true);
-    const parsed = JSON.parse(result.output!.trim());
+    const parsed = JSON.parse(getOutput(result).trim());
 
     // These safe variables should be present
     expect(parsed.hasNodeEnv).toBe(true);
@@ -282,7 +331,7 @@ print(json.dumps({
     const result = await sandbox.execute(code, 'python');
 
     expect(result.success).toBe(true);
-    const parsed = JSON.parse(result.output!.trim());
+    const parsed = JSON.parse(getOutput(result).trim());
 
     // Both HOME and TMPDIR should point to the sandbox temp directory
     expect(parsed.homeSame).toBe(true);
@@ -316,7 +365,7 @@ print(json.dumps({
     const result = await customSandbox.execute(code, 'python');
 
     expect(result.success).toBe(true);
-    const parsed = JSON.parse(result.output!.trim());
+    const parsed = JSON.parse(getOutput(result).trim());
 
     // Custom allowed variables should be accessible
     expect(parsed.hasCustomVar).toBe(true);
@@ -373,9 +422,17 @@ print(json.dumps({
     const result = await sandbox.execute(code, 'python');
 
     expect(result.success).toBe(true);
-    const parsed = JSON.parse(result.output!.trim());
+    const parsed = JSON.parse(getOutput(result).trim());
 
     // Sandbox HOME should NOT be the host HOME directory
     expect(parsed.isHostHome).toBe(false);
   });
 });
+
+
+
+
+
+
+
+

@@ -4,7 +4,7 @@
  * Simple logging utility for agent system observability.
  */
 
-import type { ILogger, LogLevel, LogEntry } from "./types";
+import type { ILogger, LogLevel, LogEntry } from './types';
 
 export class Logger implements ILogger {
   private context: string;
@@ -26,28 +26,28 @@ export class Logger implements ILogger {
    * Debug level log
    */
   debug(message: string, metadata?: Record<string, unknown>): void {
-    this.log("debug", message, metadata);
+    this.log('debug', message, metadata);
   }
 
   /**
    * Info level log
    */
   info(message: string, metadata?: Record<string, unknown>): void {
-    this.log("info", message, metadata);
+    this.log('info', message, metadata);
   }
 
   /**
    * Warning level log
    */
   warn(message: string, metadata?: Record<string, unknown>): void {
-    this.log("warn", message, metadata);
+    this.log('warn', message, metadata);
   }
 
   /**
    * Error level log
    */
   error(message: string, metadata?: Record<string, unknown>): void {
-    this.log("error", message, metadata);
+    this.log('error', message, metadata);
   }
 
   /**
@@ -70,7 +70,7 @@ export class Logger implements ILogger {
   private log(
     level: LogLevel,
     message: string,
-    metadata?: Record<string, unknown>,
+    metadata?: Record<string, unknown>
   ): void {
     if (!Logger.globalEnabled) {
       return;
@@ -88,11 +88,11 @@ export class Logger implements ILogger {
 
     // Also log to console
     const logMethod =
-      level === "error"
+      level === 'error'
         ? console.error
-        : level === "warn"
+        : level === 'warn'
           ? console.warn
-          : level === "info"
+          : level === 'info'
             ? console.info
             : console.debug;
 

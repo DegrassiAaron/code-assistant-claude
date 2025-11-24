@@ -3,8 +3,8 @@
  * ASCII dashboard for token budget and usage
  */
 
-import { BudgetManager } from "./budget-manager";
-import { UsageMonitor } from "./usage-monitor";
+import { BudgetManager } from './budget-manager';
+import { UsageMonitor } from './usage-monitor';
 
 export interface VisualizationOptions {
   width: number;
@@ -24,7 +24,7 @@ export class Visualization {
 
   constructor(
     private budgetManager: BudgetManager,
-    private usageMonitor: UsageMonitor,
+    private usageMonitor: UsageMonitor
   ) {}
 
   /**
@@ -32,16 +32,16 @@ export class Visualization {
    */
   renderDashboard(options?: Partial<VisualizationOptions>): string {
     const opts = { ...this.defaultOptions, ...options };
-    let dashboard = "";
+    let dashboard = '';
 
     dashboard += this.renderHeader();
-    dashboard += "\n";
+    dashboard += '\n';
     dashboard += this.renderBudgetAllocation();
-    dashboard += "\n";
+    dashboard += '\n';
     dashboard += this.renderUsageBar(opts.width);
-    dashboard += "\n";
+    dashboard += '\n';
     dashboard += this.renderCategoryBreakdown();
-    dashboard += "\n";
+    dashboard += '\n';
     dashboard += this.renderRecentActivity();
 
     return dashboard;
@@ -52,11 +52,11 @@ export class Visualization {
    */
   private renderHeader(): string {
     let header =
-      "╔════════════════════════════════════════════════════════════╗\n";
+      '╔════════════════════════════════════════════════════════════╗\n';
     header +=
-      "║           📊 TOKEN BUDGET DASHBOARD                        ║\n";
+      '║           📊 TOKEN BUDGET DASHBOARD                        ║\n';
     header +=
-      "╚════════════════════════════════════════════════════════════╝\n";
+      '╚════════════════════════════════════════════════════════════╝\n';
 
     return header;
   }
@@ -69,9 +69,9 @@ export class Visualization {
     const allocation = status.allocation;
 
     let output =
-      "┌─ Budget Allocation ─────────────────────────────────────┐\n";
+      '┌─ Budget Allocation ─────────────────────────────────────┐\n';
     output += `│ Total Budget: ${status.total.toLocaleString().padEnd(43)} │\n`;
-    output += "├─────────────────────────────────────────────────────────┤\n";
+    output += '├─────────────────────────────────────────────────────────┤\n';
 
     output += `│ 🔒 Reserved (5%):    ${this.formatTokens(allocation.reserved).padEnd(30)} │\n`;
     output += `│ 🔧 System (5%):      ${this.formatTokens(allocation.system).padEnd(30)} │\n`;
@@ -80,7 +80,7 @@ export class Visualization {
     output += `│    └─ Skills:        ${this.formatTokens(Math.floor(allocation.dynamic / 2)).padEnd(30)} │\n`;
     output += `│ 💬 Working (75%):    ${this.formatTokens(allocation.working).padEnd(30)} │\n`;
 
-    output += "└─────────────────────────────────────────────────────────┘\n";
+    output += '└─────────────────────────────────────────────────────────┘\n';
 
     return output;
   }
@@ -97,18 +97,18 @@ export class Visualization {
     const statusEmoji = this.getStatusEmoji(status.status);
 
     let output =
-      "┌─ Current Usage ─────────────────────────────────────────┐\n";
+      '┌─ Current Usage ─────────────────────────────────────────┐\n';
     output += `│ ${statusEmoji} Status: ${status.status.toUpperCase().padEnd(45)} │\n`;
-    output += "├─────────────────────────────────────────────────────────┤\n";
+    output += '├─────────────────────────────────────────────────────────┤\n';
 
-    output += `│ Used: ${status.used.toLocaleString()} / ${status.total.toLocaleString()} tokens (${percentage.toFixed(1)}%)${" ".repeat(Math.max(0, 21 - status.used.toString().length))} │\n`;
+    output += `│ Used: ${status.used.toLocaleString()} / ${status.total.toLocaleString()} tokens (${percentage.toFixed(1)}%)${' '.repeat(Math.max(0, 21 - status.used.toString().length))} │\n`;
 
-    const bar = "█".repeat(filled) + "░".repeat(empty);
+    const bar = '█'.repeat(filled) + '░'.repeat(empty);
     output += `│ [${bar}] │\n`;
 
-    output += `│ Remaining: ${status.remaining.toLocaleString()} tokens${" ".repeat(Math.max(0, 37 - status.remaining.toString().length))} │\n`;
+    output += `│ Remaining: ${status.remaining.toLocaleString()} tokens${' '.repeat(Math.max(0, 37 - status.remaining.toString().length))} │\n`;
 
-    output += "└─────────────────────────────────────────────────────────┘\n";
+    output += '└─────────────────────────────────────────────────────────┘\n';
 
     return output;
   }
@@ -120,17 +120,17 @@ export class Visualization {
     const breakdown = this.budgetManager.getCategoryBreakdown();
 
     let output =
-      "┌─ Category Breakdown ────────────────────────────────────┐\n";
+      '┌─ Category Breakdown ────────────────────────────────────┐\n';
 
     for (const [category, stats] of Object.entries(breakdown)) {
       const bar = this.createMiniBar(stats.percentage, 20);
       const pct = stats.percentage.toFixed(1);
 
       output += `│ ${this.getCategoryEmoji(category)} ${category.padEnd(12)} ${bar} ${pct.padStart(5)}% │\n`;
-      output += `│    ${stats.used.toLocaleString().padStart(8)} / ${stats.allocated.toLocaleString().padEnd(8)} tokens${" ".repeat(16)} │\n`;
+      output += `│    ${stats.used.toLocaleString().padStart(8)} / ${stats.allocated.toLocaleString().padEnd(8)} tokens${' '.repeat(16)} │\n`;
     }
 
-    output += "└─────────────────────────────────────────────────────────┘\n";
+    output += '└─────────────────────────────────────────────────────────┘\n';
 
     return output;
   }
@@ -142,10 +142,10 @@ export class Visualization {
     const recentEvents = this.usageMonitor.getRecentEvents(5);
 
     let output =
-      "┌─ Recent Activity ───────────────────────────────────────┐\n";
+      '┌─ Recent Activity ───────────────────────────────────────┐\n';
 
     if (recentEvents.length === 0) {
-      output += "│ No recent activity                                      │\n";
+      output += '│ No recent activity                                      │\n';
     } else {
       for (const event of recentEvents.reverse()) {
         const time = new Date(event.timestamp).toLocaleTimeString();
@@ -156,7 +156,7 @@ export class Visualization {
       }
     }
 
-    output += "└─────────────────────────────────────────────────────────┘\n";
+    output += '└─────────────────────────────────────────────────────────┘\n';
 
     return output;
   }
@@ -168,17 +168,17 @@ export class Visualization {
     const filled = Math.floor((percentage / 100) * width);
     const empty = width - filled;
 
-    return "█".repeat(filled) + "░".repeat(empty);
+    return '█'.repeat(filled) + '░'.repeat(empty);
   }
 
   /**
    * Get status emoji
    */
-  private getStatusEmoji(status: "healthy" | "warning" | "critical"): string {
+  private getStatusEmoji(status: 'healthy' | 'warning' | 'critical'): string {
     const emojis = {
-      healthy: "🟢",
-      warning: "🟡",
-      critical: "🔴",
+      healthy: '🟢',
+      warning: '🟡',
+      critical: '🔴',
     };
 
     return emojis[status];
@@ -189,16 +189,16 @@ export class Visualization {
    */
   private getCategoryEmoji(category: string): string {
     const emojis: Record<string, string> = {
-      reserved: "🔒",
-      system: "🔧",
-      dynamic: "🔄",
-      working: "💬",
-      skills: "🎯",
-      mcps: "🔌",
-      code_execution: "⚙️",
+      reserved: '🔒',
+      system: '🔧',
+      dynamic: '🔄',
+      working: '💬',
+      skills: '🎯',
+      mcps: '🔌',
+      code_execution: '⚙️',
     };
 
-    return emojis[category] || "📦";
+    return emojis[category] || '📦';
   }
 
   /**
@@ -215,23 +215,23 @@ export class Visualization {
     const trends = this.usageMonitor.getTrends(intervalMs);
 
     if (trends.length === 0) {
-      return "No usage data available\n";
+      return 'No usage data available\n';
     }
 
     let output =
-      "┌─ Usage Trend ───────────────────────────────────────────┐\n";
+      '┌─ Usage Trend ───────────────────────────────────────────┐\n';
 
     const maxTokens = Math.max(...trends.map((t) => t.tokens), 1);
 
     for (const trend of trends.slice(-10)) {
       const time = new Date(trend.period).toLocaleTimeString();
       const barLength = Math.floor((trend.tokens / maxTokens) * 30);
-      const bar = "▓".repeat(barLength);
+      const bar = '▓'.repeat(barLength);
 
       output += `│ ${time} │ ${bar.padEnd(30)} ${trend.tokens.toString().padStart(6)} │\n`;
     }
 
-    output += "└─────────────────────────────────────────────────────────┘\n";
+    output += '└─────────────────────────────────────────────────────────┘\n';
 
     return output;
   }
@@ -255,16 +255,16 @@ export class Visualization {
     const savings = this.usageMonitor.calculateSavings(baselineTokens);
 
     let output =
-      "┌─ Token Savings Report ──────────────────────────────────┐\n";
+      '┌─ Token Savings Report ──────────────────────────────────┐\n';
     output += `│ Baseline:           ${savings.baseline.toLocaleString().padEnd(35)} │\n`;
     output += `│ Actual Usage:       ${savings.actual.toLocaleString().padEnd(35)} │\n`;
     output += `│ Tokens Saved:       ${savings.saved.toLocaleString().padEnd(35)} │\n`;
-    output += `│ Reduction:          ${savings.percentSaved.toFixed(1)}%${" ".repeat(32)} │\n`;
+    output += `│ Reduction:          ${savings.percentSaved.toFixed(1)}%${' '.repeat(32)} │\n`;
 
     const bar = this.createMiniBar(savings.percentSaved, 40);
     output += `│ [${bar}] │\n`;
 
-    output += "└─────────────────────────────────────────────────────────┘\n";
+    output += '└─────────────────────────────────────────────────────────┘\n';
 
     return output;
   }

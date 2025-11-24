@@ -1,5 +1,103 @@
+/// <reference types="vitest" />
 import { ContainerCleanupJob } from '../../../src/core/execution-engine/sandbox/container-cleanup-job';
 import Docker from 'dockerode';
+import { vi } from 'vitest';
+
+const mockContainers = new Map<
+  string,
+  {
+    Id: string;
+    Image: string;
+    Created: number;
+    Labels: Record<string, string>;
+  }
+>();
+
+let nextContainerId = 1;
+
+class MockContainer {
+  info: {
+    Id: string;
+    Image: string;
+    Created: number;
+    Labels: Record<string, string>;
+  };
+
+  constructor(info: {
+    Id: string;
+    Image: string;
+    Created: number;
+    Labels: Record<string, string>;
+  }) {
+    this.info = info;
+  }
+
+  async stop(): Promise<void> {
+    // no-op for mock
+  }
+
+  async remove(): Promise<void> {
+    mockContainers.delete(this.info.Id);
+  }
+}
+
+vi.mock('dockerode', () => {
+  return {
+    default: class MockDocker {
+      async createContainer(opts: {
+        Image: string;
+        Labels?: Record<string, string>;
+      }): Promise<MockContainer> {
+        const id = `mock-${nextContainerId++}`;
+        const info = {
+          Id: id,
+          Image: opts.Image,
+          Created: Math.floor(Date.now() / 1000) - 60 * 60 * 2, // old enough for cleanup
+          Labels: {
+            'mcp.sandbox': 'true',
+            ...(opts.Labels ?? {}),
+          },
+        };
+        const container = new MockContainer(info);
+        mockContainers.set(id, info);
+        return container;
+      }
+
+      async listContainers(): Promise<
+        Array<{
+          Id: string;
+          Image: string;
+          Created: number;
+          Labels: Record<string, string>;
+        }>
+      > {
+        return Array.from(mockContainers.values()).map((info) => ({
+          ...info,
+        }));
+      }
+
+      getContainer(id: string): {
+        remove: () => Promise<void>;
+        stop: () => Promise<void>;
+      } {
+        if (!mockContainers.has(id)) {
+          const info = {
+            Id: id,
+            Image: 'node:18-alpine',
+            Created: Math.floor(Date.now() / 1000) - 60 * 60 * 2,
+            Labels: { 'mcp.sandbox': 'true' },
+          };
+          mockContainers.set(id, info);
+        }
+        const container = new MockContainer(mockContainers.get(id)!);
+        return {
+          remove: () => container.remove(),
+          stop: () => container.stop(),
+        };
+      }
+    },
+  };
+});
 
 /**
  * Tests for ContainerCleanupJob
@@ -62,11 +160,9 @@ describe('ContainerCleanupJob', () => {
   describe('One-time Cleanup', () => {
     it('should run cleanup once without starting interval', async () => {
       expect(cleanupJob.getStatus().isRunning).toBe(false);
-
       await cleanupJob.runOnce();
-
       expect(cleanupJob.getStatus().isRunning).toBe(false);
-    }, 30000);
+    });
 
     it('should cleanup old containers', async () => {
       // Create a test container (in real scenario it would be old)
@@ -80,35 +176,29 @@ describe('ContainerCleanupJob', () => {
       // or wait 1 hour. For now, this tests the mechanism.
 
       await container.remove({ force: true });
-    }, 30000);
+    });
   });
 
   describe('Periodic Cleanup', () => {
-    it('should run cleanup periodically', async () => {
-      // Start with short interval for testing
+    it('should run cleanup periodically', () => {
+      vi.useFakeTimers();
       cleanupJob.start(2000);
-
-      // Wait for at least 2 cleanup cycles
-      await new Promise(resolve => setTimeout(resolve, 5000));
-
+      vi.advanceTimersByTime(5000);
       cleanupJob.stop();
-    }, 10000);
+      vi.useRealTimers();
+    });
   });
 
   describe('Error Handling', () => {
-    it('should continue running after cleanup errors', async () => {
+    it('should continue running after cleanup errors', () => {
+      vi.useFakeTimers();
       cleanupJob.start(1000);
-
       expect(cleanupJob.getStatus().isRunning).toBe(true);
-
-      // Wait for a few cycles
-      await new Promise(resolve => setTimeout(resolve, 3000));
-
-      // Should still be running
+      vi.advanceTimersByTime(3000);
       expect(cleanupJob.getStatus().isRunning).toBe(true);
-
       cleanupJob.stop();
-    }, 10000);
+      vi.useRealTimers();
+    });
   });
 
   describe('Configuration Options', () => {
@@ -132,18 +222,14 @@ describe('ContainerCleanupJob', () => {
   });
 
   describe('Concurrency Protection', () => {
-    it('should skip cleanup if previous cycle still running', async () => {
-      // Start with very short interval
+    it('should skip cleanup if previous cycle still running', () => {
+      vi.useFakeTimers();
       cleanupJob.start(100);
-
-      // Let it run for a bit
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Should still be running despite short interval
+      vi.advanceTimersByTime(500);
       expect(cleanupJob.getStatus().isRunning).toBe(true);
-
       cleanupJob.stop();
-    }, 5000);
+      vi.useRealTimers();
+    });
   });
 
   describe('Label-based Filtering', () => {
@@ -153,6 +239,6 @@ describe('ContainerCleanupJob', () => {
       await cleanupJob.runOnce();
 
       expect(true).toBe(true);
-    }, 30000);
+    });
   });
 });

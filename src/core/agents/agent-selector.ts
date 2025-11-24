@@ -11,8 +11,8 @@ import type {
   AgentCategory,
   ComplexityLevel,
   IAgentSelector,
-} from "./types";
-import { Logger } from "./logger";
+} from './types';
+import { Logger } from './logger';
 
 /**
  * Scoring weights for different matching criteria
@@ -25,7 +25,7 @@ const SCORING_WEIGHTS = {
 } as const;
 
 export class AgentSelector implements IAgentSelector {
-  private logger = new Logger("AgentSelector");
+  private logger = new Logger('AgentSelector');
   private scoreCache = new Map<string, number>();
 
   /**
@@ -33,12 +33,12 @@ export class AgentSelector implements IAgentSelector {
    */
   scoreAgent(agent: Agent, query: string): number {
     if (!agent || !agent.metadata) {
-      this.logger.warn("Invalid agent provided to scoreAgent");
+      this.logger.warn('Invalid agent provided to scoreAgent');
       return 0;
     }
 
-    if (!query || query.trim() === "") {
-      this.logger.warn("Empty query provided to scoreAgent");
+    if (!query || query.trim() === '') {
+      this.logger.warn('Empty query provided to scoreAgent');
       return 0;
     }
 
@@ -46,7 +46,7 @@ export class AgentSelector implements IAgentSelector {
     const cacheKey = this.getCacheKey(agent.metadata.name, query);
     const cachedScore = this.scoreCache.get(cacheKey);
     if (cachedScore !== undefined) {
-      this.logger.debug("Using cached score", {
+      this.logger.debug('Using cached score', {
         agent: agent.metadata.name,
         score: cachedScore,
       });
@@ -67,20 +67,20 @@ export class AgentSelector implements IAgentSelector {
    */
   select(
     agents: Agent[],
-    criteria: AgentSelectionCriteria,
+    criteria: AgentSelectionCriteria
   ): AgentSelectionResult[] {
     // Validation
     if (!agents || agents.length === 0) {
-      this.logger.warn("Empty agents array provided");
+      this.logger.warn('Empty agents array provided');
       return [];
     }
 
-    if (!criteria.query || criteria.query.trim() === "") {
-      this.logger.error("Query is required for agent selection");
-      throw new Error("Query is required for agent selection");
+    if (!criteria.query || criteria.query.trim() === '') {
+      this.logger.error('Query is required for agent selection');
+      throw new Error('Query is required for agent selection');
     }
 
-    this.logger.info("Selecting agents", {
+    this.logger.info('Selecting agents', {
       totalAgents: agents.length,
       query: criteria.query,
       category: criteria.category,
@@ -93,7 +93,7 @@ export class AgentSelector implements IAgentSelector {
     // Filter by category if specified
     if (criteria.category) {
       filteredAgents = this.filterByCategory(filteredAgents, criteria.category);
-      this.logger.debug("Filtered by category", {
+      this.logger.debug('Filtered by category', {
         category: criteria.category,
         remaining: filteredAgents.length,
       });
@@ -103,9 +103,9 @@ export class AgentSelector implements IAgentSelector {
     if (criteria.complexity) {
       filteredAgents = this.filterByComplexity(
         filteredAgents,
-        criteria.complexity,
+        criteria.complexity
       );
-      this.logger.debug("Filtered by complexity", {
+      this.logger.debug('Filtered by complexity', {
         complexity: criteria.complexity,
         remaining: filteredAgents.length,
       });
@@ -115,10 +115,10 @@ export class AgentSelector implements IAgentSelector {
     if (criteria.requiredExpertise && criteria.requiredExpertise.length > 0) {
       filteredAgents = filteredAgents.filter((agent) =>
         criteria.requiredExpertise!.some((exp) =>
-          agent.metadata.expertise.includes(exp),
-        ),
+          agent.metadata.expertise.includes(exp)
+        )
       );
-      this.logger.debug("Filtered by expertise", {
+      this.logger.debug('Filtered by expertise', {
         requiredExpertise: criteria.requiredExpertise,
         remaining: filteredAgents.length,
       });
@@ -131,17 +131,17 @@ export class AgentSelector implements IAgentSelector {
         const queryLower = criteria.query.toLowerCase();
 
         const matchedKeywords = agent.metadata.activation.keywords.filter(
-          (keyword) => queryLower.includes(keyword.toLowerCase()),
+          (keyword) => queryLower.includes(keyword.toLowerCase())
         );
 
         const matchedTriggers = agent.metadata.activation.triggers.filter(
-          (trigger) => queryLower.includes(trigger.replace(/_/g, " ")),
+          (trigger) => queryLower.includes(trigger.replace(/_/g, ' '))
         );
 
         const reason = this.generateSelectionReason(
           agent,
           matchedKeywords,
-          matchedTriggers,
+          matchedTriggers
         );
 
         return {
@@ -159,7 +159,7 @@ export class AgentSelector implements IAgentSelector {
     const maxAgents = criteria.maxAgents || scoredAgents.length;
     const selectedAgents = scoredAgents.slice(0, maxAgents);
 
-    this.logger.info("Agents selected", {
+    this.logger.info('Agents selected', {
       count: selectedAgents.length,
       agents: selectedAgents.map((r) => ({
         name: r.agent.metadata.name,
@@ -188,7 +188,7 @@ export class AgentSelector implements IAgentSelector {
       return agents;
     }
     return agents.filter((agent) =>
-      agent.metadata.activation.complexity.includes(complexity),
+      agent.metadata.activation.complexity.includes(complexity)
     );
   }
 
@@ -197,7 +197,7 @@ export class AgentSelector implements IAgentSelector {
    */
   clearCache(): void {
     this.scoreCache.clear();
-    this.logger.debug("Score cache cleared");
+    this.logger.debug('Score cache cleared');
   }
 
   /**
@@ -210,29 +210,29 @@ export class AgentSelector implements IAgentSelector {
 
     // Keyword matching (highest weight)
     const matchedKeywords = activation.keywords.filter((keyword) =>
-      queryLower.includes(keyword.toLowerCase()),
+      queryLower.includes(keyword.toLowerCase())
     );
     score += matchedKeywords.length * SCORING_WEIGHTS.KEYWORD;
 
     // Trigger matching
     const matchedTriggers = activation.triggers.filter((trigger) =>
-      queryLower.includes(trigger.replace(/_/g, " ")),
+      queryLower.includes(trigger.replace(/_/g, ' '))
     );
     score += matchedTriggers.length * SCORING_WEIGHTS.TRIGGER;
 
     // Expertise matching
     const matchedExpertise = expertise.filter((exp) =>
-      queryLower.includes(exp.toLowerCase()),
+      queryLower.includes(exp.toLowerCase())
     );
     score += matchedExpertise.length * SCORING_WEIGHTS.EXPERTISE;
 
     // Capability matching (fixed redundant toLowerCase)
     const matchedCapabilities = capabilities.filter((cap) =>
-      queryLower.includes(cap.toLowerCase().substring(0, 20)),
+      queryLower.includes(cap.toLowerCase().substring(0, 20))
     );
     score += matchedCapabilities.length * SCORING_WEIGHTS.CAPABILITY;
 
-    this.logger.debug("Calculated score", {
+    this.logger.debug('Calculated score', {
       agent: agent.metadata.name,
       score,
       matchedKeywords: matchedKeywords.length,
@@ -250,29 +250,29 @@ export class AgentSelector implements IAgentSelector {
   private generateSelectionReason(
     agent: Agent,
     matchedKeywords: string[],
-    matchedTriggers: string[],
+    matchedTriggers: string[]
   ): string {
     const reasons: string[] = [];
 
     if (matchedKeywords.length > 0) {
       reasons.push(
-        `Matched keywords: ${matchedKeywords.slice(0, 3).join(", ")}`,
+        `Matched keywords: ${matchedKeywords.slice(0, 3).join(', ')}`
       );
     }
 
     if (matchedTriggers.length > 0) {
       reasons.push(
-        `Matched triggers: ${matchedTriggers.slice(0, 2).join(", ")}`,
+        `Matched triggers: ${matchedTriggers.slice(0, 2).join(', ')}`
       );
     }
 
     if (reasons.length === 0) {
       reasons.push(
-        `Expertise in: ${agent.metadata.expertise.slice(0, 2).join(", ")}`,
+        `Expertise in: ${agent.metadata.expertise.slice(0, 2).join(', ')}`
       );
     }
 
-    return reasons.join("; ");
+    return reasons.join('; ');
   }
 
   /**

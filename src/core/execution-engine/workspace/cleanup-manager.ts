@@ -3,19 +3,37 @@ export class CleanupManager {
   private autoCleanup: boolean;
   private autoCleanupInterval?: NodeJS.Timeout;
 
+  private isOptions(
+    value: unknown
+  ): value is {
+    autoCleanup?: boolean;
+  } {
+    return Boolean(
+      value &&
+        typeof value === 'object' &&
+        'autoCleanup' in (value as Record<string, unknown>)
+    );
+  }
+
   constructor(
     _workspaceManager?: unknown,
     _cacheManager?: unknown,
-    options: { autoCleanup?: boolean } = {},
+    options: { autoCleanup?: boolean } = {}
   ) {
     this.cleanupHandlers = new Map();
-    this.autoCleanup = options.autoCleanup ?? false;
+
+    // Support signature new CleanupManager({ autoCleanup: true })
+    const resolvedOptions = this.isOptions(_workspaceManager)
+      ? _workspaceManager
+      : options;
+
+    this.autoCleanup = resolvedOptions.autoCleanup ?? false;
     if (this.autoCleanup) this.registerProcessHandlers();
   }
 
   registerCleanup(
     resourceId: string,
-    handler: () => Promise<void> | void,
+    handler: () => Promise<void> | void
   ): void {
     if (!this.cleanupHandlers.has(resourceId)) {
       this.cleanupHandlers.set(resourceId, []);
@@ -60,9 +78,9 @@ export class CleanupManager {
       await this.cleanup();
       process.exit(0);
     };
-    process.on("exit", () => console.log("Process exiting..."));
-    process.on("SIGINT", () => cleanupAndExit("SIGINT"));
-    process.on("SIGTERM", () => cleanupAndExit("SIGTERM"));
+    process.on('exit', () => console.log('Process exiting...'));
+    process.on('SIGINT', () => cleanupAndExit('SIGINT'));
+    process.on('SIGTERM', () => cleanupAndExit('SIGTERM'));
   }
 
   startAutoCleanup(intervalMinutes: number): void {
@@ -72,10 +90,10 @@ export class CleanupManager {
     this.autoCleanupInterval = setInterval(
       () => {
         this.cleanup().catch((err) =>
-          console.error("Auto-cleanup failed:", err),
+          console.error('Auto-cleanup failed:', err)
         );
       },
-      intervalMinutes * 60 * 1000,
+      intervalMinutes * 60 * 1000
     );
   }
 

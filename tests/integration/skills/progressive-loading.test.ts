@@ -5,7 +5,7 @@ import path from 'path';
 
 describe('Progressive Loading Integration', () => {
   let loader: SkillLoader;
-  const skillsDir = path.join(__dirname, '../../../templates/skills');
+  const skillsDir = path.join(process.cwd(), 'templates/skills');
 
   beforeEach(async () => {
     loader = new SkillLoader(skillsDir, 50, 30 * 60 * 1000, new SilentLogger());
@@ -224,12 +224,23 @@ describe('Progressive Loading Integration', () => {
       expect(matches.length).toBeGreaterThan(0);
 
       // Verify high priority skills come first
-      const firstSkillName = matches[0];
-      expect(firstSkillName).toBeDefined();
+      const priorityWeight = (priority?: string) => {
+        if (priority === 'high') return 3;
+        if (priority === 'medium') return 2;
+        if (priority === 'low') return 1;
+        return 0;
+      };
 
-      const firstSkill = loader['registry'].get(firstSkillName!);
-      expect(firstSkill).toBeDefined();
-      expect(['high', 'medium'].includes(firstSkill!.metadata.priority)).toBe(true);
+      const prioritizedSkills = matches
+        .map(name => loader['registry'].get(name)!)
+        .filter(Boolean);
+
+      expect(prioritizedSkills.length).toBe(matches.length);
+
+      const weights = prioritizedSkills.map(skill => priorityWeight(skill.metadata.priority));
+      const sortedWeights = [...weights].sort((a, b) => b - a);
+
+      expect(weights).toEqual(sortedWeights);
     });
   });
 

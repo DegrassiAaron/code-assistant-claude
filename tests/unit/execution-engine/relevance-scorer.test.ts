@@ -1,43 +1,66 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+/// <reference types="vitest" />
 import { RelevanceScorer } from '../../../src/core/execution-engine/discovery/relevance-scorer';
-import type { Tool } from '../../../src/core/execution-engine/types';
+import type { MCPToolSchema } from '../../../src/core/execution-engine/types';
 
 describe('RelevanceScorer', () => {
   let scorer: RelevanceScorer;
 
-  const mockTools: Tool[] = [
+  const mockTools: MCPToolSchema[] = [
     {
       name: 'readFile',
       description: 'Read a file from the filesystem',
       category: 'filesystem',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          path: { type: 'string' }
+      parameters: [
+        {
+          name: 'path',
+          type: 'string',
+          description: 'Path to file',
+          required: true
         }
+      ],
+      returns: {
+        type: 'string',
+        description: 'File contents'
       }
     },
     {
       name: 'writeFile',
       description: 'Write content to a file',
       category: 'filesystem',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          path: { type: 'string' },
-          content: { type: 'string' }
+      parameters: [
+        {
+          name: 'path',
+          type: 'string',
+          description: 'Path to write',
+          required: true
+        },
+        {
+          name: 'content',
+          type: 'string',
+          description: 'Contents to write',
+          required: true
         }
+      ],
+      returns: {
+        type: 'string',
+        description: 'Confirmation'
       }
     },
     {
       name: 'httpGet',
       description: 'Make an HTTP GET request to fetch data',
       category: 'network',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          url: { type: 'string' }
+      parameters: [
+        {
+          name: 'url',
+          type: 'string',
+          description: 'URL to fetch',
+          required: true
         }
+      ],
+      returns: {
+        type: 'object',
+        description: 'HTTP response'
       }
     }
   ];
@@ -52,15 +75,18 @@ describe('RelevanceScorer', () => {
       const scores = scorer.scoreTools(mockTools, query);
 
       expect(scores).toHaveLength(3);
-      expect(scores[0].score).toBeGreaterThan(0);
+      expect(scores[0]).toBeDefined();
+      expect(scores[0]!.score).toBeGreaterThan(0);
     });
 
     it('should rank exact name matches highest', () => {
       const query = 'readFile';
       const scores = scorer.scoreTools(mockTools, query);
 
-      expect(scores[0].tool.name).toBe('readFile');
-      expect(scores[0].score).toBeGreaterThan(scores[1].score);
+      expect(scores[0]).toBeDefined();
+      expect(scores[1]).toBeDefined();
+      expect(scores[0]!.tool.name).toBe('readFile');
+      expect(scores[0]!.score).toBeGreaterThan(scores[1]!.score);
     });
 
     it('should rank description matches', () => {

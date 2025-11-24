@@ -8,7 +8,7 @@ const execAsync = promisify(exec);
 
 describe('E2E: React Project Setup', () => {
   const testProjectPath = path.join(__dirname, '../fixtures/e2e-react-project');
-  const cliPath = path.join(__dirname, '../../dist/cli/index.js');
+  //const cliPath = path.join(__dirname, '../../dist/cli/index.js');
 
   beforeAll(async () => {
     // Create test React project

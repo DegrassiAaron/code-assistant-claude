@@ -1,6 +1,6 @@
-import { WorkspaceState } from "../types";
-import { promises as fs } from "fs";
-import path from "path";
+import { WorkspaceState } from '../types';
+import { promises as fs } from 'fs';
+import path from 'path';
 
 /**
  * Manages persistence of workspace state
@@ -9,7 +9,7 @@ export class StateManager {
   private stateFile: string;
 
   constructor(stateFile?: string) {
-    this.stateFile = stateFile || path.join(process.cwd(), ".mcp-state.json");
+    this.stateFile = stateFile || path.join(process.cwd(), '.mcp-state.json');
   }
 
   /**
@@ -17,7 +17,7 @@ export class StateManager {
    */
   async saveState(workspaces: Map<string, WorkspaceState>): Promise<void> {
     const state = {
-      version: "1.0.0",
+      version: '1.0.0',
       savedAt: new Date().toISOString(),
       workspaces: Array.from(workspaces.entries()).map(([_, workspace]) => ({
         ...workspace,
@@ -35,7 +35,7 @@ export class StateManager {
    */
   async loadState(): Promise<Map<string, WorkspaceState>> {
     try {
-      const content = await fs.readFile(this.stateFile, "utf-8");
+      const content = await fs.readFile(this.stateFile, 'utf-8');
       const state = JSON.parse(content);
 
       const workspaces = new Map<string, WorkspaceState>();

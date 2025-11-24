@@ -43,7 +43,7 @@ describe("MonorepoDetector", () => {
       expect(result.isMonorepo).toBe(true);
       expect(result.tool).toBe("lerna");
       expect(result.workspaces.length).toBeGreaterThan(0);
-      expect(result.workspaces[0].name).toBe("package1");
+      expect(result.workspaces[0]?.name).toBe("package1");
     });
   });
 
@@ -105,7 +105,7 @@ describe("MonorepoDetector", () => {
 
       expect(result.isMonorepo).toBe(true);
       expect(result.tool).toBe("yarn");
-      expect(result.workspaces[0].technologies).toContain("React");
+      expect(result.workspaces[0]?.technologies ?? []).toContain("React");
     });
 
     it("should detect npm workspaces", async () => {
@@ -137,7 +137,7 @@ describe("MonorepoDetector", () => {
 
       expect(result.isMonorepo).toBe(true);
       expect(result.tool).toBe("npm");
-      expect(result.workspaces[0].technologies).toContain("Express");
+      expect(result.workspaces[0]?.technologies ?? []).toContain("Express");
     });
   });
 
@@ -296,8 +296,9 @@ EndProject`;
       expect(result.isMonorepo).toBe(true);
       expect(result.tool).toBe("dotnet-solution");
       expect(result.workspaces.length).toBe(2);
-      expect(result.workspaces[0].name).toBe("Project1");
-      expect(result.workspaces[0].technologies).toContain("C#");
+      const firstWorkspace = result.workspaces[0];
+      expect(firstWorkspace?.name).toBe("Project1");
+      expect(firstWorkspace?.technologies ?? []).toContain("C#");
     });
   });
 

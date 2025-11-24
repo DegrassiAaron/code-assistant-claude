@@ -1,6 +1,6 @@
-import { encoding_for_model, TiktokenModel } from "tiktoken";
-import { CHARS_PER_TOKEN_ESTIMATE } from "./constants";
-import { Logger, ConsoleLogger } from "./logger";
+import { encoding_for_model, TiktokenModel } from 'tiktoken';
+import { CHARS_PER_TOKEN_ESTIMATE } from './constants';
+import { Logger, ConsoleLogger } from './logger';
 
 /**
  * Token estimation utility using tiktoken for accurate token counting
@@ -19,8 +19,8 @@ export class TokenEstimator {
    * @param logger - Logger instance for debugging
    */
   constructor(
-    private model: TiktokenModel = "gpt-4",
-    logger: Logger = new ConsoleLogger("[TokenEstimator]"),
+    private model: TiktokenModel = 'gpt-4',
+    logger: Logger = new ConsoleLogger('[TokenEstimator]')
   ) {
     this.logger = logger;
     this.initialize();
@@ -35,12 +35,12 @@ export class TokenEstimator {
       this.encoder = encoding_for_model(this.model);
       this.initialized = true;
       this.logger.debug?.(
-        `Initialized tiktoken encoder for model: ${this.model}`,
+        `Initialized tiktoken encoder for model: ${this.model}`
       );
     } catch (error) {
       this.logger.warn(
-        "Failed to initialize tiktoken encoder, falling back to simple estimation",
-        error,
+        'Failed to initialize tiktoken encoder, falling back to simple estimation',
+        error
       );
       this.encoder = null;
       this.initialized = false;
@@ -70,8 +70,8 @@ export class TokenEstimator {
       return tokens.length;
     } catch (error) {
       this.logger.warn(
-        "Tiktoken encoding failed, using simple estimation",
-        error,
+        'Tiktoken encoding failed, using simple estimation',
+        error
       );
       return this.simpleEstimate(text);
     }
@@ -115,9 +115,9 @@ export class TokenEstimator {
     if (this.encoder) {
       try {
         this.encoder.free();
-        this.logger.debug?.("Disposed tiktoken encoder");
+        this.logger.debug?.('Disposed tiktoken encoder');
       } catch (error) {
-        this.logger.warn("Failed to dispose tiktoken encoder", error);
+        this.logger.warn('Failed to dispose tiktoken encoder', error);
       }
       this.encoder = null;
       this.initialized = false;

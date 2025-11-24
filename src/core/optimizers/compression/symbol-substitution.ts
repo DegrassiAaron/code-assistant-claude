@@ -3,7 +3,7 @@
  * Intelligent replacement of text with symbols for compression
  */
 
-import { symbolSystem } from "../symbols/symbol-system";
+import { symbolSystem } from '../symbols/symbol-system';
 
 export interface SubstitutionOptions {
   aggressive: boolean;
@@ -35,7 +35,7 @@ export class SymbolSubstitution {
    */
   substitute(
     text: string,
-    options?: Partial<SubstitutionOptions>,
+    options?: Partial<SubstitutionOptions>
   ): SubstitutionResult {
     const opts = { ...this.defaultOptions, ...options };
     const substitutions: Array<{ from: string; to: string; position: number }> =
@@ -104,7 +104,7 @@ export class SymbolSubstitution {
    */
   batchSubstitute(
     texts: string[],
-    options?: Partial<SubstitutionOptions>,
+    options?: Partial<SubstitutionOptions>
   ): SubstitutionResult[] {
     return texts.map((text) => this.substitute(text, options));
   }

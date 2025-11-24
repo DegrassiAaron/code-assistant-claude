@@ -28,13 +28,13 @@ export class ResourceLimiter {
   }
 
   enforceLimit(
-    resourceType: "memory" | "cpu" | "time",
+    resourceType: 'memory' | 'cpu' | 'time',
     withinLimit: boolean,
-    customMessage?: string,
+    customMessage?: string
   ): void {
     if (!withinLimit) {
       throw new Error(
-        customMessage || `Resource limit exceeded: ${resourceType}`,
+        customMessage || `Resource limit exceeded: ${resourceType}`
       );
     }
   }

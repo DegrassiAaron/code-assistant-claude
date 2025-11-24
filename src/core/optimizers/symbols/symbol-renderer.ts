@@ -3,12 +3,12 @@
  * Renders symbols in human-readable format with context
  */
 
-import { CORE_SYMBOLS } from "./core-symbols";
-import { BUSINESS_SYMBOLS } from "./business-symbols";
-import { TECHNICAL_SYMBOLS } from "./technical-symbols";
+import { CORE_SYMBOLS } from './core-symbols';
+import { BUSINESS_SYMBOLS } from './business-symbols';
+import { TECHNICAL_SYMBOLS } from './technical-symbols';
 
 export interface RenderOptions {
-  mode: "compact" | "verbose" | "hybrid";
+  mode: 'compact' | 'verbose' | 'hybrid';
   colorize?: boolean;
   includeTooltips?: boolean;
 }
@@ -28,12 +28,12 @@ export class SymbolRenderer {
    */
   render(
     text: string,
-    options: RenderOptions = { mode: "hybrid" },
+    options: RenderOptions = { mode: 'hybrid' }
   ): RenderedOutput {
     let rendered = text;
 
     // In compact mode, keep symbols as-is
-    if (options.mode === "compact") {
+    if (options.mode === 'compact') {
       return {
         text,
         symbolsUsed: this.extractSymbols(text),
@@ -42,7 +42,7 @@ export class SymbolRenderer {
     }
 
     // In verbose mode, add explanations
-    if (options.mode === "verbose") {
+    if (options.mode === 'verbose') {
       rendered = this.addExplanations(text);
       return {
         text: rendered,
@@ -52,7 +52,7 @@ export class SymbolRenderer {
     }
 
     // In hybrid mode, add tooltips for complex symbols
-    if (options.mode === "hybrid" && options.includeTooltips) {
+    if (options.mode === 'hybrid' && options.includeTooltips) {
       rendered = this.addTooltips(text);
     }
 
@@ -77,10 +77,10 @@ export class SymbolRenderer {
     ];
 
     for (const def of allSymbols) {
-      const pattern = new RegExp(def.symbol, "g");
+      const pattern = new RegExp(def.symbol, 'g');
       explained = explained.replace(
         pattern,
-        `${def.symbol} (${def.keywords[0]})`,
+        `${def.symbol} (${def.keywords[0]})`
       );
     }
 
@@ -100,11 +100,11 @@ export class SymbolRenderer {
     ];
 
     for (const def of allSymbols) {
-      const pattern = new RegExp(def.symbol, "g");
+      const pattern = new RegExp(def.symbol, 'g');
       // Use markdown link syntax for tooltips
       withTooltips = withTooltips.replace(
         pattern,
-        `[${def.symbol}](# "${def.description}")`,
+        `[${def.symbol}](# "${def.description}")`
       );
     }
 
@@ -144,7 +144,7 @@ export class SymbolRenderer {
       ? allSymbols.filter((s) => symbols.includes(s.symbol))
       : allSymbols;
 
-    let legend = "## Symbol Legend\n\n";
+    let legend = '## Symbol Legend\n\n';
 
     // Group by category
     const categories = new Map<string, typeof symbolsToShow>();
@@ -165,7 +165,7 @@ export class SymbolRenderer {
         legend += `- ${sym.symbol} **${sym.keywords[0]}** - ${sym.description}\n`;
       }
 
-      legend += "\n";
+      legend += '\n';
     }
 
     return legend;
@@ -201,7 +201,7 @@ export class SymbolRenderer {
       ...TECHNICAL_SYMBOLS,
     ];
 
-    let summary = "### Symbol Usage Summary\n\n";
+    let summary = '### Symbol Usage Summary\n\n';
     summary += `Total symbols used: ${symbols.length}\n\n`;
 
     // Count by category
@@ -215,7 +215,7 @@ export class SymbolRenderer {
       }
     }
 
-    summary += "**By Category:**\n";
+    summary += '**By Category:**\n';
     for (const [category, count] of categoryCounts.entries()) {
       summary += `- ${this.capitalizeFirst(category)}: ${count}\n`;
     }

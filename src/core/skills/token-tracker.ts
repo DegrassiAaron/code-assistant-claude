@@ -1,4 +1,4 @@
-import { TokenUsageEntry, LoadingStage } from "./types";
+import { TokenUsageEntry, LoadingStage } from './types';
 
 /**
  * Tracks token consumption for skills
@@ -18,7 +18,7 @@ export class TokenTracker {
   trackSkillUsage(
     skillName: string,
     stage: LoadingStage,
-    tokens: number,
+    tokens: number
   ): void {
     this.entries.push({
       skillName,
@@ -53,11 +53,11 @@ export class TokenTracker {
   getTotalTokens(): number {
     const skillTokens = this.entries.reduce(
       (sum, entry) => sum + entry.tokens,
-      0,
+      0
     );
     const systemTokens = Array.from(this.systemUsage.values()).reduce(
       (sum, val) => sum + val,
-      0,
+      0
     );
     return skillTokens + systemTokens;
   }
@@ -151,7 +151,7 @@ export class TokenTracker {
    */
   getEntriesInRange(start: Date, end: Date): TokenUsageEntry[] {
     return this.entries.filter(
-      (entry) => entry.timestamp >= start && entry.timestamp <= end,
+      (entry) => entry.timestamp >= start && entry.timestamp <= end
     );
   }
 }

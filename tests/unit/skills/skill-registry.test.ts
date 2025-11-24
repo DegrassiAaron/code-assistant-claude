@@ -4,7 +4,7 @@ import path from 'path';
 
 describe('SkillRegistry', () => {
   let registry: SkillRegistry;
-  const skillsDir = path.join(__dirname, '../../../templates/skills');
+  const skillsDir = path.join(process.cwd(), 'templates/skills');
 
   beforeEach(async () => {
     registry = new SkillRegistry(skillsDir, new SilentLogger());

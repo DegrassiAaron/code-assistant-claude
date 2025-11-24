@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+/// <reference types="vitest" />
 import { CodeValidator } from '../../../src/core/execution-engine/security/code-validator';
 
 describe('CodeValidator', () => {

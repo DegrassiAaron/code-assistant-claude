@@ -42,7 +42,7 @@ export class UsageMonitor {
     tokens: number,
     category: string,
     operation: string,
-    metadata?: Record<string, unknown>,
+    metadata?: Record<string, unknown>
   ): void {
     const event: UsageEvent = {
       timestamp: Date.now(),
@@ -117,7 +117,7 @@ export class UsageMonitor {
     while (currentTime < endTime) {
       const intervalEnd = currentTime + intervalMs;
       const intervalEvents = this.events.filter(
-        (e) => e.timestamp >= currentTime && e.timestamp < intervalEnd,
+        (e) => e.timestamp >= currentTime && e.timestamp < intervalEnd
       );
 
       const tokens = intervalEvents.reduce((sum, e) => sum + e.tokens, 0);
@@ -141,7 +141,7 @@ export class UsageMonitor {
    * Get top consumers by category
    */
   getTopConsumers(
-    limit: number = 5,
+    limit: number = 5
   ): Array<{ category: string; tokens: number; percentage: number }> {
     const stats = this.getStats();
     const total = stats.total;
@@ -195,7 +195,7 @@ export class UsageMonitor {
       try {
         listener(event);
       } catch (error) {
-        console.error("Error in usage monitor listener:", error);
+        console.error('Error in usage monitor listener:', error);
       }
     }
   }
@@ -207,19 +207,19 @@ export class UsageMonitor {
     const stats = this.getStats(since);
     const topConsumers = this.getTopConsumers(5);
 
-    let report = "## Token Usage Report\n\n";
+    let report = '## Token Usage Report\n\n';
 
     report += `**Total Tokens Used:** ${stats.total.toLocaleString()}\n`;
     report += `**Time Range:** ${new Date(stats.timeRange.start).toLocaleString()} - ${new Date(stats.timeRange.end).toLocaleString()}\n`;
     report += `**Average per Operation:** ${stats.averagePerOperation.toFixed(2)}\n`;
     report += `**Peak Usage:** ${stats.peakUsage.toLocaleString()}\n\n`;
 
-    report += "### Top Consumers\n\n";
+    report += '### Top Consumers\n\n';
     for (const consumer of topConsumers) {
       report += `- **${consumer.category}**: ${consumer.tokens.toLocaleString()} tokens (${consumer.percentage.toFixed(1)}%)\n`;
     }
 
-    report += "\n### By Category\n\n";
+    report += '\n### By Category\n\n';
     for (const [category, tokens] of Object.entries(stats.byCategory)) {
       report += `- ${category}: ${tokens.toLocaleString()}\n`;
     }

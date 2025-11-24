@@ -1,4 +1,4 @@
-import type { MCPToolSchema } from "../types";
+import type { MCPToolSchema } from '../types';
 
 export class ToolIndexer {
   private tools: Map<string, MCPToolSchema>;

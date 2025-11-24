@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+/// <reference types="vitest" />
 import { CleanupManager } from '../../../src/core/execution-engine/workspace/cleanup-manager';
 import * as fs from 'fs/promises';
 

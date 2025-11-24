@@ -1,5 +1,5 @@
-import { RiskAssessment } from "./risk-assessor";
-import { SecurityValidation } from "../types";
+import { RiskAssessment } from './risk-assessor';
+import { SecurityValidation } from '../types';
 
 /**
  * Manages approval workflow for high-risk code execution
@@ -12,7 +12,7 @@ export class ApprovalGate {
    */
   requiresApproval(
     riskAssessment: RiskAssessment,
-    validation: SecurityValidation,
+    validation: SecurityValidation
   ): boolean {
     return riskAssessment.requiresApproval || validation.requiresApproval;
   }
@@ -23,7 +23,7 @@ export class ApprovalGate {
   async requestApproval(
     code: string,
     riskAssessment: RiskAssessment,
-    validation: SecurityValidation,
+    validation: SecurityValidation
   ): Promise<ApprovalRequest> {
     const requestId = this.generateRequestId();
 
@@ -32,7 +32,7 @@ export class ApprovalGate {
       code,
       riskAssessment,
       validation,
-      status: "pending",
+      status: 'pending',
       requestedAt: new Date(),
       approvedBy: undefined,
       approvedAt: undefined,
@@ -49,11 +49,11 @@ export class ApprovalGate {
    */
   approve(requestId: string, approvedBy: string, reason?: string): boolean {
     const request = this.pendingApprovals.get(requestId);
-    if (!request || request.status !== "pending") {
+    if (!request || request.status !== 'pending') {
       return false;
     }
 
-    request.status = "approved";
+    request.status = 'approved';
     request.approvedBy = approvedBy;
     request.approvedAt = new Date();
     request.reason = reason;
@@ -66,11 +66,11 @@ export class ApprovalGate {
    */
   reject(requestId: string, rejectedBy: string, reason: string): boolean {
     const request = this.pendingApprovals.get(requestId);
-    if (!request || request.status !== "pending") {
+    if (!request || request.status !== 'pending') {
       return false;
     }
 
-    request.status = "rejected";
+    request.status = 'rejected';
     request.approvedBy = rejectedBy;
     request.approvedAt = new Date();
     request.reason = reason;
@@ -90,7 +90,7 @@ export class ApprovalGate {
    */
   getPendingApprovals(): ApprovalRequest[] {
     return Array.from(this.pendingApprovals.values()).filter(
-      (r) => r.status === "pending",
+      (r) => r.status === 'pending'
     );
   }
 
@@ -104,7 +104,7 @@ export class ApprovalGate {
     let removed = 0;
 
     for (const [id, request] of this.pendingApprovals.entries()) {
-      if (request.requestedAt < cutoff && request.status !== "pending") {
+      if (request.requestedAt < cutoff && request.status !== 'pending') {
         this.pendingApprovals.delete(id);
         removed++;
       }
@@ -125,32 +125,32 @@ export class ApprovalGate {
    */
   formatRequest(request: ApprovalRequest): string {
     const lines = [
-      "═══════════════════════════════════════════════════",
-      "          CODE EXECUTION APPROVAL REQUIRED          ",
-      "═══════════════════════════════════════════════════",
-      "",
+      '═══════════════════════════════════════════════════',
+      '          CODE EXECUTION APPROVAL REQUIRED          ',
+      '═══════════════════════════════════════════════════',
+      '',
       `Request ID: ${request.id}`,
       `Risk Level: ${request.riskAssessment.riskLevel.toUpperCase()}`,
       `Risk Score: ${request.riskAssessment.riskScore}/100`,
-      "",
-      "Risk Factors:",
+      '',
+      'Risk Factors:',
       ...request.riskAssessment.factors.map(
-        (f) => `  • ${f.name}: ${f.description} (score: ${f.score})`,
+        (f) => `  • ${f.name}: ${f.description} (score: ${f.score})`
       ),
-      "",
-      "Security Issues:",
+      '',
+      'Security Issues:',
       ...request.validation.issues
         .slice(0, 5)
         .map((i) => `  • [${i.severity}] ${i.description}`),
-      "",
-      "Recommendation:",
+      '',
+      'Recommendation:',
       `  ${request.riskAssessment.recommendation}`,
-      "",
-      "═══════════════════════════════════════════════════",
-      "",
+      '',
+      '═══════════════════════════════════════════════════',
+      '',
     ];
 
-    return lines.join("\n");
+    return lines.join('\n');
   }
 }
 
@@ -162,7 +162,7 @@ export interface ApprovalRequest {
   code: string;
   riskAssessment: RiskAssessment;
   validation: SecurityValidation;
-  status: "pending" | "approved" | "rejected";
+  status: 'pending' | 'approved' | 'rejected';
   requestedAt: Date;
   approvedBy?: string;
   approvedAt?: Date;

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+/// <reference types="vitest" />
 import { ResourceLimiter } from '../../../src/core/execution-engine/sandbox/resource-limiter';
 
 describe('ResourceLimiter', () => {

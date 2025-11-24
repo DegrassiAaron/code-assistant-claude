@@ -8,8 +8,8 @@ import {
   CommandMetadata,
   ValidationResult,
   ParsedCommand,
-} from "./types";
-import { ParameterParser } from "./parameter-parser";
+} from './types';
+import { ParameterParser } from './parameter-parser';
 
 export class CommandValidator {
   private parameterParser: ParameterParser;
@@ -27,34 +27,34 @@ export class CommandValidator {
     const metadata = command.metadata;
 
     // Validate required fields
-    if (!metadata.name || metadata.name.trim() === "") {
-      errors.push("Command name is required");
+    if (!metadata.name || metadata.name.trim() === '') {
+      errors.push('Command name is required');
     }
 
-    if (!metadata.description || metadata.description.trim() === "") {
-      errors.push("Command description is required");
+    if (!metadata.description || metadata.description.trim() === '') {
+      errors.push('Command description is required');
     }
 
     if (!metadata.category) {
-      errors.push("Command category is required");
+      errors.push('Command category is required');
     } else if (
-      !["workflow", "superclaude", "optimization", "git"].includes(
-        metadata.category,
+      !['workflow', 'superclaude', 'optimization', 'git'].includes(
+        metadata.category
       )
     ) {
       errors.push(`Invalid category: ${metadata.category}`);
     }
 
     if (!metadata.version) {
-      warnings.push("Command version is missing");
+      warnings.push('Command version is missing');
     }
 
     // Validate triggers
     if (!metadata.triggers || !metadata.triggers.exact) {
-      errors.push("Command must have an exact trigger");
+      errors.push('Command must have an exact trigger');
     } else {
-      if (!metadata.triggers.exact.startsWith("/")) {
-        errors.push("Exact trigger must start with /");
+      if (!metadata.triggers.exact.startsWith('/')) {
+        errors.push('Exact trigger must start with /');
       }
     }
 
@@ -62,16 +62,16 @@ export class CommandValidator {
     if (metadata.parameters) {
       for (const param of metadata.parameters) {
         if (!param.name) {
-          errors.push("Parameter must have a name");
+          errors.push('Parameter must have a name');
         }
 
-        if (!["string", "number", "boolean", "array"].includes(param.type)) {
+        if (!['string', 'number', 'boolean', 'array'].includes(param.type)) {
           errors.push(`Invalid parameter type: ${param.type}`);
         }
 
         if (param.required && param.default !== undefined) {
           warnings.push(
-            `Parameter ${param.name} is marked required but has a default value`,
+            `Parameter ${param.name} is marked required but has a default value`
           );
         }
       }
@@ -79,12 +79,12 @@ export class CommandValidator {
 
     // Validate token estimate
     if (metadata.tokenEstimate <= 0) {
-      warnings.push("Token estimate should be positive");
+      warnings.push('Token estimate should be positive');
     }
 
     // Validate content
-    if (!command.content || command.content.trim() === "") {
-      errors.push("Command content is required");
+    if (!command.content || command.content.trim() === '') {
+      errors.push('Command content is required');
     }
 
     return {
@@ -102,7 +102,7 @@ export class CommandValidator {
     parsedCommand: ParsedCommand,
     availableSkills: string[] = [],
     availableMCPs: string[] = [],
-    availableAgents: string[] = [],
+    availableAgents: string[] = []
   ): ValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
@@ -112,7 +112,7 @@ export class CommandValidator {
     const paramValidation = this.parameterParser.validateParameters(
       parsedCommand.parameters,
       parsedCommand.flags,
-      metadata.parameters,
+      metadata.parameters
     );
 
     errors.push(...paramValidation.errors);
@@ -161,13 +161,13 @@ export class CommandValidator {
     // Check for common issues
     if (metadata.autoExecute && metadata.parameters?.some((p) => p.required)) {
       warnings.push(
-        "Auto-execute commands with required parameters may fail if parameters are not provided",
+        'Auto-execute commands with required parameters may fail if parameters are not provided'
       );
     }
 
     if (metadata.tokenEstimate && metadata.tokenEstimate > 50000) {
       warnings.push(
-        `High token estimate (${metadata.tokenEstimate}). Consider breaking into smaller commands.`,
+        `High token estimate (${metadata.tokenEstimate}). Consider breaking into smaller commands.`
       );
     }
 
@@ -183,11 +183,11 @@ export class CommandValidator {
    */
   canExecute(
     command: Command,
-    availableTokens: number = Infinity,
+    availableTokens: number = Infinity
   ): { canExecute: boolean; reason?: string } {
     // Check if command is loaded
     if (!command.loaded) {
-      return { canExecute: false, reason: "Command not loaded" };
+      return { canExecute: false, reason: 'Command not loaded' };
     }
 
     // Check token budget
@@ -203,7 +203,7 @@ export class CommandValidator {
     if (!validation.valid) {
       return {
         canExecute: false,
-        reason: `Invalid command: ${validation.errors.join(", ")}`,
+        reason: `Invalid command: ${validation.errors.join(', ')}`,
       };
     }
 

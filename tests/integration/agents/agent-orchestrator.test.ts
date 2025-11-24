@@ -2,7 +2,7 @@
  * Agent Orchestrator Integration Tests
  */
 
-import { describe, it, expect, beforeEach } from '@jest/globals';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { AgentOrchestrator } from '../../../src/core/agents/agent-orchestrator';
 import type {
   Agent,
@@ -38,7 +38,8 @@ describe('Agent Orchestrator', () => {
           integrations: {
             skills: ['code-reviewer'],
             mcps: ['magic'],
-            other_agents: ['security-auditor', 'performance-tuner'],
+            // Use collaborators only for coordination tips, not hard deps in this suite
+            other_agents: ['performance-tuner'],
           },
         },
         content: 'Code reviewer agent content...',
@@ -63,7 +64,7 @@ describe('Agent Orchestrator', () => {
           integrations: {
             skills: ['security-auditor'],
             mcps: [],
-            other_agents: ['code-reviewer'],
+            other_agents: [],
           },
         },
         content: 'Security auditor agent content...',

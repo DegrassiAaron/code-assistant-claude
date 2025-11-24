@@ -8,12 +8,12 @@
  * - Duplicate prevention
  */
 
-import { createWordBoundaryPattern } from "../../utils/regex";
+import { createWordBoundaryPattern } from '../../utils/regex';
 
 export interface AbbreviationRule {
   full: string;
   abbreviation: string;
-  category: "technical" | "business" | "general";
+  category: 'technical' | 'business' | 'general';
   context?: string[];
 }
 
@@ -36,70 +36,70 @@ export class AbbreviationEngine {
 
   private rules: AbbreviationRule[] = [
     // Technical abbreviations
-    { full: "application", abbreviation: "app", category: "technical" },
-    { full: "database", abbreviation: "db", category: "technical" },
-    { full: "configuration", abbreviation: "config", category: "technical" },
-    { full: "environment", abbreviation: "env", category: "technical" },
-    { full: "repository", abbreviation: "repo", category: "technical" },
-    { full: "documentation", abbreviation: "docs", category: "technical" },
-    { full: "specification", abbreviation: "spec", category: "technical" },
-    { full: "implementation", abbreviation: "impl", category: "technical" },
-    { full: "administrator", abbreviation: "admin", category: "technical" },
-    { full: "authentication", abbreviation: "auth", category: "technical" },
-    { full: "authorization", abbreviation: "authz", category: "technical" },
-    { full: "function", abbreviation: "fn", category: "technical" },
-    { full: "parameter", abbreviation: "param", category: "technical" },
-    { full: "variable", abbreviation: "var", category: "technical" },
-    { full: "constant", abbreviation: "const", category: "technical" },
-    { full: "interface", abbreviation: "iface", category: "technical" },
-    { full: "definition", abbreviation: "def", category: "technical" },
-    { full: "reference", abbreviation: "ref", category: "technical" },
-    { full: "temporary", abbreviation: "temp", category: "technical" },
-    { full: "maximum", abbreviation: "max", category: "technical" },
-    { full: "minimum", abbreviation: "min", category: "technical" },
-    { full: "average", abbreviation: "avg", category: "technical" },
-    { full: "statistics", abbreviation: "stats", category: "technical" },
-    { full: "information", abbreviation: "info", category: "technical" },
-    { full: "message", abbreviation: "msg", category: "technical" },
-    { full: "error", abbreviation: "err", category: "technical" },
-    { full: "warning", abbreviation: "warn", category: "technical" },
-    { full: "production", abbreviation: "prod", category: "technical" },
-    { full: "development", abbreviation: "dev", category: "technical" },
+    { full: 'application', abbreviation: 'app', category: 'technical' },
+    { full: 'database', abbreviation: 'db', category: 'technical' },
+    { full: 'configuration', abbreviation: 'config', category: 'technical' },
+    { full: 'environment', abbreviation: 'env', category: 'technical' },
+    { full: 'repository', abbreviation: 'repo', category: 'technical' },
+    { full: 'documentation', abbreviation: 'docs', category: 'technical' },
+    { full: 'specification', abbreviation: 'spec', category: 'technical' },
+    { full: 'implementation', abbreviation: 'impl', category: 'technical' },
+    { full: 'administrator', abbreviation: 'admin', category: 'technical' },
+    { full: 'authentication', abbreviation: 'auth', category: 'technical' },
+    { full: 'authorization', abbreviation: 'authz', category: 'technical' },
+    { full: 'function', abbreviation: 'fn', category: 'technical' },
+    { full: 'parameter', abbreviation: 'param', category: 'technical' },
+    { full: 'variable', abbreviation: 'var', category: 'technical' },
+    { full: 'constant', abbreviation: 'const', category: 'technical' },
+    { full: 'interface', abbreviation: 'iface', category: 'technical' },
+    { full: 'definition', abbreviation: 'def', category: 'technical' },
+    { full: 'reference', abbreviation: 'ref', category: 'technical' },
+    { full: 'temporary', abbreviation: 'temp', category: 'technical' },
+    { full: 'maximum', abbreviation: 'max', category: 'technical' },
+    { full: 'minimum', abbreviation: 'min', category: 'technical' },
+    { full: 'average', abbreviation: 'avg', category: 'technical' },
+    { full: 'statistics', abbreviation: 'stats', category: 'technical' },
+    { full: 'information', abbreviation: 'info', category: 'technical' },
+    { full: 'message', abbreviation: 'msg', category: 'technical' },
+    { full: 'error', abbreviation: 'err', category: 'technical' },
+    { full: 'warning', abbreviation: 'warn', category: 'technical' },
+    { full: 'production', abbreviation: 'prod', category: 'technical' },
+    { full: 'development', abbreviation: 'dev', category: 'technical' },
 
     // Business abbreviations
-    { full: "customer", abbreviation: "cust", category: "business" },
-    { full: "organization", abbreviation: "org", category: "business" },
-    { full: "department", abbreviation: "dept", category: "business" },
-    { full: "management", abbreviation: "mgmt", category: "business" },
-    { full: "business", abbreviation: "biz", category: "business" },
-    { full: "marketing", abbreviation: "mkt", category: "business" },
-    { full: "operations", abbreviation: "ops", category: "business" },
-    { full: "human resources", abbreviation: "HR", category: "business" },
+    { full: 'customer', abbreviation: 'cust', category: 'business' },
+    { full: 'organization', abbreviation: 'org', category: 'business' },
+    { full: 'department', abbreviation: 'dept', category: 'business' },
+    { full: 'management', abbreviation: 'mgmt', category: 'business' },
+    { full: 'business', abbreviation: 'biz', category: 'business' },
+    { full: 'marketing', abbreviation: 'mkt', category: 'business' },
+    { full: 'operations', abbreviation: 'ops', category: 'business' },
+    { full: 'human resources', abbreviation: 'HR', category: 'business' },
     {
-      full: "chief executive officer",
-      abbreviation: "CEO",
-      category: "business",
+      full: 'chief executive officer',
+      abbreviation: 'CEO',
+      category: 'business',
     },
     {
-      full: "chief technology officer",
-      abbreviation: "CTO",
-      category: "business",
+      full: 'chief technology officer',
+      abbreviation: 'CTO',
+      category: 'business',
     },
-    { full: "return on investment", abbreviation: "ROI", category: "business" },
+    { full: 'return on investment', abbreviation: 'ROI', category: 'business' },
     {
-      full: "key performance indicator",
-      abbreviation: "KPI",
-      category: "business",
+      full: 'key performance indicator',
+      abbreviation: 'KPI',
+      category: 'business',
     },
 
     // General abbreviations
-    { full: "for example", abbreviation: "e.g.", category: "general" },
-    { full: "that is", abbreviation: "i.e.", category: "general" },
-    { full: "and so forth", abbreviation: "etc.", category: "general" },
-    { full: "approximately", abbreviation: "approx.", category: "general" },
-    { full: "versus", abbreviation: "vs", category: "general" },
-    { full: "with respect to", abbreviation: "w.r.t.", category: "general" },
-    { full: "with regard to", abbreviation: "w.r.t.", category: "general" },
+    { full: 'for example', abbreviation: 'e.g.', category: 'general' },
+    { full: 'that is', abbreviation: 'i.e.', category: 'general' },
+    { full: 'and so forth', abbreviation: 'etc.', category: 'general' },
+    { full: 'approximately', abbreviation: 'approx.', category: 'general' },
+    { full: 'versus', abbreviation: 'vs', category: 'general' },
+    { full: 'with respect to', abbreviation: 'w.r.t.', category: 'general' },
+    { full: 'with regard to', abbreviation: 'w.r.t.', category: 'general' },
   ];
 
   // PERFORMANCE FIX: Cached regex patterns
@@ -132,7 +132,7 @@ export class AbbreviationEngine {
    */
   private sortRules(): void {
     this.sortedRules = [...this.rules].sort(
-      (a, b) => b.full.length - a.full.length,
+      (a, b) => b.full.length - a.full.length
     );
   }
 
@@ -146,11 +146,11 @@ export class AbbreviationEngine {
 
     // Compile abbreviation patterns
     for (const rule of this.rules) {
-      const pattern = createWordBoundaryPattern(rule.full, "gi");
+      const pattern = createWordBoundaryPattern(rule.full, 'gi');
       this.regexCache.set(rule.full, pattern);
 
       // Compile reverse pattern for expansion
-      const reversePattern = createWordBoundaryPattern(rule.abbreviation, "g");
+      const reversePattern = createWordBoundaryPattern(rule.abbreviation, 'g');
       this.reverseRegexCache.set(rule.abbreviation, reversePattern);
     }
   }
@@ -160,7 +160,7 @@ export class AbbreviationEngine {
    */
   abbreviate(
     text: string,
-    _options: AbbreviationOptions = {},
+    _options: AbbreviationOptions = {}
   ): AbbreviationResult {
     if (text.length === 0) {
       return {
@@ -196,7 +196,7 @@ export class AbbreviationEngine {
 
     const abbreviatedLength = abbreviated.length;
     const tokensReduced = Math.floor(
-      (originalLength - abbreviatedLength) / AbbreviationEngine.CHARS_PER_TOKEN,
+      (originalLength - abbreviatedLength) / AbbreviationEngine.CHARS_PER_TOKEN
     );
 
     return {
@@ -234,7 +234,7 @@ export class AbbreviationEngine {
   addCustomRule(
     full: string,
     abbreviation: string,
-    category: AbbreviationRule["category"],
+    category: AbbreviationRule['category']
   ): void {
     // Remove existing rule if present
     this.removeCustomRule(full);
@@ -267,7 +267,7 @@ export class AbbreviationEngine {
   /**
    * Get all abbreviation rules
    */
-  getRules(category?: AbbreviationRule["category"]): AbbreviationRule[] {
+  getRules(category?: AbbreviationRule['category']): AbbreviationRule[] {
     if (category) {
       return this.rules.filter((r) => r.category === category);
     }
@@ -278,7 +278,7 @@ export class AbbreviationEngine {
    * Find potential abbreviations in text
    */
   findPotentialAbbreviations(
-    text: string,
+    text: string
   ): Array<{ word: string; suggestion: string }> {
     const suggestions: Array<{ word: string; suggestion: string }> = [];
 
@@ -309,10 +309,10 @@ export class AbbreviationEngine {
     customRules: number;
   } {
     const technical = this.rules.filter(
-      (r) => r.category === "technical",
+      (r) => r.category === 'technical'
     ).length;
-    const business = this.rules.filter((r) => r.category === "business").length;
-    const general = this.rules.filter((r) => r.category === "general").length;
+    const business = this.rules.filter((r) => r.category === 'business').length;
+    const general = this.rules.filter((r) => r.category === 'general').length;
 
     return {
       totalRules: this.rules.length,

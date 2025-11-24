@@ -1,5 +1,5 @@
-import { ExecutionResult, CacheEntry } from "../types";
-import crypto from "crypto";
+import { ExecutionResult, CacheEntry } from '../types';
+import crypto from 'crypto';
 
 /**
  * Manages caching of execution results
@@ -87,7 +87,7 @@ export class CacheManager {
    * Generate cache key from code
    */
   private generateKey(code: string): string {
-    return crypto.createHash("sha256").update(code).digest("hex");
+    return crypto.createHash('sha256').update(code).digest('hex');
   }
 
   /**

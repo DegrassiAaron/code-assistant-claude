@@ -5,9 +5,9 @@
  * support for different verbosity levels.
  */
 
-import chalk from "chalk";
+import chalk from 'chalk';
 
-export type LogLevel = "silent" | "normal" | "verbose" | "debug";
+export type LogLevel = 'silent' | 'normal' | 'verbose' | 'debug';
 
 export interface LoggerOptions {
   level: LogLevel;
@@ -20,7 +20,7 @@ export interface LoggerOptions {
  */
 class LoggerConfig {
   private static instance: LoggerConfig;
-  private _level: LogLevel = "normal";
+  private _level: LogLevel = 'normal';
   private _showTimestamps: boolean = false;
 
   private constructor() {}
@@ -52,7 +52,7 @@ class LoggerConfig {
    * Check if current level allows logging at specified level
    */
   shouldLog(level: LogLevel): boolean {
-    const levels: LogLevel[] = ["silent", "normal", "verbose", "debug"];
+    const levels: LogLevel[] = ['silent', 'normal', 'verbose', 'debug'];
     const currentLevelIndex = levels.indexOf(this._level);
     const requestedLevelIndex = levels.indexOf(level);
     return requestedLevelIndex <= currentLevelIndex;
@@ -66,7 +66,7 @@ export class Logger {
   private prefix: string;
   private config: LoggerConfig;
 
-  constructor(prefix: string = "") {
+  constructor(prefix: string = '') {
     this.prefix = prefix;
     this.config = LoggerConfig.getInstance();
   }
@@ -99,10 +99,10 @@ export class Logger {
    */
   private getTimestamp(): string {
     if (!this.config.shouldShowTimestamps()) {
-      return "";
+      return '';
     }
     const now = new Date();
-    const time = now.toLocaleTimeString("en-US", { hour12: false });
+    const time = now.toLocaleTimeString('en-US', { hour12: false });
     return chalk.gray(`[${time}] `);
   }
 
@@ -110,17 +110,17 @@ export class Logger {
    * Format prefix
    */
   private getPrefix(): string {
-    return this.prefix ? chalk.cyan(`[${this.prefix}]`) + " " : "";
+    return this.prefix ? chalk.cyan(`[${this.prefix}]`) + ' ' : '';
   }
 
   /**
    * Log informational message (normal level)
    */
   info(message: string, ...args: unknown[]): void {
-    if (!this.config.shouldLog("normal")) return;
+    if (!this.config.shouldLog('normal')) return;
     console.log(
-      `${this.getTimestamp()}${this.getPrefix()}${chalk.blue("ℹ")} ${message}`,
-      ...args,
+      `${this.getTimestamp()}${this.getPrefix()}${chalk.blue('ℹ')} ${message}`,
+      ...args
     );
   }
 
@@ -128,10 +128,10 @@ export class Logger {
    * Log success message (normal level)
    */
   success(message: string, ...args: unknown[]): void {
-    if (!this.config.shouldLog("normal")) return;
+    if (!this.config.shouldLog('normal')) return;
     console.log(
-      `${this.getTimestamp()}${this.getPrefix()}${chalk.green("✓")} ${chalk.green(message)}`,
-      ...args,
+      `${this.getTimestamp()}${this.getPrefix()}${chalk.green('✓')} ${chalk.green(message)}`,
+      ...args
     );
   }
 
@@ -139,10 +139,10 @@ export class Logger {
    * Log warning message (normal level)
    */
   warn(message: string, ...args: unknown[]): void {
-    if (!this.config.shouldLog("normal")) return;
+    if (!this.config.shouldLog('normal')) return;
     console.warn(
-      `${this.getTimestamp()}${this.getPrefix()}${chalk.yellow("⚠")} ${chalk.yellow(message)}`,
-      ...args,
+      `${this.getTimestamp()}${this.getPrefix()}${chalk.yellow('⚠')} ${chalk.yellow(message)}`,
+      ...args
     );
   }
 
@@ -153,8 +153,8 @@ export class Logger {
     const errorDetails =
       error instanceof Error ? error.stack || error.message : error;
     console.error(
-      `${this.getTimestamp()}${this.getPrefix()}${chalk.red("✖")} ${chalk.red(message)}`,
-      errorDetails ? "\n" + errorDetails : "",
+      `${this.getTimestamp()}${this.getPrefix()}${chalk.red('✖')} ${chalk.red(message)}`,
+      errorDetails ? '\n' + errorDetails : ''
     );
   }
 
@@ -162,10 +162,10 @@ export class Logger {
    * Log verbose message (verbose level)
    */
   verbose(message: string, ...args: unknown[]): void {
-    if (!this.config.shouldLog("verbose")) return;
+    if (!this.config.shouldLog('verbose')) return;
     console.log(
-      `${this.getTimestamp()}${this.getPrefix()}${chalk.magenta("◆")} ${chalk.gray(message)}`,
-      ...args,
+      `${this.getTimestamp()}${this.getPrefix()}${chalk.magenta('◆')} ${chalk.gray(message)}`,
+      ...args
     );
   }
 
@@ -173,10 +173,10 @@ export class Logger {
    * Log debug message (debug level)
    */
   debug(message: string, ...args: unknown[]): void {
-    if (!this.config.shouldLog("debug")) return;
+    if (!this.config.shouldLog('debug')) return;
     console.log(
-      `${this.getTimestamp()}${this.getPrefix()}${chalk.gray("🐛")} ${chalk.gray(message)}`,
-      ...args,
+      `${this.getTimestamp()}${this.getPrefix()}${chalk.gray('🐛')} ${chalk.gray(message)}`,
+      ...args
     );
   }
 
@@ -184,7 +184,7 @@ export class Logger {
    * Start a timed operation (verbose/debug)
    */
   startTimer(label: string): () => void {
-    if (!this.config.shouldLog("verbose")) {
+    if (!this.config.shouldLog('verbose')) {
       return () => {}; // No-op if not verbose
     }
 
@@ -201,9 +201,9 @@ export class Logger {
    * Log a step in a process (verbose)
    */
   step(step: number, total: number, message: string): void {
-    if (!this.config.shouldLog("verbose")) return;
+    if (!this.config.shouldLog('verbose')) return;
     console.log(
-      `${this.getTimestamp()}${this.getPrefix()}${chalk.blue(`[${step}/${total}]`)} ${message}`,
+      `${this.getTimestamp()}${this.getPrefix()}${chalk.blue(`[${step}/${total}]`)} ${message}`
     );
   }
 
@@ -211,7 +211,7 @@ export class Logger {
    * Log JSON data (debug only)
    */
   debugObject(label: string, obj: unknown): void {
-    if (!this.config.shouldLog("debug")) return;
+    if (!this.config.shouldLog('debug')) return;
     this.debug(`${label}:`);
     console.log(chalk.gray(JSON.stringify(obj, null, 2)));
   }

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { CodeWrapper } from "../types";
+import { CodeWrapper } from '../types';
 
 /**
  * Runtime for executing generated MCP code
@@ -12,7 +12,7 @@ export class MCPCodeRuntime {
    */
   async execute(
     wrapper: CodeWrapper,
-    context?: Record<string, unknown>,
+    context?: Record<string, unknown>
   ): Promise<unknown> {
     // Set up execution context
     if (context) {
@@ -21,9 +21,9 @@ export class MCPCodeRuntime {
       }
     }
 
-    if (wrapper.language === "typescript") {
+    if (wrapper.language === 'typescript') {
       return this.executeTypeScript(wrapper.code);
-    } else if (wrapper.language === "python") {
+    } else if (wrapper.language === 'python') {
       return this.executePython(wrapper.code);
     } else {
       throw new Error(`Unsupported language: ${wrapper.language}`);
@@ -43,12 +43,12 @@ export class MCPCodeRuntime {
       // Actual execution would happen in a sandbox
       return {
         success: true,
-        message: "TypeScript code validated successfully",
+        message: 'TypeScript code validated successfully',
         code,
       };
     } catch (error) {
       throw new Error(
-        `TypeScript execution failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `TypeScript execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -66,12 +66,12 @@ export class MCPCodeRuntime {
       // Actual execution would happen in a sandbox
       return {
         success: true,
-        message: "Python code validated successfully",
+        message: 'Python code validated successfully',
         code,
       };
     } catch (error) {
       throw new Error(
-        `Python execution failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Python execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }

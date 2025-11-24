@@ -15,8 +15,8 @@ import type {
   IAgentOrchestrator,
   MultiAgentPlan,
   MultiAgentResult,
-} from "./types";
-import { Logger } from "./logger";
+} from './types';
+import { Logger } from './logger';
 
 /**
  * Default execution policy
@@ -29,7 +29,7 @@ const DEFAULT_POLICY: ExecutionPolicy = {
 };
 
 export class MultiAgentCoordinator implements IAgentCoordinator {
-  private logger = new Logger("MultiAgentCoordinator");
+  private logger = new Logger('MultiAgentCoordinator');
 
   constructor(private orchestrator: IAgentOrchestrator) {}
 
@@ -38,13 +38,13 @@ export class MultiAgentCoordinator implements IAgentCoordinator {
    */
   async createPlan(
     agents: Agent[],
-    strategy: CoordinationStrategy,
+    strategy: CoordinationStrategy
   ): Promise<MultiAgentPlan> {
     if (!agents || agents.length === 0) {
-      throw new Error("Cannot create plan with empty agents array");
+      throw new Error('Cannot create plan with empty agents array');
     }
 
-    this.logger.info("Creating execution plan", {
+    this.logger.info('Creating execution plan', {
       agentCount: agents.length,
       strategy,
     });
@@ -52,7 +52,7 @@ export class MultiAgentCoordinator implements IAgentCoordinator {
     // Estimate token usage based on agent metadata
     const expectedTokens = agents.reduce(
       (sum, agent) => sum + this.estimateAgentTokens(agent),
-      0,
+      0
     );
 
     const plan: MultiAgentPlan = {
@@ -62,9 +62,9 @@ export class MultiAgentCoordinator implements IAgentCoordinator {
     };
 
     // For hierarchical strategy, define dependencies
-    if (strategy === "hierarchical") {
+    if (strategy === 'hierarchical') {
       plan.dependencies = this.buildDependencyGraph(agents);
-      this.logger.debug("Built dependency graph", {
+      this.logger.debug('Built dependency graph', {
         dependencies: Array.from(plan.dependencies.entries()),
       });
     }
@@ -78,12 +78,12 @@ export class MultiAgentCoordinator implements IAgentCoordinator {
   async executePlan(
     plan: MultiAgentPlan,
     context: AgentContext,
-    options?: ExecutionOptions,
+    options?: ExecutionOptions
   ): Promise<MultiAgentResult> {
     const startTime = Date.now();
     const policy = { ...DEFAULT_POLICY, ...options?.policy };
 
-    this.logger.info("Executing plan", {
+    this.logger.info('Executing plan', {
       strategy: plan.strategy,
       agentCount: plan.agents.length,
       policy,
@@ -93,29 +93,29 @@ export class MultiAgentCoordinator implements IAgentCoordinator {
 
     try {
       switch (plan.strategy) {
-        case "sequential":
+        case 'sequential':
           results = await this.executeSequential(plan.agents, context, options);
           break;
-        case "parallel":
+        case 'parallel':
           results = await this.executeParallel(plan.agents, context, options);
           break;
-        case "hierarchical":
+        case 'hierarchical':
           if (!plan.dependencies) {
-            throw new Error("Hierarchical strategy requires dependencies");
+            throw new Error('Hierarchical strategy requires dependencies');
           }
           results = await this.executeHierarchical(
             plan.agents,
             context,
             plan.dependencies,
-            options,
+            options
           );
           break;
         default:
           throw new Error(`Unknown strategy: ${plan.strategy}`);
       }
     } catch (error) {
-      this.logger.error("Plan execution failed", {
-        error: error instanceof Error ? error.message : "Unknown error",
+      this.logger.error('Plan execution failed', {
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
@@ -124,7 +124,7 @@ export class MultiAgentCoordinator implements IAgentCoordinator {
     const totalTokens = results.reduce((sum, r) => sum + r.tokensUsed, 0);
     const success = results.every((r) => r.success);
 
-    this.logger.info("Plan execution completed", {
+    this.logger.info('Plan execution completed', {
       totalDuration,
       totalTokens,
       success,
@@ -146,32 +146,32 @@ export class MultiAgentCoordinator implements IAgentCoordinator {
   async executeSequential(
     agents: Agent[],
     context: AgentContext,
-    options?: ExecutionOptions,
+    options?: ExecutionOptions
   ): Promise<AgentExecutionResult[]> {
     const policy = { ...DEFAULT_POLICY, ...options?.policy };
     const results: AgentExecutionResult[] = [];
     let failureCount = 0;
 
-    this.logger.debug("Starting sequential execution", {
+    this.logger.debug('Starting sequential execution', {
       agentCount: agents.length,
       policy,
     });
 
     for (const agent of agents) {
-      this.logger.debug("Executing agent sequentially", {
+      this.logger.debug('Executing agent sequentially', {
         agent: agent.metadata.name,
       });
 
       const result = await this.orchestrator.executeAgent(
         agent,
         context,
-        options,
+        options
       );
       results.push(result);
 
       if (!result.success) {
         failureCount++;
-        this.logger.warn("Agent execution failed", {
+        this.logger.warn('Agent execution failed', {
           agent: agent.metadata.name,
           error: result.error,
           failureCount,
@@ -182,7 +182,7 @@ export class MultiAgentCoordinator implements IAgentCoordinator {
           !policy.continueOnError ||
           (policy.maxFailures && failureCount >= policy.maxFailures)
         ) {
-          this.logger.info("Stopping sequential execution due to failures", {
+          this.logger.info('Stopping sequential execution due to failures', {
             failureCount,
             maxFailures: policy.maxFailures,
           });
@@ -200,13 +200,13 @@ export class MultiAgentCoordinator implements IAgentCoordinator {
   async executeParallel(
     agents: Agent[],
     context: AgentContext,
-    options?: ExecutionOptions,
+    options?: ExecutionOptions
   ): Promise<AgentExecutionResult[]> {
     const policy = { ...DEFAULT_POLICY, ...options?.policy };
     const maxConcurrent = policy.maxConcurrent || 5;
     const results: AgentExecutionResult[] = [];
 
-    this.logger.debug("Starting parallel execution", {
+    this.logger.debug('Starting parallel execution', {
       agentCount: agents.length,
       maxConcurrent,
     });
@@ -215,13 +215,13 @@ export class MultiAgentCoordinator implements IAgentCoordinator {
     for (let i = 0; i < agents.length; i += maxConcurrent) {
       const batch = agents.slice(i, i + maxConcurrent);
 
-      this.logger.debug("Executing batch", {
+      this.logger.debug('Executing batch', {
         batchNumber: Math.floor(i / maxConcurrent) + 1,
         batchSize: batch.length,
       });
 
       const batchPromises = batch.map((agent) =>
-        this.orchestrator.executeAgent(agent, context, options),
+        this.orchestrator.executeAgent(agent, context, options)
       );
 
       const batchResults = await Promise.all(batchPromises);
@@ -230,7 +230,7 @@ export class MultiAgentCoordinator implements IAgentCoordinator {
       // Log any failures
       const batchFailures = batchResults.filter((r) => !r.success);
       if (batchFailures.length > 0) {
-        this.logger.warn("Batch had failures", {
+        this.logger.warn('Batch had failures', {
           failureCount: batchFailures.length,
           agents: batchFailures.map((r) => r.agent),
         });
@@ -247,14 +247,14 @@ export class MultiAgentCoordinator implements IAgentCoordinator {
     agents: Agent[],
     context: AgentContext,
     dependencies: Map<string, string[]>,
-    options?: ExecutionOptions,
+    options?: ExecutionOptions
   ): Promise<AgentExecutionResult[]> {
     const results = new Map<string, AgentExecutionResult>();
     const executed = new Set<string>();
     const maxIterations = agents.length * 2; // Safety limit
     let iterations = 0;
 
-    this.logger.debug("Starting hierarchical execution", {
+    this.logger.debug('Starting hierarchical execution', {
       agentCount: agents.length,
     });
 
@@ -272,7 +272,7 @@ export class MultiAgentCoordinator implements IAgentCoordinator {
       }
 
       // Execute agent
-      this.logger.debug("Executing agent in hierarchy", {
+      this.logger.debug('Executing agent in hierarchy', {
         agent: agent.metadata.name,
         dependencies: deps,
       });
@@ -280,7 +280,7 @@ export class MultiAgentCoordinator implements IAgentCoordinator {
       const result = await this.orchestrator.executeAgent(
         agent,
         context,
-        options,
+        options
       );
       results.set(agent.metadata.name, result);
       executed.add(agent.metadata.name);
@@ -293,21 +293,21 @@ export class MultiAgentCoordinator implements IAgentCoordinator {
       // Detect circular dependencies or infinite loop
       if (iterations > maxIterations) {
         this.logger.error(
-          "Max iterations exceeded - likely circular dependency",
+          'Max iterations exceeded - likely circular dependency',
           {
             executed: Array.from(executed),
             remaining: agents
               .filter((a) => !executed.has(a.metadata.name))
               .map((a) => a.metadata.name),
-          },
+          }
         );
         throw new Error(
-          "Circular dependency or infinite loop detected in hierarchical execution",
+          'Circular dependency or infinite loop detected in hierarchical execution'
         );
       }
 
       const readyAgents = agents.filter(
-        (agent) => !executed.has(agent.metadata.name),
+        (agent) => !executed.has(agent.metadata.name)
       );
 
       if (readyAgents.length === 0) {
@@ -326,7 +326,7 @@ export class MultiAgentCoordinator implements IAgentCoordinator {
           .filter((a) => !executed.has(a.metadata.name))
           .map((a) => a.metadata.name);
 
-        this.logger.error("No progress made - circular dependency", {
+        this.logger.error('No progress made - circular dependency', {
           remaining,
           dependencies: remaining.map((name) => ({
             agent: name,
@@ -335,12 +335,12 @@ export class MultiAgentCoordinator implements IAgentCoordinator {
         });
 
         throw new Error(
-          `Circular dependency detected. Unable to execute: ${remaining.join(", ")}`,
+          `Circular dependency detected. Unable to execute: ${remaining.join(', ')}`
         );
       }
     }
 
-    this.logger.debug("Hierarchical execution completed", {
+    this.logger.debug('Hierarchical execution completed', {
       iterations,
       executed: executed.size,
     });
@@ -351,11 +351,11 @@ export class MultiAgentCoordinator implements IAgentCoordinator {
         results.get(agent.metadata.name) || {
           agent: agent.metadata.name,
           success: false,
-          output: "",
+          output: '',
           tokensUsed: 0,
           duration: 0,
-          error: "Agent was not executed (dependency issue)",
-        },
+          error: 'Agent was not executed (dependency issue)',
+        }
     );
   }
 
@@ -385,7 +385,7 @@ export class MultiAgentCoordinator implements IAgentCoordinator {
       if (
         deps.length === 0 &&
         i > 0 &&
-        agent?.metadata?.category === "technical"
+        agent?.metadata?.category === 'technical'
       ) {
         const prevAgent = agents[i - 1];
         if (prevAgent) {
@@ -409,7 +409,7 @@ export class MultiAgentCoordinator implements IAgentCoordinator {
 
     // More complex agents use more tokens
     const complexityMultiplier = agent.metadata.activation.complexity.includes(
-      "complex",
+      'complex'
     )
       ? 1.5
       : 1.0;

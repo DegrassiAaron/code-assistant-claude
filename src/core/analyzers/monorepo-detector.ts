@@ -1,8 +1,8 @@
-import { promises as fs } from "fs";
-import * as path from "path";
-import { glob } from "glob";
-import * as yaml from "js-yaml";
-import { createLogger } from "../utils/logger";
+import { promises as fs } from 'fs';
+import * as path from 'path';
+import { glob } from 'glob';
+import * as yaml from 'js-yaml';
+import { createLogger } from '../utils/logger';
 
 // Interfacce TypeScript per sostituire 'any'
 export interface PnpmWorkspaceConfig {
@@ -59,7 +59,7 @@ export class MonorepoDetector {
   private static readonly MAX_CACHE_ENTRIES = 100; // Limite LRU cache
   private static readonly MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
 
-  private readonly logger = createLogger("MonorepoDetector");
+  private readonly logger = createLogger('MonorepoDetector');
   private readonly maxWorkspaces: number;
   private readonly timeoutMs: number;
   private readonly enableCache: boolean;
@@ -67,21 +67,21 @@ export class MonorepoDetector {
 
   constructor(
     private projectRoot: string,
-    options: MonorepoDetectorOptions = {},
+    options: MonorepoDetectorOptions = {}
   ) {
     // Validazione configurazione
     if (options.maxWorkspaces !== undefined && options.maxWorkspaces <= 0) {
-      throw new Error("maxWorkspaces must be greater than 0");
+      throw new Error('maxWorkspaces must be greater than 0');
     }
     if (options.timeoutMs !== undefined && options.timeoutMs <= 0) {
-      throw new Error("timeoutMs must be greater than 0");
+      throw new Error('timeoutMs must be greater than 0');
     }
 
     this.maxWorkspaces =
       options.maxWorkspaces ?? MonorepoDetector.DEFAULT_MAX_WORKSPACES;
     this.timeoutMs = Math.min(
       options.timeoutMs ?? MonorepoDetector.DEFAULT_TIMEOUT_MS,
-      MonorepoDetector.MAX_TIMEOUT_MS,
+      MonorepoDetector.MAX_TIMEOUT_MS
     );
     this.enableCache = options.enableCache ?? true;
   }
@@ -119,12 +119,12 @@ export class MonorepoDetector {
         const detected = await this.withTimeout(
           detector(),
           this.timeoutMs,
-          "Detector timeout",
+          'Detector timeout'
         );
         if (detected.isMonorepo) {
           Object.assign(result, detected);
           this.logger.verbose(
-            `Detected ${detected.tool} monorepo with ${detected.workspaces.length} workspaces`,
+            `Detected ${detected.tool} monorepo with ${detected.workspaces.length} workspaces`
           );
           break;
         }
@@ -134,7 +134,7 @@ export class MonorepoDetector {
       if (result.isMonorepo) {
         result.crossLanguage = this.isCrossLanguage(result.workspaces);
         this.logger.verbose(
-          `Cross-language: ${result.crossLanguage ? "yes" : "no"}`,
+          `Cross-language: ${result.crossLanguage ? 'yes' : 'no'}`
         );
       }
 
@@ -144,7 +144,7 @@ export class MonorepoDetector {
 
       return result;
     } catch (error) {
-      this.logger.error("Monorepo detection failed", error);
+      this.logger.error('Monorepo detection failed', error);
       const elapsedMs = Date.now() - startTime;
       result.detectionTimeMs = elapsedMs;
       return result;
@@ -164,15 +164,15 @@ export class MonorepoDetector {
   // Helper: lettura file sicura con limite dimensione
   private async readFileSafe(
     filePath: string,
-    maxSizeBytes: number = MonorepoDetector.MAX_FILE_SIZE_BYTES,
+    maxSizeBytes: number = MonorepoDetector.MAX_FILE_SIZE_BYTES
   ): Promise<string> {
     const stats = await fs.stat(filePath);
     if (stats.size > maxSizeBytes) {
       throw new Error(
-        `File too large: ${filePath} (${stats.size} bytes, max ${maxSizeBytes})`,
+        `File too large: ${filePath} (${stats.size} bytes, max ${maxSizeBytes})`
       );
     }
-    return fs.readFile(filePath, "utf-8");
+    return fs.readFile(filePath, 'utf-8');
   }
 
   // Helper: validazione path sicura (protegge da symlink attacks)
@@ -196,12 +196,12 @@ export class MonorepoDetector {
   private async withTimeout<T>(
     promise: Promise<T>,
     timeoutMs: number,
-    errorMessage: string,
+    errorMessage: string
   ): Promise<T> {
     return Promise.race([
       promise,
       new Promise<T>((_, reject) =>
-        setTimeout(() => reject(new Error(errorMessage)), timeoutMs),
+        setTimeout(() => reject(new Error(errorMessage)), timeoutMs)
       ),
     ]);
   }
@@ -209,7 +209,7 @@ export class MonorepoDetector {
   // Helper: glob con cache LRU
   private async cachedGlob(
     pattern: string,
-    options: { cwd: string; absolute?: boolean; ignore?: string[] },
+    options: { cwd: string; absolute?: boolean; ignore?: string[] }
   ): Promise<string[]> {
     if (!this.enableCache) {
       return glob(pattern, options);
@@ -234,7 +234,7 @@ export class MonorepoDetector {
     // Implementazione LRU: rimuovi entry più vecchia se superato limite
     if (this.globCache.size > MonorepoDetector.MAX_CACHE_ENTRIES) {
       const entries = Array.from(this.globCache.entries()).sort(
-        (a, b) => a[1].timestamp - b[1].timestamp,
+        (a, b) => a[1].timestamp - b[1].timestamp
       );
       const oldestEntry = entries[0];
       if (oldestEntry) {
@@ -251,7 +251,7 @@ export class MonorepoDetector {
   private limitWorkspaces(workspaces: WorkspaceInfo[]): WorkspaceInfo[] {
     if (workspaces.length > this.maxWorkspaces) {
       this.logger.warn(
-        `Limiting workspaces from ${workspaces.length} to ${this.maxWorkspaces}`,
+        `Limiting workspaces from ${workspaces.length} to ${this.maxWorkspaces}`
       );
       return workspaces.slice(0, this.maxWorkspaces);
     }
@@ -261,13 +261,13 @@ export class MonorepoDetector {
   // Helper: parse XML semplice per Maven (migliorato per gestire commenti)
   private parseSimpleXml(content: string, tagName: string): string[] | null {
     // Rimuovi commenti XML prima del parsing
-    const cleanContent = content.replace(/<!--[\s\S]*?-->/g, "");
+    const cleanContent = content.replace(/<!--[\s\S]*?-->/g, '');
 
     const results: string[] = [];
     // Pattern più robusto che gestisce whitespace e newlines
     const tagPattern = new RegExp(
       `<${tagName}>\\s*([^<]+?)\\s*</${tagName}>`,
-      "g",
+      'g'
     );
     let match;
 
@@ -284,7 +284,7 @@ export class MonorepoDetector {
   }
 
   private async detectLernaMonorepo(): Promise<MonorepoInfo> {
-    const lernaPath = path.join(this.projectRoot, "lerna.json");
+    const lernaPath = path.join(this.projectRoot, 'lerna.json');
     try {
       if (!(await this.fileExists(lernaPath))) {
         return this.emptyResult();
@@ -292,26 +292,26 @@ export class MonorepoDetector {
 
       const lernaConfig = JSON.parse(await this.readFileSafe(lernaPath));
       const packages = lernaConfig.packages ||
-        lernaConfig.workspaces || ["packages/*"];
+        lernaConfig.workspaces || ['packages/*'];
 
       const workspaces = await this.findWorkspaces(packages);
 
       return {
         isMonorepo: true,
-        tool: "lerna",
+        tool: 'lerna',
         rootPath: this.projectRoot,
         workspaces: this.limitWorkspaces(workspaces),
-        rootTechnologies: ["JavaScript", "TypeScript"],
+        rootTechnologies: ['JavaScript', 'TypeScript'],
         crossLanguage: false,
       };
     } catch (error) {
-      this.logger.debug("Lerna detection failed", error);
+      this.logger.debug('Lerna detection failed', error);
       return this.emptyResult();
     }
   }
 
   private async detectPnpmWorkspaces(): Promise<MonorepoInfo> {
-    const pnpmPath = path.join(this.projectRoot, "pnpm-workspace.yaml");
+    const pnpmPath = path.join(this.projectRoot, 'pnpm-workspace.yaml');
     try {
       if (!(await this.fileExists(pnpmPath))) {
         return this.emptyResult();
@@ -321,8 +321,8 @@ export class MonorepoDetector {
       const rawConfig = yaml.load(content);
 
       // Validazione type-safe
-      if (!rawConfig || typeof rawConfig !== "object") {
-        this.logger.warn("Invalid pnpm-workspace.yaml format");
+      if (!rawConfig || typeof rawConfig !== 'object') {
+        this.logger.warn('Invalid pnpm-workspace.yaml format');
         return this.emptyResult();
       }
 
@@ -333,27 +333,27 @@ export class MonorepoDetector {
 
       return {
         isMonorepo: true,
-        tool: "pnpm",
+        tool: 'pnpm',
         rootPath: this.projectRoot,
         workspaces: this.limitWorkspaces(workspaces),
-        rootTechnologies: ["JavaScript", "TypeScript"],
+        rootTechnologies: ['JavaScript', 'TypeScript'],
         crossLanguage: false,
       };
     } catch (error) {
-      this.logger.debug("pnpm detection failed", error);
+      this.logger.debug('pnpm detection failed', error);
       return this.emptyResult();
     }
   }
 
   private async detectYarnWorkspaces(): Promise<MonorepoInfo> {
-    const packageJsonPath = path.join(this.projectRoot, "package.json");
+    const packageJsonPath = path.join(this.projectRoot, 'package.json');
     try {
       if (!(await this.fileExists(packageJsonPath))) {
         return this.emptyResult();
       }
 
       const packageJson: PackageJson = JSON.parse(
-        await this.readFileSafe(packageJsonPath),
+        await this.readFileSafe(packageJsonPath)
       );
       const workspacesField = packageJson.workspaces;
 
@@ -370,26 +370,26 @@ export class MonorepoDetector {
 
       // Determina il tool (yarn o npm) in base al lockfile
       const yarnLock = await this.fileExists(
-        path.join(this.projectRoot, "yarn.lock"),
+        path.join(this.projectRoot, 'yarn.lock')
       );
-      const tool = yarnLock ? "yarn" : "npm";
+      const tool = yarnLock ? 'yarn' : 'npm';
 
       return {
         isMonorepo: true,
         tool,
         rootPath: this.projectRoot,
         workspaces: this.limitWorkspaces(workspaces),
-        rootTechnologies: ["JavaScript", "TypeScript"],
+        rootTechnologies: ['JavaScript', 'TypeScript'],
         crossLanguage: false,
       };
     } catch (error) {
-      this.logger.debug("Yarn/npm workspace detection failed", error);
+      this.logger.debug('Yarn/npm workspace detection failed', error);
       return this.emptyResult();
     }
   }
 
   private async detectGoWorkspace(): Promise<MonorepoInfo> {
-    const goWorkPath = path.join(this.projectRoot, "go.work");
+    const goWorkPath = path.join(this.projectRoot, 'go.work');
     try {
       if (!(await this.fileExists(goWorkPath))) {
         return this.emptyResult();
@@ -399,22 +399,22 @@ export class MonorepoDetector {
       const useModules: string[] = [];
 
       // Parse go.work file (formato semplice, migliore gestione commenti)
-      const lines = content.split("\n");
+      const lines = content.split('\n');
       let inUseBlock = false;
       for (const line of lines) {
         const trimmed = line.trim();
         // Ignora commenti
-        if (trimmed.startsWith("//") || trimmed.startsWith("#")) {
+        if (trimmed.startsWith('//') || trimmed.startsWith('#')) {
           continue;
         }
 
-        if (trimmed.startsWith("use")) {
+        if (trimmed.startsWith('use')) {
           inUseBlock = true;
           // Gestisci "use ./path"
           const match = trimmed.match(/use\s+(.+)/);
           if (match && match[1]) {
-            const modulePath = match[1].replace(/[()]/g, "").trim();
-            if (modulePath && !modulePath.startsWith("(")) {
+            const modulePath = match[1].replace(/[()]/g, '').trim();
+            if (modulePath && !modulePath.startsWith('(')) {
               if (await this.isPathSafe(modulePath)) {
                 useModules.push(modulePath);
               }
@@ -423,10 +423,10 @@ export class MonorepoDetector {
           }
         }
         if (inUseBlock) {
-          if (trimmed === ")") {
+          if (trimmed === ')') {
             inUseBlock = false;
-          } else if (trimmed && !trimmed.startsWith("//")) {
-            const modulePath = trimmed.replace(/[()]/g, "").trim();
+          } else if (trimmed && !trimmed.startsWith('//')) {
+            const modulePath = trimmed.replace(/[()]/g, '').trim();
             if (modulePath && (await this.isPathSafe(modulePath))) {
               useModules.push(modulePath);
             }
@@ -437,7 +437,7 @@ export class MonorepoDetector {
       // Parallelizza lettura moduli Go
       const workspacePromises = useModules.map(async (modulePath) => {
         const fullPath = path.join(this.projectRoot, modulePath);
-        const goModPath = path.join(fullPath, "go.mod");
+        const goModPath = path.join(fullPath, 'go.mod');
 
         if (await this.fileExists(goModPath)) {
           const goModContent = await this.readFileSafe(goModPath);
@@ -448,8 +448,8 @@ export class MonorepoDetector {
           return {
             name: moduleName,
             path: modulePath,
-            type: "Go Module",
-            technologies: ["Go"],
+            type: 'Go Module',
+            technologies: ['Go'],
             hasOwnPackageManager: true,
           };
         }
@@ -458,25 +458,25 @@ export class MonorepoDetector {
 
       const workspaceResults = await Promise.all(workspacePromises);
       const workspaces = workspaceResults.filter(
-        (w): w is WorkspaceInfo => w !== null,
+        (w): w is WorkspaceInfo => w !== null
       );
 
       return {
         isMonorepo: true,
-        tool: "go-workspace",
+        tool: 'go-workspace',
         rootPath: this.projectRoot,
         workspaces: this.limitWorkspaces(workspaces),
-        rootTechnologies: ["Go"],
+        rootTechnologies: ['Go'],
         crossLanguage: false,
       };
     } catch (error) {
-      this.logger.debug("Go workspace detection failed", error);
+      this.logger.debug('Go workspace detection failed', error);
       return this.emptyResult();
     }
   }
 
   private async detectRustWorkspace(): Promise<MonorepoInfo> {
-    const cargoTomlPath = path.join(this.projectRoot, "Cargo.toml");
+    const cargoTomlPath = path.join(this.projectRoot, 'Cargo.toml');
     try {
       if (!(await this.fileExists(cargoTomlPath))) {
         return this.emptyResult();
@@ -485,7 +485,7 @@ export class MonorepoDetector {
       const content = await this.readFileSafe(cargoTomlPath);
 
       // Check per [workspace] section
-      if (!content.includes("[workspace]")) {
+      if (!content.includes('[workspace]')) {
         return this.emptyResult();
       }
 
@@ -497,15 +497,15 @@ export class MonorepoDetector {
 
       const workspaceSection = workspaceMatch[1];
       const membersMatch = workspaceSection.match(
-        /members\s*=\s*\[([\s\S]*?)\]/,
+        /members\s*=\s*\[([\s\S]*?)\]/
       );
       if (!membersMatch || !membersMatch[1]) {
         return this.emptyResult();
       }
 
       const members = membersMatch[1]
-        .split(",")
-        .map((m) => m.trim().replace(/['"]/g, ""))
+        .split(',')
+        .map((m) => m.trim().replace(/['"]/g, ''))
         .filter((m) => m);
 
       // Parallelizza processing crates
@@ -521,7 +521,7 @@ export class MonorepoDetector {
       const workspacePromises = allMatches.map(async (match) => {
         if (!(await this.isPathSafe(match))) return null;
 
-        const cargoPath = path.join(this.projectRoot, match, "Cargo.toml");
+        const cargoPath = path.join(this.projectRoot, match, 'Cargo.toml');
         if (await this.fileExists(cargoPath)) {
           const cargoContent = await this.readFileSafe(cargoPath);
           const nameMatch = cargoContent.match(/name\s*=\s*"(.+?)"/);
@@ -531,8 +531,8 @@ export class MonorepoDetector {
           return {
             name,
             path: match,
-            type: "Rust Crate",
-            technologies: ["Rust"],
+            type: 'Rust Crate',
+            technologies: ['Rust'],
             hasOwnPackageManager: true,
           };
         }
@@ -541,25 +541,25 @@ export class MonorepoDetector {
 
       const workspaceResults = await Promise.all(workspacePromises);
       const workspaces = workspaceResults.filter(
-        (w): w is WorkspaceInfo => w !== null,
+        (w): w is WorkspaceInfo => w !== null
       );
 
       return {
         isMonorepo: true,
-        tool: "cargo-workspace",
+        tool: 'cargo-workspace',
         rootPath: this.projectRoot,
         workspaces: this.limitWorkspaces(workspaces),
-        rootTechnologies: ["Rust"],
+        rootTechnologies: ['Rust'],
         crossLanguage: false,
       };
     } catch (error) {
-      this.logger.debug("Rust workspace detection failed", error);
+      this.logger.debug('Rust workspace detection failed', error);
       return this.emptyResult();
     }
   }
 
   private async detectMavenMultiModule(): Promise<MonorepoInfo> {
-    const pomPath = path.join(this.projectRoot, "pom.xml");
+    const pomPath = path.join(this.projectRoot, 'pom.xml');
     try {
       if (!(await this.fileExists(pomPath))) {
         return this.emptyResult();
@@ -574,7 +574,7 @@ export class MonorepoDetector {
       }
 
       const modulesSection = modulesMatch[1];
-      const modules = this.parseSimpleXml(modulesSection, "module");
+      const modules = this.parseSimpleXml(modulesSection, 'module');
 
       if (!modules || modules.length === 0) {
         return this.emptyResult();
@@ -587,19 +587,19 @@ export class MonorepoDetector {
         const modulePomPath = path.join(
           this.projectRoot,
           modulePath,
-          "pom.xml",
+          'pom.xml'
         );
 
         if (await this.fileExists(modulePomPath)) {
           const moduleContent = await this.readFileSafe(modulePomPath);
-          const artifactIds = this.parseSimpleXml(moduleContent, "artifactId");
+          const artifactIds = this.parseSimpleXml(moduleContent, 'artifactId');
           const artifactId = artifactIds?.[0] || path.basename(modulePath);
 
           return {
             name: artifactId,
             path: modulePath,
-            type: "Maven Module",
-            technologies: ["Java"],
+            type: 'Maven Module',
+            technologies: ['Java'],
             hasOwnPackageManager: true,
           };
         }
@@ -608,29 +608,29 @@ export class MonorepoDetector {
 
       const workspaceResults = await Promise.all(workspacePromises);
       const workspaces = workspaceResults.filter(
-        (w): w is WorkspaceInfo => w !== null,
+        (w): w is WorkspaceInfo => w !== null
       );
 
       return {
         isMonorepo: true,
-        tool: "maven",
+        tool: 'maven',
         rootPath: this.projectRoot,
         workspaces: this.limitWorkspaces(workspaces),
-        rootTechnologies: ["Java"],
+        rootTechnologies: ['Java'],
         crossLanguage: false,
       };
     } catch (error) {
-      this.logger.debug("Maven multi-module detection failed", error);
+      this.logger.debug('Maven multi-module detection failed', error);
       return this.emptyResult();
     }
   }
 
   private async detectGradleMultiProject(): Promise<MonorepoInfo> {
-    const settingsPath = path.join(this.projectRoot, "settings.gradle");
-    const settingsKtsPath = path.join(this.projectRoot, "settings.gradle.kts");
+    const settingsPath = path.join(this.projectRoot, 'settings.gradle');
+    const settingsKtsPath = path.join(this.projectRoot, 'settings.gradle.kts');
 
     try {
-      let content = "";
+      let content = '';
 
       if (await this.fileExists(settingsPath)) {
         content = await this.readFileSafe(settingsPath);
@@ -642,13 +642,22 @@ export class MonorepoDetector {
         return this.emptyResult();
       }
 
-      // Parse per trovare include() statements
-      const includePattern = /include\s*\(\s*['"](.+?)['"]\s*\)/g;
+      // Parse include statements (supports: include 'app', include(":core", ":lib"))
       const includes: string[] = [];
+      const includeRegex = /include\s+([^\n]+)/g;
       let match;
-      while ((match = includePattern.exec(content)) !== null) {
-        if (match[1]) {
-          includes.push(match[1]);
+      while ((match = includeRegex.exec(content)) !== null) {
+        const remainder = match[1]
+          .replace(/[()]/g, '') // drop optional parentheses
+          .trim();
+
+        const parts = remainder.split(',').map((p) => p.trim());
+        for (const part of parts) {
+          if (!part) continue;
+          const cleaned = part.replace(/^['"]|['"]$/g, '');
+          if (cleaned) {
+            includes.push(cleaned);
+          }
         }
       }
 
@@ -659,25 +668,25 @@ export class MonorepoDetector {
       // Parallelizza verifica progetti Gradle
       const workspacePromises = includes.map(async (projectPath) => {
         // Converti ":subproject" in "subproject"
-        const relativePath = projectPath.replace(/^:/, "").replace(/:/g, "/");
+        const relativePath = projectPath.replace(/^:/, '').replace(/:/g, '/');
 
         if (!(await this.isPathSafe(relativePath))) return null;
 
         const fullPath = path.join(this.projectRoot, relativePath);
 
         const buildGradle = await this.fileExists(
-          path.join(fullPath, "build.gradle"),
+          path.join(fullPath, 'build.gradle')
         );
         const buildGradleKts = await this.fileExists(
-          path.join(fullPath, "build.gradle.kts"),
+          path.join(fullPath, 'build.gradle.kts')
         );
 
         if (buildGradle || buildGradleKts) {
           return {
             name: projectPath,
             path: relativePath,
-            type: "Gradle Project",
-            technologies: ["Java", "Kotlin"],
+            type: 'Gradle Project',
+            technologies: ['Java', 'Kotlin'],
             hasOwnPackageManager: true,
           };
         }
@@ -686,25 +695,25 @@ export class MonorepoDetector {
 
       const workspaceResults = await Promise.all(workspacePromises);
       const workspaces = workspaceResults.filter(
-        (w): w is WorkspaceInfo => w !== null,
+        (w): w is WorkspaceInfo => w !== null
       );
 
       return {
         isMonorepo: true,
-        tool: "gradle",
+        tool: 'gradle',
         rootPath: this.projectRoot,
         workspaces: this.limitWorkspaces(workspaces),
-        rootTechnologies: ["Java", "Kotlin"],
+        rootTechnologies: ['Java', 'Kotlin'],
         crossLanguage: false,
       };
     } catch (error) {
-      this.logger.debug("Gradle multi-project detection failed", error);
+      this.logger.debug('Gradle multi-project detection failed', error);
       return this.emptyResult();
     }
   }
 
   private async detectPythonMonorepo(): Promise<MonorepoInfo> {
-    const pyprojectPath = path.join(this.projectRoot, "pyproject.toml");
+    const pyprojectPath = path.join(this.projectRoot, 'pyproject.toml');
     try {
       if (!(await this.fileExists(pyprojectPath))) {
         return this.emptyResult();
@@ -713,19 +722,19 @@ export class MonorepoDetector {
       const content = await this.readFileSafe(pyprojectPath);
 
       // Poetry workspace support (experimental)
-      if (content.includes("[tool.poetry.workspace]")) {
+      if (content.includes('[tool.poetry.workspace]')) {
         const workspaceMatch = content.match(
-          /\[tool\.poetry\.workspace\]([\s\S]*?)(?=\n\[|$)/,
+          /\[tool\.poetry\.workspace\]([\s\S]*?)(?=\n\[|$)/
         );
         if (workspaceMatch && workspaceMatch[1]) {
           const workspaceSection = workspaceMatch[1];
           const membersMatch = workspaceSection.match(
-            /members\s*=\s*\[([\s\S]*?)\]/,
+            /members\s*=\s*\[([\s\S]*?)\]/
           );
           if (membersMatch && membersMatch[1]) {
             const members = membersMatch[1]
-              .split(",")
-              .map((m) => m.trim().replace(/['"]/g, ""))
+              .split(',')
+              .map((m) => m.trim().replace(/['"]/g, ''))
               .filter((m) => m);
 
             const allMatches: string[] = [];
@@ -742,18 +751,18 @@ export class MonorepoDetector {
               if (!(await this.isPathSafe(match))) return null;
 
               const pyprojectExists = await this.fileExists(
-                path.join(this.projectRoot, match, "pyproject.toml"),
+                path.join(this.projectRoot, match, 'pyproject.toml')
               );
               const setupExists = await this.fileExists(
-                path.join(this.projectRoot, match, "setup.py"),
+                path.join(this.projectRoot, match, 'setup.py')
               );
 
               if (pyprojectExists || setupExists) {
                 return {
                   name: path.basename(match),
                   path: match,
-                  type: "Python Package",
-                  technologies: ["Python"],
+                  type: 'Python Package',
+                  technologies: ['Python'],
                   hasOwnPackageManager: true,
                 };
               }
@@ -762,16 +771,16 @@ export class MonorepoDetector {
 
             const workspaceResults = await Promise.all(workspacePromises);
             const workspaces = workspaceResults.filter(
-              (w): w is WorkspaceInfo => w !== null,
+              (w): w is WorkspaceInfo => w !== null
             );
 
             if (workspaces.length > 0) {
               return {
                 isMonorepo: true,
-                tool: "poetry",
+                tool: 'poetry',
                 rootPath: this.projectRoot,
                 workspaces: this.limitWorkspaces(workspaces),
-                rootTechnologies: ["Python"],
+                rootTechnologies: ['Python'],
                 crossLanguage: false,
               };
             }
@@ -781,11 +790,11 @@ export class MonorepoDetector {
 
       // Fallback: cerca directory con setup.py o pyproject.toml
       const potentialPackages = await this.cachedGlob(
-        "*/+(pyproject.toml|setup.py)",
+        '*/+(pyproject.toml|setup.py)',
         {
           cwd: this.projectRoot,
           absolute: false,
-        },
+        }
       );
 
       // Usa costante per minimo packages
@@ -800,8 +809,8 @@ export class MonorepoDetector {
             workspaces.push({
               name: dirName,
               path: dirName,
-              type: "Python Package",
-              technologies: ["Python"],
+              type: 'Python Package',
+              technologies: ['Python'],
               hasOwnPackageManager: true,
             });
           }
@@ -809,24 +818,24 @@ export class MonorepoDetector {
 
         return {
           isMonorepo: true,
-          tool: "python-custom",
+          tool: 'python-custom',
           rootPath: this.projectRoot,
           workspaces: this.limitWorkspaces(workspaces),
-          rootTechnologies: ["Python"],
+          rootTechnologies: ['Python'],
           crossLanguage: false,
         };
       }
 
       return this.emptyResult();
     } catch (error) {
-      this.logger.debug("Python monorepo detection failed", error);
+      this.logger.debug('Python monorepo detection failed', error);
       return this.emptyResult();
     }
   }
 
   private async detectDotNetSolution(): Promise<MonorepoInfo> {
     try {
-      const slnFiles = await this.cachedGlob("*.sln", {
+      const slnFiles = await this.cachedGlob('*.sln', {
         cwd: this.projectRoot,
         absolute: false,
       });
@@ -848,10 +857,10 @@ export class MonorepoDetector {
         if (!match[1] || !match[2]) continue;
 
         const projectName = match[1];
-        const projectPath = match[2].replace(/\\/g, "/");
+        const projectPath = match[2].replace(/\\/g, '/');
 
         // Verifica che sia un progetto C# (.csproj)
-        if (projectPath.endsWith(".csproj")) {
+        if (projectPath.endsWith('.csproj')) {
           const projectDir = path.dirname(projectPath);
           if (await this.isPathSafe(projectDir)) {
             projects.push({
@@ -870,27 +879,27 @@ export class MonorepoDetector {
       const workspaces: WorkspaceInfo[] = projects.map((project) => ({
         name: project.name,
         path: project.path,
-        type: "C# Project",
-        technologies: ["C#"],
+        type: 'C# Project',
+        technologies: ['C#'],
         hasOwnPackageManager: true,
       }));
 
       return {
         isMonorepo: true,
-        tool: "dotnet-solution",
+        tool: 'dotnet-solution',
         rootPath: this.projectRoot,
         workspaces: this.limitWorkspaces(workspaces),
-        rootTechnologies: ["C#"],
+        rootTechnologies: ['C#'],
         crossLanguage: false,
       };
     } catch (error) {
-      this.logger.debug(".NET solution detection failed", error);
+      this.logger.debug('.NET solution detection failed', error);
       return this.emptyResult();
     }
   }
 
   private async detectNxMonorepo(): Promise<MonorepoInfo> {
-    const nxPath = path.join(this.projectRoot, "nx.json");
+    const nxPath = path.join(this.projectRoot, 'nx.json');
     try {
       if (!(await this.fileExists(nxPath))) {
         return this.emptyResult();
@@ -898,14 +907,14 @@ export class MonorepoDetector {
 
       // Verifica che nx.json esista (configurazione validata implicitamente)
       await this.readFileSafe(nxPath);
-      const packageJsonPath = path.join(this.projectRoot, "package.json");
+      const packageJsonPath = path.join(this.projectRoot, 'package.json');
 
       if (!(await this.fileExists(packageJsonPath))) {
         return this.emptyResult();
       }
 
       const packageJson: PackageJson = JSON.parse(
-        await this.readFileSafe(packageJsonPath),
+        await this.readFileSafe(packageJsonPath)
       );
       const workspacesField = packageJson.workspaces;
 
@@ -922,33 +931,33 @@ export class MonorepoDetector {
 
       return {
         isMonorepo: true,
-        tool: "nx",
+        tool: 'nx',
         rootPath: this.projectRoot,
         workspaces: this.limitWorkspaces(workspaces),
-        rootTechnologies: ["JavaScript", "TypeScript"],
+        rootTechnologies: ['JavaScript', 'TypeScript'],
         crossLanguage: false,
       };
     } catch (error) {
-      this.logger.debug("Nx monorepo detection failed", error);
+      this.logger.debug('Nx monorepo detection failed', error);
       return this.emptyResult();
     }
   }
 
   private async detectTurborepo(): Promise<MonorepoInfo> {
-    const turboPath = path.join(this.projectRoot, "turbo.json");
+    const turboPath = path.join(this.projectRoot, 'turbo.json');
     try {
       if (!(await this.fileExists(turboPath))) {
         return this.emptyResult();
       }
 
-      const packageJsonPath = path.join(this.projectRoot, "package.json");
+      const packageJsonPath = path.join(this.projectRoot, 'package.json');
 
       if (!(await this.fileExists(packageJsonPath))) {
         return this.emptyResult();
       }
 
       const packageJson: PackageJson = JSON.parse(
-        await this.readFileSafe(packageJsonPath),
+        await this.readFileSafe(packageJsonPath)
       );
       const workspacesField = packageJson.workspaces;
 
@@ -964,20 +973,20 @@ export class MonorepoDetector {
 
       return {
         isMonorepo: true,
-        tool: "turborepo",
+        tool: 'turborepo',
         rootPath: this.projectRoot,
         workspaces: this.limitWorkspaces(workspaces),
-        rootTechnologies: ["JavaScript", "TypeScript"],
+        rootTechnologies: ['JavaScript', 'TypeScript'],
         crossLanguage: false,
       };
     } catch (error) {
-      this.logger.debug("Turborepo detection failed", error);
+      this.logger.debug('Turborepo detection failed', error);
       return this.emptyResult();
     }
   }
 
   private async detectRushMonorepo(): Promise<MonorepoInfo> {
-    const rushPath = path.join(this.projectRoot, "rush.json");
+    const rushPath = path.join(this.projectRoot, 'rush.json');
     try {
       if (!(await this.fileExists(rushPath))) {
         return this.emptyResult();
@@ -1000,13 +1009,13 @@ export class MonorepoDetector {
         const packageJsonPath = path.join(
           this.projectRoot,
           projectPath,
-          "package.json",
+          'package.json'
         );
 
         if (await this.fileExists(packageJsonPath)) {
           try {
             const packageJson: PackageJson = JSON.parse(
-              await this.readFileSafe(packageJsonPath),
+              await this.readFileSafe(packageJsonPath)
             );
             const name =
               packageJson.name ||
@@ -1019,14 +1028,14 @@ export class MonorepoDetector {
             return {
               name,
               path: projectPath,
-              type: "NPM Package",
+              type: 'NPM Package',
               technologies,
               hasOwnPackageManager: true,
             };
           } catch (error) {
             this.logger.debug(
               `Failed to parse package.json at ${projectPath}`,
-              error,
+              error
             );
             return null;
           }
@@ -1036,19 +1045,19 @@ export class MonorepoDetector {
 
       const workspaceResults = await Promise.all(workspacePromises);
       const workspaces = workspaceResults.filter(
-        (w): w is WorkspaceInfo => w !== null,
+        (w): w is WorkspaceInfo => w !== null
       );
 
       return {
         isMonorepo: true,
-        tool: "rush",
+        tool: 'rush',
         rootPath: this.projectRoot,
         workspaces: this.limitWorkspaces(workspaces),
-        rootTechnologies: ["JavaScript", "TypeScript"],
+        rootTechnologies: ['JavaScript', 'TypeScript'],
         crossLanguage: false,
       };
     } catch (error) {
-      this.logger.debug("Rush monorepo detection failed", error);
+      this.logger.debug('Rush monorepo detection failed', error);
       return this.emptyResult();
     }
   }
@@ -1061,8 +1070,8 @@ export class MonorepoDetector {
       this.cachedGlob(pattern, {
         cwd: this.projectRoot,
         absolute: false,
-        ignore: ["**/node_modules/**"],
-      }),
+        ignore: ['**/node_modules/**'],
+      })
     );
 
     const results = await Promise.all(globPromises);
@@ -1075,13 +1084,13 @@ export class MonorepoDetector {
       const packageJsonPath = path.join(
         this.projectRoot,
         match,
-        "package.json",
+        'package.json'
       );
 
       if (await this.fileExists(packageJsonPath)) {
         try {
           const packageJson: PackageJson = JSON.parse(
-            await this.readFileSafe(packageJsonPath),
+            await this.readFileSafe(packageJsonPath)
           );
           const name = packageJson.name || path.basename(match);
 
@@ -1092,7 +1101,7 @@ export class MonorepoDetector {
           return {
             name,
             path: match,
-            type: "NPM Package",
+            type: 'NPM Package',
             technologies,
             hasOwnPackageManager: true,
           };
@@ -1109,7 +1118,7 @@ export class MonorepoDetector {
   }
 
   private detectTechnologiesFromPackageJson(
-    packageJson: PackageJson,
+    packageJson: PackageJson
   ): string[] {
     const technologies = new Set<string>();
 
@@ -1120,40 +1129,40 @@ export class MonorepoDetector {
 
     // JavaScript/TypeScript
     if (allDeps.typescript || packageJson.types) {
-      technologies.add("TypeScript");
+      technologies.add('TypeScript');
     } else {
-      technologies.add("JavaScript");
+      technologies.add('JavaScript');
     }
 
     // Frameworks Frontend
-    if (allDeps.react) technologies.add("React");
-    if (allDeps.vue) technologies.add("Vue");
-    if (allDeps.angular || allDeps["@angular/core"])
-      technologies.add("Angular");
-    if (allDeps.next) technologies.add("Next.js");
-    if (allDeps.svelte) technologies.add("Svelte");
-    if (allDeps["solid-js"]) technologies.add("SolidJS");
-    if (allDeps["@solidjs/start"]) technologies.add("SolidStart");
-    if (allDeps["@remix-run/react"]) technologies.add("Remix");
-    if (allDeps.astro) technologies.add("Astro");
-    if (allDeps.nuxt) technologies.add("Nuxt");
-    if (allDeps.qwik) technologies.add("Qwik");
-    if (allDeps["@builder.io/qwik-city"]) technologies.add("Qwik City");
+    if (allDeps.react) technologies.add('React');
+    if (allDeps.vue) technologies.add('Vue');
+    if (allDeps.angular || allDeps['@angular/core'])
+      technologies.add('Angular');
+    if (allDeps.next) technologies.add('Next.js');
+    if (allDeps.svelte) technologies.add('Svelte');
+    if (allDeps['solid-js']) technologies.add('SolidJS');
+    if (allDeps['@solidjs/start']) technologies.add('SolidStart');
+    if (allDeps['@remix-run/react']) technologies.add('Remix');
+    if (allDeps.astro) technologies.add('Astro');
+    if (allDeps.nuxt) technologies.add('Nuxt');
+    if (allDeps.qwik) technologies.add('Qwik');
+    if (allDeps['@builder.io/qwik-city']) technologies.add('Qwik City');
 
     // Frameworks Backend
-    if (allDeps.express) technologies.add("Express");
-    if (allDeps["@nestjs/core"]) technologies.add("NestJS");
-    if (allDeps.fastify) technologies.add("Fastify");
-    if (allDeps.koa) technologies.add("Koa");
-    if (allDeps.hapi || allDeps["@hapi/hapi"]) technologies.add("Hapi");
-    if (allDeps["@trpc/server"]) technologies.add("tRPC");
+    if (allDeps.express) technologies.add('Express');
+    if (allDeps['@nestjs/core']) technologies.add('NestJS');
+    if (allDeps.fastify) technologies.add('Fastify');
+    if (allDeps.koa) technologies.add('Koa');
+    if (allDeps.hapi || allDeps['@hapi/hapi']) technologies.add('Hapi');
+    if (allDeps['@trpc/server']) technologies.add('tRPC');
 
     // Meta-frameworks & Tools
-    if (allDeps.vite) technologies.add("Vite");
-    if (allDeps.webpack) technologies.add("Webpack");
-    if (allDeps.turbopack) technologies.add("Turbopack");
-    if (allDeps.gatsby) technologies.add("Gatsby");
-    if (allDeps["@11ty/eleventy"]) technologies.add("Eleventy");
+    if (allDeps.vite) technologies.add('Vite');
+    if (allDeps.webpack) technologies.add('Webpack');
+    if (allDeps.turbopack) technologies.add('Turbopack');
+    if (allDeps.gatsby) technologies.add('Gatsby');
+    if (allDeps['@11ty/eleventy']) technologies.add('Eleventy');
 
     return Array.from(technologies);
   }
@@ -1164,18 +1173,18 @@ export class MonorepoDetector {
     for (const workspace of workspaces) {
       for (const tech of workspace.technologies) {
         // Raggruppa per linguaggio principale
-        if (["JavaScript", "TypeScript"].includes(tech)) {
-          languageGroups.add("JS");
-        } else if (["Python"].includes(tech)) {
-          languageGroups.add("Python");
-        } else if (["Java", "Kotlin"].includes(tech)) {
-          languageGroups.add("JVM");
-        } else if (["Go"].includes(tech)) {
-          languageGroups.add("Go");
-        } else if (["Rust"].includes(tech)) {
-          languageGroups.add("Rust");
-        } else if (["C#"].includes(tech)) {
-          languageGroups.add("DotNet");
+        if (['JavaScript', 'TypeScript'].includes(tech)) {
+          languageGroups.add('JS');
+        } else if (['Python'].includes(tech)) {
+          languageGroups.add('Python');
+        } else if (['Java', 'Kotlin'].includes(tech)) {
+          languageGroups.add('JVM');
+        } else if (['Go'].includes(tech)) {
+          languageGroups.add('Go');
+        } else if (['Rust'].includes(tech)) {
+          languageGroups.add('Rust');
+        } else if (['C#'].includes(tech)) {
+          languageGroups.add('DotNet');
         }
       }
     }
@@ -1197,6 +1206,6 @@ export class MonorepoDetector {
   // Metodo per pulire la cache (utile per test)
   clearCache(): void {
     this.globCache.clear();
-    this.logger.verbose("Cache cleared");
+    this.logger.verbose('Cache cleared');
   }
 }

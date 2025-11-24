@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+/// <reference types="vitest" />
 import { WorkspaceManager } from '../../../src/core/execution-engine/workspace/workspace-manager';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -13,6 +13,7 @@ describe('WorkspaceManager', () => {
   beforeEach(() => {
     workspaceManager = new WorkspaceManager(testWorkspaceDir);
     vi.clearAllMocks();
+    vi.mocked(fs.access).mockRejectedValue(new Error('ENOENT'));
   });
 
   afterEach(async () => {

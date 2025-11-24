@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Logger, ConsoleLogger } from "./logger";
+import { Logger, ConsoleLogger } from './logger';
 
 /**
  * Retry configuration options
@@ -25,7 +25,7 @@ const DEFAULT_RETRY_OPTIONS: Required<RetryOptions> = {
   initialDelay: 100,
   backoffMultiplier: 2,
   maxDelay: 5000,
-  logger: new ConsoleLogger("[Retry]"),
+  logger: new ConsoleLogger('[Retry]'),
 };
 
 /**
@@ -50,12 +50,12 @@ function sleep(ms: number): Promise<void> {
  * @returns true if the error is retryable
  */
 function isRetryableError(error: unknown): boolean {
-  if (typeof error !== "object" || error === null) {
+  if (typeof error !== 'object' || error === null) {
     return false;
   }
 
   const nodeError = error as NodeJS.ErrnoException;
-  const retryableCodes = ["EBUSY", "EMFILE", "ENFILE", "EIO"];
+  const retryableCodes = ['EBUSY', 'EMFILE', 'ENFILE', 'EIO'];
 
   return nodeError.code ? retryableCodes.includes(nodeError.code) : false;
 }
@@ -81,7 +81,7 @@ function isRetryableError(error: unknown): boolean {
  */
 export async function withRetry<T>(
   operation: () => Promise<T>,
-  options: RetryOptions = {},
+  options: RetryOptions = {}
 ): Promise<T> {
   const config = { ...DEFAULT_RETRY_OPTIONS, ...options };
   let lastError: unknown;
@@ -105,7 +105,7 @@ export async function withRetry<T>(
 
       config.logger.warn(
         `Operation failed (attempt ${attempt + 1}/${config.maxRetries + 1}), retrying in ${delay}ms...`,
-        error,
+        error
       );
 
       await sleep(delay);
@@ -116,7 +116,7 @@ export async function withRetry<T>(
   }
 
   // All retries exhausted
-  config.logger.error("All retry attempts exhausted", lastError);
+  config.logger.error('All retry attempts exhausted', lastError);
   throw lastError;
 }
 
@@ -141,7 +141,7 @@ export async function withRetry<T>(
  */
 export function retryable<TArgs extends any[], TResult>(
   fn: (...args: TArgs) => Promise<TResult>,
-  options: RetryOptions = {},
+  options: RetryOptions = {}
 ): (...args: TArgs) => Promise<TResult> {
   return (...args: TArgs) => withRetry(() => fn(...args), options);
 }

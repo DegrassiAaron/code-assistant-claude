@@ -5,7 +5,7 @@ import path from 'path';
 
 describe('SkillParser', () => {
   let parser: SkillParser;
-  const testSkillPath = path.join(__dirname, '../../../templates/skills/core/code-reviewer/SKILL.md');
+  const testSkillPath = path.join(process.cwd(), 'templates/skills/core/code-reviewer/SKILL.md');
 
   beforeEach(() => {
     parser = new SkillParser(new SilentLogger());

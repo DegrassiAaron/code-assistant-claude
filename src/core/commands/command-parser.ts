@@ -3,8 +3,8 @@
  * Parses slash command syntax and extracts command name and arguments with security validations
  */
 
-import { ParsedCommand, ParameterValue } from "./types";
-import { ParameterParser } from "./parameter-parser";
+import { ParsedCommand, ParameterValue } from './types';
+import { ParameterParser } from './parameter-parser';
 
 const MAX_INPUT_LENGTH = 10000;
 const MAX_COMMAND_NAME_LENGTH = 100;
@@ -31,25 +31,25 @@ export class CommandParser {
     // Security: Validate input length
     if (input.length > MAX_INPUT_LENGTH) {
       throw new Error(
-        `Command input too long (max ${MAX_INPUT_LENGTH} characters)`,
+        `Command input too long (max ${MAX_INPUT_LENGTH} characters)`
       );
     }
 
     const trimmed = input.trim();
 
     // Check if it starts with a slash (command trigger)
-    if (!trimmed.startsWith("/")) {
+    if (!trimmed.startsWith('/')) {
       return null;
     }
 
     // Extract command name and arguments
-    const spaceIndex = trimmed.indexOf(" ");
+    const spaceIndex = trimmed.indexOf(' ');
     let commandPart: string;
     let argsPart: string;
 
     if (spaceIndex === -1) {
       commandPart = trimmed;
-      argsPart = "";
+      argsPart = '';
     } else {
       commandPart = trimmed.substring(0, spaceIndex);
       argsPart = trimmed.substring(spaceIndex + 1).trim();
@@ -59,14 +59,14 @@ export class CommandParser {
     let commandName = commandPart.substring(1);
 
     // Handle /sc:command-name syntax
-    if (commandName.startsWith("sc:")) {
+    if (commandName.startsWith('sc:')) {
       commandName = commandName.substring(3);
     }
 
     // Security: Validate command name length
     if (commandName.length > MAX_COMMAND_NAME_LENGTH) {
       throw new Error(
-        `Command name too long (max ${MAX_COMMAND_NAME_LENGTH} characters)`,
+        `Command name too long (max ${MAX_COMMAND_NAME_LENGTH} characters)`
       );
     }
 
@@ -90,7 +90,7 @@ export class CommandParser {
     input: string,
     exactTrigger: string,
     aliases?: string[],
-    keywords?: string[],
+    keywords?: string[]
   ): boolean {
     const parsed = this.parse(input);
 
@@ -99,7 +99,7 @@ export class CommandParser {
       const commandName = parsed.commandName.toLowerCase();
 
       // Check exact trigger (remove /sc: prefix)
-      const exactName = exactTrigger.replace(/^\/sc:/, "").toLowerCase();
+      const exactName = exactTrigger.replace(/^\/sc:/, '').toLowerCase();
       if (commandName === exactName) {
         return true;
       }
@@ -107,7 +107,7 @@ export class CommandParser {
       // Check aliases
       if (aliases) {
         for (const alias of aliases) {
-          const aliasName = alias.replace(/^\//, "").toLowerCase();
+          const aliasName = alias.replace(/^\//, '').toLowerCase();
           if (commandName === aliasName) {
             return true;
           }
@@ -140,7 +140,7 @@ export class CommandParser {
    * Checks if a string looks like a command
    */
   isCommand(input: string): boolean {
-    return input.trim().startsWith("/");
+    return input.trim().startsWith('/');
   }
 
   /**
@@ -148,17 +148,17 @@ export class CommandParser {
    */
   formatCommand(
     command: string,
-    parameters?: Record<string, ParameterValue>,
+    parameters?: Record<string, ParameterValue>
   ): string {
     let formatted = `/${command}`;
 
     if (parameters) {
       for (const [key, value] of Object.entries(parameters)) {
-        if (typeof value === "boolean") {
+        if (typeof value === 'boolean') {
           if (value) {
             formatted += ` --${key}`;
           }
-        } else if (typeof value === "string") {
+        } else if (typeof value === 'string') {
           formatted += ` --${key}="${value}"`;
         } else {
           formatted += ` --${key}=${JSON.stringify(value)}`;

@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { spawn } from "child_process";
-import { promises as fs } from "fs";
-import path from "path";
-import { SandboxConfig, ExecutionResult } from "../types";
-import * as os from "os";
+import { spawn } from 'child_process';
+import { promises as fs } from 'fs';
+import path from 'path';
+import { SandboxConfig, ExecutionResult } from '../types';
+import * as os from 'os';
 
 /**
  * Safe environment variables that don't contain secrets
@@ -15,10 +15,10 @@ import * as os from "os";
  * - TMPDIR: Set to sandbox temporary directory
  */
 const SAFE_ENV_VARS = [
-  "USER", // Username (generally safe, no secrets)
-  "LANG", // Language/locale setting
-  "LC_ALL", // Locale setting
-  "TZ", // Timezone
+  'USER', // Username (generally safe, no secrets)
+  'LANG', // Language/locale setting
+  'LC_ALL', // Locale setting
+  'TZ', // Timezone
 ];
 
 /**
@@ -37,16 +37,16 @@ export class ProcessSandbox {
    */
   async execute(
     code: string,
-    language: "typescript" | "python",
+    language: 'typescript' | 'python'
   ): Promise<ExecutionResult> {
     const startTime = Date.now();
 
     try {
       // Create temporary directory for execution
-      const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "mcp-sandbox-"));
+      const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'mcp-sandbox-'));
 
       // Write code to file
-      const filename = language === "typescript" ? "script.ts" : "script.py";
+      const filename = language === 'typescript' ? 'script.ts' : 'script.py';
       const filePath = path.join(tmpDir, filename);
       await fs.writeFile(filePath, code);
 
@@ -63,19 +63,19 @@ export class ProcessSandbox {
         error: result.error,
         metrics: {
           executionTime: Date.now() - startTime,
-          memoryUsed: result.memoryUsed || "0M",
-          tokensInSummary: this.estimateTokens(result.output || ""),
+          memoryUsed: result.memoryUsed || '0M',
+          tokensInSummary: this.estimateTokens(result.output || ''),
         },
         piiTokenized: false,
       };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-        summary: "Process execution failed",
+        error: error instanceof Error ? error.message : 'Unknown error',
+        summary: 'Process execution failed',
         metrics: {
           executionTime: Date.now() - startTime,
-          memoryUsed: "0M",
+          memoryUsed: '0M',
           tokensInSummary: 0,
         },
         piiTokenized: false,
@@ -89,7 +89,7 @@ export class ProcessSandbox {
   private async executeInProcess(
     filePath: string,
     language: string,
-    tmpDir: string,
+    tmpDir: string
   ): Promise<{
     success: boolean;
     output?: string;
@@ -97,7 +97,7 @@ export class ProcessSandbox {
     memoryUsed?: string;
   }> {
     return new Promise((resolve) => {
-      const command = language === "typescript" ? "ts-node" : "python3";
+      const command = language === 'typescript' ? 'ts-node' : 'python3';
       const args = [filePath];
 
       // ✅ Build safe environment - NO SECRETS
@@ -111,18 +111,18 @@ export class ProcessSandbox {
         if (dangerousPattern.test(varName)) {
           throw new Error(
             `Security Error: Refusing to expose potentially sensitive variable: ${varName}. ` +
-              `Variable names matching KEY, SECRET, TOKEN, PASSWORD, CREDENTIAL, or AUTH are not allowed.`,
+              `Variable names matching KEY, SECRET, TOKEN, PASSWORD, CREDENTIAL, or AUTH are not allowed.`
           );
         }
       }
 
       const safeEnv: Record<string, string> = {
-        NODE_ENV: "sandbox",
+        NODE_ENV: 'sandbox',
         // Use sandbox-specific directories to prevent path leakage
         HOME: tmpDir,
         TMPDIR: tmpDir,
         // Ensure PATH is available with safe fallback
-        PATH: process.env.PATH || "/usr/local/bin:/usr/bin:/bin",
+        PATH: process.env.PATH || '/usr/local/bin:/usr/bin:/bin',
         // Only include whitelisted variables that exist (type-safe)
         ...Object.fromEntries(
           (
@@ -130,9 +130,7 @@ export class ProcessSandbox {
               key,
               process.env[key],
             ]) as Array<[string, string | undefined]>
-          ).filter(
-            (entry): entry is [string, string] => entry[1] !== undefined,
-          ),
+          ).filter((entry): entry is [string, string] => entry[1] !== undefined)
         ),
         // Include custom allowed variables if validated
         ...Object.fromEntries(
@@ -141,9 +139,7 @@ export class ProcessSandbox {
               key,
               process.env[key],
             ]) as Array<[string, string | undefined]>
-          ).filter(
-            (entry): entry is [string, string] => entry[1] !== undefined,
-          ),
+          ).filter((entry): entry is [string, string] => entry[1] !== undefined)
         ),
       };
 
@@ -152,8 +148,8 @@ export class ProcessSandbox {
         env: safeEnv,
       });
 
-      let stdout = "";
-      let stderr = "";
+      let stdout = '';
+      let stderr = '';
       let resolved = false;
 
       // Guard to prevent double-resolution of promise
@@ -169,20 +165,20 @@ export class ProcessSandbox {
         }
       };
 
-      child.stdout?.on("data", (data: Buffer) => {
+      child.stdout?.on('data', (data: Buffer) => {
         stdout += data.toString();
       });
 
-      child.stderr?.on("data", (data: Buffer) => {
+      child.stderr?.on('data', (data: Buffer) => {
         stderr += data.toString();
       });
 
-      child.on("close", (code: number | null, signal: string | null) => {
+      child.on('close', (code: number | null, signal: string | null) => {
         // Check if process was killed by timeout
-        if (signal === "SIGTERM" || code === null) {
+        if (signal === 'SIGTERM' || code === null) {
           safeResolve({
             success: false,
-            error: "Execution timeout",
+            error: 'Execution timeout',
           });
         } else if (code === 0) {
           safeResolve({
@@ -199,7 +195,7 @@ export class ProcessSandbox {
         }
       });
 
-      child.on("error", (error: unknown) => {
+      child.on('error', (error: unknown) => {
         safeResolve({
           success: false,
           error: error instanceof Error ? error.message : String(error),
@@ -212,7 +208,7 @@ export class ProcessSandbox {
    * Summarize output to <500 tokens
    */
   private summarizeOutput(output: unknown): string {
-    const str = typeof output === "string" ? output : JSON.stringify(output);
+    const str = typeof output === 'string' ? output : JSON.stringify(output);
 
     if (str.length < 2000) {
       return str;

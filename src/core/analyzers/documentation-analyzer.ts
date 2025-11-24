@@ -1,12 +1,12 @@
-import { promises as fs } from "fs";
-import path from "path";
+import { promises as fs } from 'fs';
+import path from 'path';
 
 export interface DocumentationContext {
   purpose: string;
   domain: string[];
   conventions: {
-    gitWorkflow?: "gitflow" | "github-flow" | "trunk-based";
-    commitStyle?: "conventional" | "custom";
+    gitWorkflow?: 'gitflow' | 'github-flow' | 'trunk-based';
+    commitStyle?: 'conventional' | 'custom';
   };
   customInstructions: string[];
 }
@@ -14,7 +14,7 @@ export interface DocumentationContext {
 export class DocumentationAnalyzer {
   async analyze(projectRoot: string): Promise<DocumentationContext> {
     const context: DocumentationContext = {
-      purpose: "",
+      purpose: '',
       domain: [],
       conventions: {},
       customInstructions: [],
@@ -30,15 +30,15 @@ export class DocumentationAnalyzer {
 
   private async readClaudeMd(
     root: string,
-    context: DocumentationContext,
+    context: DocumentationContext
   ): Promise<void> {
     try {
-      const content = await fs.readFile(path.join(root, "CLAUDE.md"), "utf-8");
+      const content = await fs.readFile(path.join(root, 'CLAUDE.md'), 'utf-8');
 
       // Extract purpose from first paragraph or header
-      const lines = content.split("\n");
+      const lines = content.split('\n');
       for (const line of lines) {
-        if (line.trim() && !line.startsWith("#") && !context.purpose) {
+        if (line.trim() && !line.startsWith('#') && !context.purpose) {
           context.purpose = line.trim();
           break;
         }
@@ -48,16 +48,16 @@ export class DocumentationAnalyzer {
       context.domain = this.extractDomain(content);
 
       // Extract conventions
-      if (content.toLowerCase().includes("gitflow")) {
-        context.conventions.gitWorkflow = "gitflow";
-      } else if (content.toLowerCase().includes("github flow")) {
-        context.conventions.gitWorkflow = "github-flow";
-      } else if (content.toLowerCase().includes("trunk-based")) {
-        context.conventions.gitWorkflow = "trunk-based";
+      if (content.toLowerCase().includes('gitflow')) {
+        context.conventions.gitWorkflow = 'gitflow';
+      } else if (content.toLowerCase().includes('github flow')) {
+        context.conventions.gitWorkflow = 'github-flow';
+      } else if (content.toLowerCase().includes('trunk-based')) {
+        context.conventions.gitWorkflow = 'trunk-based';
       }
 
-      if (content.toLowerCase().includes("conventional commit")) {
-        context.conventions.commitStyle = "conventional";
+      if (content.toLowerCase().includes('conventional commit')) {
+        context.conventions.commitStyle = 'conventional';
       }
 
       // Extract custom instructions (sections starting with ##)
@@ -75,21 +75,21 @@ export class DocumentationAnalyzer {
 
   private async readReadme(
     root: string,
-    context: DocumentationContext,
+    context: DocumentationContext
   ): Promise<void> {
     try {
-      const content = await fs.readFile(path.join(root, "README.md"), "utf-8");
+      const content = await fs.readFile(path.join(root, 'README.md'), 'utf-8');
 
       // If no purpose from CLAUDE.md, try README
       if (!context.purpose) {
         // Get first paragraph after title
-        const lines = content.split("\n").filter((l) => l.trim());
+        const lines = content.split('\n').filter((l) => l.trim());
         for (let i = 0; i < lines.length; i++) {
           const currentLine = lines[i];
           const nextLine = lines[i + 1];
-          if (currentLine && currentLine.startsWith("#") && nextLine) {
+          if (currentLine && currentLine.startsWith('#') && nextLine) {
             const trimmedNext = nextLine.trim();
-            if (trimmedNext && !trimmedNext.startsWith("#")) {
+            if (trimmedNext && !trimmedNext.startsWith('#')) {
               context.purpose = trimmedNext;
               break;
             }
@@ -107,28 +107,28 @@ export class DocumentationAnalyzer {
 
   private async readContributing(
     root: string,
-    context: DocumentationContext,
+    context: DocumentationContext
   ): Promise<void> {
     try {
       const content = await fs.readFile(
-        path.join(root, "CONTRIBUTING.md"),
-        "utf-8",
+        path.join(root, 'CONTRIBUTING.md'),
+        'utf-8'
       );
 
       // Extract commit conventions
-      if (content.toLowerCase().includes("conventional commit")) {
-        context.conventions.commitStyle = "conventional";
+      if (content.toLowerCase().includes('conventional commit')) {
+        context.conventions.commitStyle = 'conventional';
       }
 
       // Extract git workflow if not already found
       if (!context.conventions.gitWorkflow) {
         if (
-          content.toLowerCase().includes("gitflow") ||
-          (content.includes("feature/") && content.includes("develop"))
+          content.toLowerCase().includes('gitflow') ||
+          (content.includes('feature/') && content.includes('develop'))
         ) {
-          context.conventions.gitWorkflow = "gitflow";
-        } else if (content.toLowerCase().includes("github flow")) {
-          context.conventions.gitWorkflow = "github-flow";
+          context.conventions.gitWorkflow = 'gitflow';
+        } else if (content.toLowerCase().includes('github flow')) {
+          context.conventions.gitWorkflow = 'github-flow';
         }
       }
     } catch {
@@ -142,62 +142,62 @@ export class DocumentationAnalyzer {
 
     // Common domain keywords
     const domainKeywords = {
-      "e-commerce": [
-        "ecommerce",
-        "e-commerce",
-        "shopping",
-        "cart",
-        "checkout",
-        "payment",
-        "store",
+      'e-commerce': [
+        'ecommerce',
+        'e-commerce',
+        'shopping',
+        'cart',
+        'checkout',
+        'payment',
+        'store',
       ],
       healthcare: [
-        "healthcare",
-        "health",
-        "medical",
-        "patient",
-        "hospital",
-        "clinic",
+        'healthcare',
+        'health',
+        'medical',
+        'patient',
+        'hospital',
+        'clinic',
       ],
       finance: [
-        "finance",
-        "financial",
-        "banking",
-        "payment",
-        "transaction",
-        "ledger",
+        'finance',
+        'financial',
+        'banking',
+        'payment',
+        'transaction',
+        'ledger',
       ],
       education: [
-        "education",
-        "learning",
-        "course",
-        "student",
-        "teacher",
-        "school",
+        'education',
+        'learning',
+        'course',
+        'student',
+        'teacher',
+        'school',
       ],
-      social: ["social", "messaging", "chat", "feed", "post", "comment"],
+      social: ['social', 'messaging', 'chat', 'feed', 'post', 'comment'],
       analytics: [
-        "analytics",
-        "dashboard",
-        "metrics",
-        "reporting",
-        "visualization",
+        'analytics',
+        'dashboard',
+        'metrics',
+        'reporting',
+        'visualization',
       ],
       productivity: [
-        "productivity",
-        "task",
-        "todo",
-        "project management",
-        "collaboration",
+        'productivity',
+        'task',
+        'todo',
+        'project management',
+        'collaboration',
       ],
-      content: ["content", "cms", "blog", "article", "publishing"],
-      iot: ["iot", "sensor", "device", "embedded", "hardware"],
-      "ai-ml": [
-        "ai",
-        "machine learning",
-        "ml",
-        "neural network",
-        "deep learning",
+      content: ['content', 'cms', 'blog', 'article', 'publishing'],
+      iot: ['iot', 'sensor', 'device', 'embedded', 'hardware'],
+      'ai-ml': [
+        'ai',
+        'machine learning',
+        'ml',
+        'neural network',
+        'deep learning',
       ],
     };
 

@@ -1,6 +1,6 @@
-import { execSync } from "child_process";
+import { execSync } from 'child_process';
 
-export type GitWorkflow = "gitflow" | "github-flow" | "trunk-based" | "custom";
+export type GitWorkflow = 'gitflow' | 'github-flow' | 'trunk-based' | 'custom';
 
 export interface GitConventions {
   workflow: GitWorkflow;
@@ -17,7 +17,7 @@ export class GitWorkflowAnalyzer {
       // Check if it's a git repository
       const isGitRepo = this.isGitRepository(projectRoot);
       if (!isGitRepo) {
-        throw new Error("Not a git repository");
+        throw new Error('Not a git repository');
       }
 
       // Get all branches
@@ -35,15 +35,15 @@ export class GitWorkflowAnalyzer {
       return this.detectCustomWorkflow(branches);
     } catch (error) {
       throw new Error(
-        "Git workflow detection failed: " +
-          (error instanceof Error ? error.message : "Unknown error"),
+        'Git workflow detection failed: ' +
+          (error instanceof Error ? error.message : 'Unknown error')
       );
     }
   }
 
   private isGitRepository(projectRoot: string): boolean {
     try {
-      execSync("git rev-parse --git-dir", { cwd: projectRoot, stdio: "pipe" });
+      execSync('git rev-parse --git-dir', { cwd: projectRoot, stdio: 'pipe' });
       return true;
     } catch {
       return false;
@@ -52,15 +52,15 @@ export class GitWorkflowAnalyzer {
 
   private getAllBranches(projectRoot: string): string[] {
     try {
-      const output = execSync("git branch -a", {
+      const output = execSync('git branch -a', {
         cwd: projectRoot,
-        encoding: "utf-8",
+        encoding: 'utf-8',
       });
       return output
-        .split("\n")
-        .map((line) => line.replace("*", "").trim())
-        .filter((line) => line && !line.includes("HEAD"))
-        .map((line) => line.replace(/^remotes\/origin\//, ""));
+        .split('\n')
+        .map((line) => line.replace('*', '').trim())
+        .filter((line) => line && !line.includes('HEAD'))
+        .map((line) => line.replace(/^remotes\/origin\//, ''));
     } catch {
       return [];
     }
@@ -69,13 +69,13 @@ export class GitWorkflowAnalyzer {
   private isGitFlow(branches: string[]): boolean {
     // GitFlow has 'develop' branch and feature/release/hotfix patterns
     const hasDevelop = branches.some(
-      (b) => b === "develop" || b === "development",
+      (b) => b === 'develop' || b === 'development'
     );
     const hasFeatureBranches = branches.some(
       (b) =>
-        b.startsWith("feature/") ||
-        b.startsWith("release/") ||
-        b.startsWith("hotfix/"),
+        b.startsWith('feature/') ||
+        b.startsWith('release/') ||
+        b.startsWith('hotfix/')
     );
 
     return hasDevelop && hasFeatureBranches;
@@ -83,25 +83,28 @@ export class GitWorkflowAnalyzer {
 
   private isGitHubFlow(branches: string[]): boolean {
     // GitHub Flow typically has main/master and feature branches without develop
-    const hasMain = branches.some((b) => b === "main" || b === "master");
+    const hasMain = branches.some((b) => b === 'main' || b === 'master');
     const noDevelop = !branches.some(
-      (b) => b === "develop" || b === "development",
+      (b) => b === 'develop' || b === 'development'
+    );
+    const nonMainBranches = branches.filter(
+      (b) => b !== 'main' && b !== 'master'
     );
     const hasFeatureBranches = branches.some(
       (b) =>
-        b.includes("feature") ||
-        b.includes("fix") ||
-        b.includes("add") ||
-        b.match(/^\d+/), // Issue numbers
+        b.includes('feature') ||
+        b.includes('fix') ||
+        b.includes('add') ||
+        b.match(/^\d+/) // Issue numbers
     );
 
-    return hasMain && noDevelop && (hasFeatureBranches || branches.length <= 2);
+    return hasMain && noDevelop && hasFeatureBranches && nonMainBranches.length > 0;
   }
 
   private isTrunkBased(branches: string[]): boolean {
     // Trunk-based has only main/master or very few short-lived branches
     const hasMain = branches.some(
-      (b) => b === "main" || b === "master" || b === "trunk",
+      (b) => b === 'main' || b === 'master' || b === 'trunk'
     );
     const fewBranches = branches.length <= 3;
 
@@ -112,15 +115,15 @@ export class GitWorkflowAnalyzer {
     const prefixes = this.extractBranchPrefixes(branches);
 
     return {
-      workflow: "gitflow",
+      workflow: 'gitflow',
       branchPrefixes: prefixes,
       mainBranch:
-        branches.find((b) => b === "main" || b === "master") || "main",
+        branches.find((b) => b === 'main' || b === 'master') || 'main',
       developBranch:
-        branches.find((b) => b === "develop" || b === "development") ||
-        "develop",
-      releaseBranches: branches.filter((b) => b.startsWith("release/")),
-      hotfixPattern: "hotfix/*",
+        branches.find((b) => b === 'develop' || b === 'development') ||
+        'develop',
+      releaseBranches: branches.filter((b) => b.startsWith('release/')),
+      hotfixPattern: 'hotfix/*',
     };
   }
 
@@ -128,20 +131,20 @@ export class GitWorkflowAnalyzer {
     const prefixes = this.extractBranchPrefixes(branches);
 
     return {
-      workflow: "github-flow",
+      workflow: 'github-flow',
       branchPrefixes: prefixes,
       mainBranch:
-        branches.find((b) => b === "main" || b === "master") || "main",
+        branches.find((b) => b === 'main' || b === 'master') || 'main',
     };
   }
 
   private detectTrunkBasedConventions(branches: string[]): GitConventions {
     return {
-      workflow: "trunk-based",
+      workflow: 'trunk-based',
       branchPrefixes: [],
       mainBranch:
-        branches.find((b) => b === "main" || b === "master" || b === "trunk") ||
-        "main",
+        branches.find((b) => b === 'main' || b === 'master' || b === 'trunk') ||
+        'main',
     };
   }
 
@@ -149,10 +152,10 @@ export class GitWorkflowAnalyzer {
     const prefixes = this.extractBranchPrefixes(branches);
 
     return {
-      workflow: "custom",
+      workflow: 'custom',
       branchPrefixes: prefixes,
       mainBranch:
-        branches.find((b) => b === "main" || b === "master") || "main",
+        branches.find((b) => b === 'main' || b === 'master') || 'main',
     };
   }
 
@@ -160,7 +163,7 @@ export class GitWorkflowAnalyzer {
     const prefixes = new Set<string>();
 
     for (const branch of branches) {
-      const parts = branch.split("/");
+      const parts = branch.split('/');
       if (parts.length > 1 && parts[0]) {
         prefixes.add(parts[0]);
       }

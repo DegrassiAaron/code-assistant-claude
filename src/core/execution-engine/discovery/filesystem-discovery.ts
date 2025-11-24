@@ -1,7 +1,7 @@
-import { promises as fs } from "fs";
-import { glob } from "glob";
-import { MCPToolSchema, DiscoveredTool } from "../types";
-import { SchemaParser } from "../mcp-code-api/schema-parser";
+import { promises as fs } from 'fs';
+import { glob } from 'glob';
+import { MCPToolSchema, DiscoveredTool } from '../types';
+import { SchemaParser } from '../mcp-code-api/schema-parser';
 
 /**
  * Discovers MCP tools from filesystem
@@ -26,14 +26,14 @@ export class FilesystemDiscovery {
       return; // Already indexed
     }
 
-    const toolFiles = await glob("**/*.json", {
+    const toolFiles = await glob('**/*.json', {
       cwd: this.toolsDir,
       absolute: true,
     });
 
     for (const toolFile of toolFiles) {
       try {
-        const content = await fs.readFile(toolFile, "utf-8");
+        const content = await fs.readFile(toolFile, 'utf-8');
         const tools = this.schemaParser.parseFromJSON(content);
 
         for (const tool of tools) {
@@ -46,7 +46,7 @@ export class FilesystemDiscovery {
 
     this.indexed = true;
     console.log(
-      `✓ Indexed ${this.index.size} MCP tools from ${toolFiles.length} files`,
+      `✓ Indexed ${this.index.size} MCP tools from ${toolFiles.length} files`
     );
   }
 
@@ -55,7 +55,7 @@ export class FilesystemDiscovery {
    */
   search(keywords: string[]): DiscoveredTool[] {
     if (!this.indexed) {
-      throw new Error("Tools not indexed. Call indexTools() first.");
+      throw new Error('Tools not indexed. Call indexTools() first.');
     }
 
     const results: DiscoveredTool[] = [];
@@ -105,7 +105,7 @@ export class FilesystemDiscovery {
    */
   private calculateRelevance(
     schema: MCPToolSchema,
-    keywords: string[],
+    keywords: string[]
   ): number {
     const text = `${schema.name} ${schema.description}`.toLowerCase();
     let matches = 0;

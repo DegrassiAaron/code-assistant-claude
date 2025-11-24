@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import * as fs from "fs/promises";
-import * as path from "path";
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
 /**
  * WorkspaceManager - Manages workspace directories and session isolation
@@ -9,7 +9,7 @@ export class WorkspaceManager {
   private workspaceDir: string;
   private sessions: Map<string, string>;
 
-  constructor(workspaceDir: string = path.join(process.cwd(), ".workspace")) {
+  constructor(workspaceDir: string = path.join(process.cwd(), '.workspace')) {
     this.workspaceDir = workspaceDir;
     this.sessions = new Map();
   }
@@ -28,7 +28,7 @@ export class WorkspaceManager {
       await fs.access(sessionPath);
       throw new Error(`Session ${sessionId} already exists`);
     } catch (error: unknown) {
-      if (error instanceof Error && error.message?.includes("already exists"))
+      if (error instanceof Error && error.message?.includes('already exists'))
         throw error;
     }
     await fs.mkdir(sessionPath, { recursive: true });
@@ -79,7 +79,7 @@ export class WorkspaceManager {
 
   createWorkspace(
     sessionId: string,
-    _language?: string,
+    _language?: string
   ): { id: string; path: string } {
     return { id: sessionId, path: this.workspaceDir };
   }

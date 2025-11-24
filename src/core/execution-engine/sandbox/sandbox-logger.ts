@@ -18,7 +18,7 @@ export interface SandboxLogger {
   error(
     message: string,
     error?: Error,
-    metadata?: Record<string, unknown>,
+    metadata?: Record<string, unknown>
   ): void;
   metric(name: string, value: number, metadata?: Record<string, unknown>): void;
 }
@@ -28,31 +28,31 @@ export interface SandboxLogger {
  */
 export class ConsoleLogger implements SandboxLogger {
   info(message: string, metadata?: Record<string, unknown>): void {
-    const meta = metadata ? ` ${JSON.stringify(metadata)}` : "";
+    const meta = metadata ? ` ${JSON.stringify(metadata)}` : '';
     console.log(`[INFO] ${message}${meta}`);
   }
 
   warn(message: string, metadata?: Record<string, unknown>): void {
-    const meta = metadata ? ` ${JSON.stringify(metadata)}` : "";
+    const meta = metadata ? ` ${JSON.stringify(metadata)}` : '';
     console.warn(`[WARN] ${message}${meta}`);
   }
 
   error(
     message: string,
     error?: Error,
-    metadata?: Record<string, unknown>,
+    metadata?: Record<string, unknown>
   ): void {
-    const meta = metadata ? ` ${JSON.stringify(metadata)}` : "";
-    const err = error ? ` - ${error.message}` : "";
+    const meta = metadata ? ` ${JSON.stringify(metadata)}` : '';
+    const err = error ? ` - ${error.message}` : '';
     console.error(`[ERROR] ${message}${err}${meta}`);
   }
 
   metric(
     name: string,
     value: number,
-    metadata?: Record<string, unknown>,
+    metadata?: Record<string, unknown>
   ): void {
-    const meta = metadata ? ` ${JSON.stringify(metadata)}` : "";
+    const meta = metadata ? ` ${JSON.stringify(metadata)}` : '';
     console.log(`[METRIC] ${name}=${value}${meta}`);
   }
 }

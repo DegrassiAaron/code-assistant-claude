@@ -1,4 +1,4 @@
-import { MCPToolSchema, SemanticSearchResult, ToolIndexEntry } from "../types";
+import { MCPToolSchema, SemanticSearchResult, ToolIndexEntry } from '../types';
 
 /**
  * Semantic search for MCP tools
@@ -16,7 +16,7 @@ export class SemanticSearch {
       description: schema.description,
       keywords: this.extractKeywords(schema),
       category: this.inferCategory(schema),
-      filePath: "", // Would be set by filesystem discovery
+      filePath: '', // Would be set by filesystem discovery
       schema,
     }));
   }
@@ -83,13 +83,13 @@ export class SemanticSearch {
     const desc = schema.description.toLowerCase();
 
     // Simple category inference
-    if (name.includes("git") || desc.includes("git")) return "git";
-    if (name.includes("file") || desc.includes("file")) return "filesystem";
-    if (name.includes("http") || desc.includes("http")) return "network";
-    if (name.includes("db") || desc.includes("database")) return "database";
-    if (name.includes("test") || desc.includes("test")) return "testing";
+    if (name.includes('git') || desc.includes('git')) return 'git';
+    if (name.includes('file') || desc.includes('file')) return 'filesystem';
+    if (name.includes('http') || desc.includes('http')) return 'network';
+    if (name.includes('db') || desc.includes('database')) return 'database';
+    if (name.includes('test') || desc.includes('test')) return 'testing';
 
-    return "general";
+    return 'general';
   }
 
   /**
@@ -107,7 +107,7 @@ export class SemanticSearch {
    */
   private calculateSemanticScore(
     entry: ToolIndexEntry,
-    queryTokens: string[],
+    queryTokens: string[]
   ): number {
     let score = 0;
 
@@ -119,15 +119,15 @@ export class SemanticSearch {
     // Keyword matches
     const keywordMatches = queryTokens.filter((token) =>
       entry.keywords.some(
-        (keyword) => keyword.includes(token) || token.includes(keyword),
-      ),
+        (keyword) => keyword.includes(token) || token.includes(keyword)
+      )
     );
     score += (keywordMatches.length / queryTokens.length) * 0.3;
 
     // Description matches
     const descriptionText = entry.description.toLowerCase();
     const descMatches = queryTokens.filter((token) =>
-      descriptionText.includes(token),
+      descriptionText.includes(token)
     );
     score += (descMatches.length / queryTokens.length) * 0.2;
 
@@ -139,7 +139,7 @@ export class SemanticSearch {
    */
   private findMatches(
     entry: ToolIndexEntry,
-    queryTokens: string[],
+    queryTokens: string[]
   ): { field: string; value: string; relevance: number }[] {
     const matches: { field: string; value: string; relevance: number }[] = [];
 
@@ -147,7 +147,7 @@ export class SemanticSearch {
     queryTokens.forEach((token) => {
       if (entry.name.toLowerCase().includes(token)) {
         matches.push({
-          field: "name",
+          field: 'name',
           value: entry.name,
           relevance: 1.0,
         });
@@ -159,7 +159,7 @@ export class SemanticSearch {
       queryTokens.forEach((token) => {
         if (keyword.includes(token)) {
           matches.push({
-            field: "keyword",
+            field: 'keyword',
             value: keyword,
             relevance: 0.8,
           });
@@ -171,12 +171,12 @@ export class SemanticSearch {
     const sentences = entry.description.split(/[.!?]/);
     sentences.forEach((sentence) => {
       const matchCount = queryTokens.filter((token) =>
-        sentence.toLowerCase().includes(token),
+        sentence.toLowerCase().includes(token)
       ).length;
 
       if (matchCount > 0) {
         matches.push({
-          field: "description",
+          field: 'description',
           value: sentence.trim(),
           relevance: matchCount / queryTokens.length,
         });

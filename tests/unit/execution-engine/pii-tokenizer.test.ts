@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+/// <reference types="vitest" />
 import { PIITokenizer } from '../../../src/core/execution-engine/security/pii-tokenizer';
 
 describe('PIITokenizer', () => {

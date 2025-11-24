@@ -3,8 +3,8 @@
  * Executes commands and manages skill/MCP activation with comprehensive security and error handling
  */
 
-import * as fs from "fs/promises";
-import * as path from "path";
+import * as fs from 'fs/promises';
+import * as path from 'path';
 import {
   Command,
   CommandExecutionContext,
@@ -14,17 +14,17 @@ import {
   CommandRegistry,
   CommandCache,
   ParameterValue,
-} from "./types";
-import { CommandParser } from "./command-parser";
-import { CommandValidator } from "./command-validator";
-import { Logger, ConsoleLogger } from "./logger";
+} from './types';
+import { CommandParser } from './command-parser';
+import { CommandValidator } from './command-validator';
+import { Logger, ConsoleLogger } from './logger';
 
 export class CommandExecutor {
   private static readonly DEFAULT_CATEGORIES = [
-    "workflow",
-    "superclaude",
-    "optimization",
-    "git",
+    'workflow',
+    'superclaude',
+    'optimization',
+    'git',
   ] as const;
 
   private commandParser: CommandParser;
@@ -36,9 +36,9 @@ export class CommandExecutor {
   private categories: readonly string[];
 
   constructor(
-    templatesPath: string = "templates/commands",
+    templatesPath: string = 'templates/commands',
     logger?: Logger,
-    categories?: readonly string[],
+    categories?: readonly string[]
   ) {
     this.commandParser = new CommandParser();
     this.commandValidator = new CommandValidator();
@@ -52,9 +52,9 @@ export class CommandExecutor {
    */
   async loadCommand(
     commandPath: string,
-    useCache: boolean = true,
+    useCache: boolean = true
   ): Promise<CommandLoadResult> {
-    this.logger.info("Loading command", { path: commandPath });
+    this.logger.info('Loading command', { path: commandPath });
 
     try {
       // Check cache if enabled
@@ -63,19 +63,19 @@ export class CommandExecutor {
         if (cached) {
           const stats = await fs.stat(commandPath);
           if (stats.mtimeMs === cached.mtime) {
-            this.logger.debug("Using cached command", { path: commandPath });
+            this.logger.debug('Using cached command', { path: commandPath });
             return { success: true, command: cached.command };
           }
         }
       }
 
-      const content = await fs.readFile(commandPath, "utf-8");
+      const content = await fs.readFile(commandPath, 'utf-8');
       const stats = await fs.stat(commandPath);
 
       // Extract metadata from frontmatter
       const metadata = this.parseCommandMetadata(content);
       if (!metadata) {
-        const error = "Failed to parse command metadata";
+        const error = 'Failed to parse command metadata';
         this.logger.error(error, undefined, { path: commandPath });
         return {
           success: false,
@@ -93,10 +93,10 @@ export class CommandExecutor {
       const validation =
         this.commandValidator.validateCommandDefinition(command);
       if (!validation.valid) {
-        const error = `Invalid command: ${validation.errors.join(", ")}`;
+        const error = `Invalid command: ${validation.errors.join(', ')}`;
         this.logger.error(error, undefined, {
           path: commandPath,
-          errors: validation.errors.join("; "),
+          errors: validation.errors.join('; '),
         });
         return {
           success: false,
@@ -111,7 +111,7 @@ export class CommandExecutor {
         mtime: stats.mtimeMs,
       });
 
-      this.logger.info("Command loaded successfully", {
+      this.logger.info('Command loaded successfully', {
         name: metadata.name,
         path: commandPath,
       });
@@ -125,12 +125,12 @@ export class CommandExecutor {
         error instanceof Error ? error.message : String(error);
 
       this.logger.error(
-        "Failed to load command",
+        'Failed to load command',
         error instanceof Error ? error : undefined,
         {
           path: commandPath,
           message: errorMessage,
-        },
+        }
       );
 
       return {
@@ -154,7 +154,7 @@ export class CommandExecutor {
         const files = await fs.readdir(categoryPath);
 
         for (const file of files) {
-          if (file.endsWith(".md")) {
+          if (file.endsWith('.md')) {
             const commandPath = path.join(categoryPath, file);
             const result = await this.loadCommand(commandPath);
 
@@ -163,7 +163,7 @@ export class CommandExecutor {
             } else {
               const errorMsg = `${category}/${file}: ${result.error}`;
               failed.push(errorMsg);
-              this.logger.warn("Failed to load command file", {
+              this.logger.warn('Failed to load command file', {
                 error: errorMsg,
               });
             }
@@ -178,7 +178,7 @@ export class CommandExecutor {
       }
     }
 
-    this.logger.info("Commands loaded", { loaded, failed: failed.length });
+    this.logger.info('Commands loaded', { loaded, failed: failed.length });
 
     return { loaded, failed };
   }
@@ -187,19 +187,19 @@ export class CommandExecutor {
    * Executes a command
    */
   async execute(
-    context: CommandExecutionContext,
+    context: CommandExecutionContext
   ): Promise<CommandExecutionResult> {
     const startTime = Date.now();
 
     try {
-      this.logger.info("Executing command", { command: context.command });
+      this.logger.info('Executing command', { command: context.command });
 
       // Parse command
       const parsed = this.commandParser.parse(context.command);
       if (!parsed) {
         return {
           success: false,
-          error: "Invalid command syntax",
+          error: 'Invalid command syntax',
           activatedSkills: [],
           activatedMCPs: [],
           activatedAgents: [],
@@ -227,11 +227,11 @@ export class CommandExecutor {
       // Validate execution
       const validation = this.commandValidator.validateExecution(
         command,
-        parsed,
+        parsed
       );
 
       if (!validation.valid) {
-        const error = `Validation failed: ${validation.errors.join(", ")}`;
+        const error = `Validation failed: ${validation.errors.join(', ')}`;
         this.logger.warn(error, { command: command.metadata.name });
         return {
           success: false,
@@ -249,7 +249,7 @@ export class CommandExecutor {
 
       const executionTime = Date.now() - startTime;
 
-      this.logger.info("Command executed successfully", {
+      this.logger.info('Command executed successfully', {
         command: command.metadata.name,
         executionTime,
       });
@@ -268,9 +268,9 @@ export class CommandExecutor {
         error instanceof Error ? error.message : String(error);
 
       this.logger.error(
-        "Command execution failed",
+        'Command execution failed',
         error instanceof Error ? error : undefined,
-        { command: context.command },
+        { command: context.command }
       );
 
       return {
@@ -311,7 +311,7 @@ export class CommandExecutor {
   private parseCommandMetadata(content: string): CommandMetadata | null {
     const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
     if (!frontmatterMatch || !frontmatterMatch[1]) {
-      this.logger.warn("No frontmatter found in command file");
+      this.logger.warn('No frontmatter found in command file');
       return null;
     }
 
@@ -322,15 +322,15 @@ export class CommandExecutor {
 
       // Runtime validation
       if (!this.validateMetadata(metadata)) {
-        this.logger.error("Metadata validation failed");
+        this.logger.error('Metadata validation failed');
         return null;
       }
 
       return metadata as CommandMetadata;
     } catch (error) {
       this.logger.error(
-        "Failed to parse command metadata",
-        error instanceof Error ? error : undefined,
+        'Failed to parse command metadata',
+        error instanceof Error ? error : undefined
       );
       return null;
     }
@@ -341,16 +341,16 @@ export class CommandExecutor {
    */
   private parseYAMLSubset(yaml: string): Record<string, unknown> {
     const result: Record<string, unknown> = {};
-    const lines = yaml.split("\n");
+    const lines = yaml.split('\n');
     const stack: Array<{ obj: Record<string, unknown>; indent: number }> = [
       { obj: result, indent: -1 },
     ];
 
-    let currentKey = "";
+    let currentKey = '';
     let currentArray: unknown[] | null = null;
 
     for (const line of lines) {
-      if (line.trim() === "" || line.trim().startsWith("#")) {
+      if (line.trim() === '' || line.trim().startsWith('#')) {
         continue;
       }
 
@@ -372,7 +372,7 @@ export class CommandExecutor {
 
       const current = stackTop.obj;
 
-      if (trimmed.startsWith("-")) {
+      if (trimmed.startsWith('-')) {
         // Array item
         const value = trimmed.substring(1).trim();
         if (!currentArray && currentKey) {
@@ -382,9 +382,9 @@ export class CommandExecutor {
         if (currentArray) {
           currentArray.push(this.parseYAMLValue(value));
         }
-      } else if (trimmed.includes(":")) {
+      } else if (trimmed.includes(':')) {
         currentArray = null;
-        const colonIndex = trimmed.indexOf(":");
+        const colonIndex = trimmed.indexOf(':');
         const key = trimmed.substring(0, colonIndex).trim();
         const value = trimmed.substring(colonIndex + 1).trim();
 
@@ -408,14 +408,14 @@ export class CommandExecutor {
    * Parse a YAML value
    */
   private parseYAMLValue(value: string): unknown {
-    if (value === "true") return true;
-    if (value === "false") return false;
-    if (value === "null") return null;
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    if (value === 'null') return null;
     if (!isNaN(Number(value)) && value.trim()) return Number(value);
     if (value.startsWith('"') && value.endsWith('"')) {
       return value.slice(1, -1);
     }
-    if (value.startsWith("[") && value.endsWith("]")) {
+    if (value.startsWith('[') && value.endsWith(']')) {
       try {
         return JSON.parse(value);
       } catch {
@@ -429,24 +429,24 @@ export class CommandExecutor {
    * Runtime validation of metadata structure
    */
   private validateMetadata(metadata: unknown): metadata is CommandMetadata {
-    if (typeof metadata !== "object" || metadata === null) {
+    if (typeof metadata !== 'object' || metadata === null) {
       return false;
     }
 
     const m = metadata as Record<string, unknown>;
 
     return (
-      typeof m.name === "string" &&
-      typeof m.description === "string" &&
-      typeof m.category === "string" &&
-      ["workflow", "superclaude", "optimization", "git"].includes(
-        m.category as string,
+      typeof m.name === 'string' &&
+      typeof m.description === 'string' &&
+      typeof m.category === 'string' &&
+      ['workflow', 'superclaude', 'optimization', 'git'].includes(
+        m.category as string
       ) &&
-      typeof m.version === "string" &&
-      typeof m.triggers === "object" &&
-      typeof m.autoExecute === "boolean" &&
-      typeof m.tokenEstimate === "number" &&
-      typeof m.executionTime === "string"
+      typeof m.version === 'string' &&
+      typeof m.triggers === 'object' &&
+      typeof m.autoExecute === 'boolean' &&
+      typeof m.tokenEstimate === 'number' &&
+      typeof m.executionTime === 'string'
     );
   }
 
@@ -454,7 +454,7 @@ export class CommandExecutor {
    * Escapes special regex characters
    */
   private escapeRegex(str: string): string {
-    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
   /**
@@ -466,27 +466,27 @@ export class CommandExecutor {
       parameters: Record<string, ParameterValue>;
       flags: Record<string, boolean | string | ParameterValue>;
     },
-    context: CommandExecutionContext,
+    context: CommandExecutionContext
   ): string {
     let output = command.content;
 
     // Remove frontmatter
-    output = output.replace(/^---\n[\s\S]*?\n---\n/, "");
+    output = output.replace(/^---\n[\s\S]*?\n---\n/, '');
 
     // Replace parameter placeholders - FIX: Escape regex special characters
     for (const [key, value] of Object.entries(parsed.parameters)) {
       const escapedKey = this.escapeRegex(key);
       output = output.replace(
-        new RegExp(`\\{${escapedKey}\\}`, "g"),
-        String(value),
+        new RegExp(`\\{${escapedKey}\\}`, 'g'),
+        String(value)
       );
     }
 
     for (const [key, value] of Object.entries(parsed.flags)) {
       const escapedKey = this.escapeRegex(key);
       output = output.replace(
-        new RegExp(`\\{${escapedKey}\\}`, "g"),
-        String(value),
+        new RegExp(`\\{${escapedKey}\\}`, 'g'),
+        String(value)
       );
     }
 
@@ -519,7 +519,7 @@ export class CommandExecutor {
   unloadCommand(name: string): boolean {
     if (this.commandRegistry[name]) {
       delete this.commandRegistry[name];
-      this.logger.info("Command unloaded", { name });
+      this.logger.info('Command unloaded', { name });
 
       // Also remove from cache
       for (const [path, cached] of this.commandCache.entries()) {
@@ -541,7 +541,7 @@ export class CommandExecutor {
     const count = Object.keys(this.commandRegistry).length;
     this.commandRegistry = {};
     this.commandCache.clear();
-    this.logger.info("Registry cleared", { commandsCleared: count });
+    this.logger.info('Registry cleared', { commandsCleared: count });
   }
 
   /**
@@ -586,7 +586,7 @@ export class CommandExecutor {
     return {
       size: this.commandCache.size,
       commands: Array.from(this.commandCache.values()).map(
-        (c) => c.command.metadata.name,
+        (c) => c.command.metadata.name
       ),
     };
   }

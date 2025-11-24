@@ -1,4 +1,4 @@
-import { AnomalyDetection, Anomaly, AuditLogEntry } from "../types";
+import { AnomalyDetection, Anomaly, AuditLogEntry } from '../types';
 
 /**
  * Detects anomalies in execution patterns
@@ -13,7 +13,7 @@ export class AnomalyDetector {
   analyze(
     executionTime: number,
     memoryUsed: number,
-    logs: AuditLogEntry[],
+    logs: AuditLogEntry[]
   ): AnomalyDetection {
     const anomalies: Anomaly[] = [];
 
@@ -47,7 +47,7 @@ export class AnomalyDetector {
    */
   private detectResourceSpikes(
     executionTime: number,
-    memoryUsed: number,
+    memoryUsed: number
   ): Anomaly[] {
     const anomalies: Anomaly[] = [];
 
@@ -66,18 +66,18 @@ export class AnomalyDetector {
     // Check for spikes (3x average)
     if (executionTime > avgTime * 3) {
       anomalies.push({
-        type: "resource_spike",
+        type: 'resource_spike',
         description: `Execution time (${executionTime}ms) is 3x higher than average (${avgTime.toFixed(0)}ms)`,
-        severity: "high",
+        severity: 'high',
         timestamp: new Date(),
       });
     }
 
     if (memoryUsed > avgMemory * 3) {
       anomalies.push({
-        type: "resource_spike",
+        type: 'resource_spike',
         description: `Memory usage (${memoryUsed}MB) is 3x higher than average (${avgMemory.toFixed(0)}MB)`,
-        severity: "high",
+        severity: 'high',
         timestamp: new Date(),
       });
     }
@@ -93,25 +93,25 @@ export class AnomalyDetector {
 
     // Check for high-severity security events
     const criticalSecurityLogs = logs.filter(
-      (log) => log.type === "security" && log.severity === "critical",
+      (log) => log.type === 'security' && log.severity === 'critical'
     );
 
     if (criticalSecurityLogs.length > 0) {
       anomalies.push({
-        type: "suspicious_pattern",
+        type: 'suspicious_pattern',
         description: `${criticalSecurityLogs.length} critical security events detected`,
-        severity: "critical",
+        severity: 'critical',
         timestamp: new Date(),
       });
     }
 
     // Check for repeated error patterns
-    const errorLogs = logs.filter((log) => log.type === "error");
+    const errorLogs = logs.filter((log) => log.type === 'error');
     if (errorLogs.length > 5) {
       anomalies.push({
-        type: "suspicious_pattern",
+        type: 'suspicious_pattern',
         description: `High error rate: ${errorLogs.length} errors`,
-        severity: "medium",
+        severity: 'medium',
         timestamp: new Date(),
       });
     }
@@ -126,18 +126,18 @@ export class AnomalyDetector {
     const anomalies: Anomaly[] = [];
 
     // Get execution logs
-    const executionLogs = logs.filter((log) => log.type === "execution");
+    const executionLogs = logs.filter((log) => log.type === 'execution');
 
     // Count failures
     const failures = executionLogs.filter(
-      (log) => log.metadata?.success === false,
+      (log) => log.metadata?.success === false
     );
 
     if (failures.length > 3) {
       anomalies.push({
-        type: "repeated_failure",
+        type: 'repeated_failure',
         description: `${failures.length} consecutive execution failures`,
-        severity: failures.length > 5 ? "high" : "medium",
+        severity: failures.length > 5 ? 'high' : 'medium',
         timestamp: new Date(),
       });
     }
@@ -154,9 +154,9 @@ export class AnomalyDetector {
     // Very fast execution might indicate code didn't actually run
     if (executionTime < 10) {
       anomalies.push({
-        type: "unusual_timing",
+        type: 'unusual_timing',
         description: `Suspiciously fast execution: ${executionTime}ms`,
-        severity: "low",
+        severity: 'low',
         timestamp: new Date(),
       });
     }
@@ -164,9 +164,9 @@ export class AnomalyDetector {
     // Very slow execution might indicate infinite loop or DoS
     if (executionTime > 60000) {
       anomalies.push({
-        type: "unusual_timing",
+        type: 'unusual_timing',
         description: `Suspiciously slow execution: ${executionTime}ms`,
-        severity: "high",
+        severity: 'high',
         timestamp: new Date(),
       });
     }
@@ -194,19 +194,19 @@ export class AnomalyDetector {
    * Calculate overall risk level
    */
   private calculateRiskLevel(
-    anomalies: Anomaly[],
-  ): AnomalyDetection["riskLevel"] {
-    if (anomalies.length === 0) return "low";
+    anomalies: Anomaly[]
+  ): AnomalyDetection['riskLevel'] {
+    if (anomalies.length === 0) return 'low';
 
-    const hasCritical = anomalies.some((a) => a.severity === "critical");
-    const hasHigh = anomalies.some((a) => a.severity === "high");
-    const hasMedium = anomalies.some((a) => a.severity === "medium");
+    const hasCritical = anomalies.some((a) => a.severity === 'critical');
+    const hasHigh = anomalies.some((a) => a.severity === 'high');
+    const hasMedium = anomalies.some((a) => a.severity === 'medium');
 
-    if (hasCritical) return "critical";
-    if (hasHigh) return "high";
-    if (hasMedium) return "medium";
+    if (hasCritical) return 'critical';
+    if (hasHigh) return 'high';
+    if (hasMedium) return 'medium';
 
-    return "low";
+    return 'low';
   }
 
   /**

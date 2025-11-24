@@ -1,6 +1,89 @@
+/// <reference types="vitest" />
 import { DockerSandbox } from '../../../src/core/execution-engine/sandbox/docker-sandbox';
 import { SandboxConfig } from '../../../src/core/execution-engine/types';
 import Docker from 'dockerode';
+import { vi } from 'vitest';
+
+vi.mock('dockerode', () => {
+  const { EventEmitter } = require('events');
+  let nextId = 0;
+  const containers = new Map<string, any>();
+
+  class MockStream extends EventEmitter {
+    destroyed = false;
+    destroy(): void {
+      this.destroyed = true;
+      this.removeAllListeners();
+    }
+  }
+
+  class MockExec {
+    start(): Promise<MockStream> {
+      const stream = new MockStream();
+      setTimeout(() => {
+        stream.emit('data', Buffer.from('mock output'));
+        stream.emit('end');
+      }, 5);
+      return Promise.resolve(stream);
+    }
+  }
+
+  class MockContainer {
+    id: string;
+    constructor() {
+      this.id = `mock-${++nextId}`;
+      containers.set(this.id, this);
+    }
+
+    async putArchive(): Promise<void> {
+      return;
+    }
+
+    async start(): Promise<void> {
+      return;
+    }
+
+    async stop(): Promise<void> {
+      return;
+    }
+
+    async remove(): Promise<void> {
+      containers.delete(this.id);
+    }
+
+    async stats(): Promise<any> {
+      return { memory_stats: { usage: 1024 * 1024 } };
+    }
+
+    async exec(): Promise<MockExec> {
+      return new MockExec();
+    }
+
+    async wait(): Promise<{ StatusCode: number }> {
+      return { StatusCode: 0 };
+    }
+  }
+
+  class MockDocker {
+    async pull(): Promise<void> {
+      return;
+    }
+
+    async createContainer(): Promise<MockContainer> {
+      return new MockContainer();
+    }
+
+    async listContainers(): Promise<Array<{ Id: string }>> {
+      return Array.from(containers.keys()).map((id) => ({ Id: id }));
+    }
+
+    getContainer(id: string): MockContainer | undefined {
+      return containers.get(id);
+    }
+  }
+
+  return { default: MockDocker };
+});
 
 /**
  * Tests for Docker container cleanup functionality
@@ -11,6 +94,7 @@ describe('DockerSandbox Cleanup', () => {
   let docker: Docker;
 
   const defaultConfig: SandboxConfig = {
+    type: 'docker',
     resourceLimits: {
       memory: '512M',
       cpu: 1,
@@ -19,10 +103,9 @@ describe('DockerSandbox Cleanup', () => {
     },
     networkPolicy: {
       mode: 'none',
-      allowedDomains: []
+      allowed: []
     },
-    allowedModules: ['fs', 'path'],
-    securityLevel: 'strict' as const
+    allowedEnvVars: []
   };
 
   beforeEach(() => {

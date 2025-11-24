@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import Docker from "dockerode";
-import { SandboxConfig, ExecutionResult } from "../types";
-import * as tar from "tar-stream";
+import Docker from 'dockerode';
+import { SandboxConfig, ExecutionResult } from '../types';
+import * as tar from 'tar-stream';
 import {
   SandboxLogger,
   ConsoleLogger,
   ContainerMetricsTracker,
-} from "./sandbox-logger";
+} from './sandbox-logger';
 
 /**
  * Docker-based sandbox for isolated code execution
@@ -30,7 +30,7 @@ export class DockerSandbox {
    */
   async execute(
     code: string,
-    language: "typescript" | "python",
+    language: 'typescript' | 'python'
   ): Promise<ExecutionResult> {
     const startTime = Date.now();
     let container: Docker.Container | null = null;
@@ -44,7 +44,7 @@ export class DockerSandbox {
       // Track active container and metrics
       DockerSandbox.activeContainers.add(containerId);
       DockerSandbox.metricsTracker.incrementCreated();
-      this.logger.info("Container created", {
+      this.logger.info('Container created', {
         containerId: containerId.substring(0, 12),
         language,
       });
@@ -68,7 +68,7 @@ export class DockerSandbox {
         metrics: {
           executionTime: Date.now() - startTime,
           memoryUsed: this.formatMemory(
-            (stats as any).memory_stats?.usage || 0,
+            (stats as any).memory_stats?.usage || 0
           ),
           tokensInSummary: this.estimateTokens(result.output),
         },
@@ -77,11 +77,11 @@ export class DockerSandbox {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-        summary: "Execution failed",
+        error: error instanceof Error ? error.message : 'Unknown error',
+        summary: 'Execution failed',
         metrics: {
           executionTime: Date.now() - startTime,
-          memoryUsed: "0M",
+          memoryUsed: '0M',
           tokensInSummary: 0,
         },
         piiTokenized: false,
@@ -97,7 +97,7 @@ export class DockerSandbox {
           await container.stop({ t: 0 });
         } catch (stopError) {
           // Log but don't fail - container might already be stopped
-          this.logger.warn("Failed to stop container", {
+          this.logger.warn('Failed to stop container', {
             containerId: containerId?.substring(0, 12),
             error:
               stopError instanceof Error
@@ -110,7 +110,7 @@ export class DockerSandbox {
           // Force remove even if container is running
           await container.remove({ force: true, v: true });
           DockerSandbox.metricsTracker.incrementCleanedSuccess();
-          this.logger.info("Container cleaned up", {
+          this.logger.info('Container cleaned up', {
             containerId: containerId?.substring(0, 12),
             cleanupTimeMs: Date.now() - cleanupStartTime,
           });
@@ -119,11 +119,11 @@ export class DockerSandbox {
           cleanupSuccess = false;
           DockerSandbox.metricsTracker.incrementCleanedFailed();
           this.logger.error(
-            "Failed to remove container",
+            'Failed to remove container',
             removeError instanceof Error ? removeError : undefined,
             {
               containerId: containerId?.substring(0, 12),
-            },
+            }
           );
         }
 
@@ -135,7 +135,7 @@ export class DockerSandbox {
         // Track cleanup metrics
         const cleanupTime = Date.now() - cleanupStartTime;
         DockerSandbox.metricsTracker.recordCleanupTime(cleanupTime);
-        this.logger.metric("container.cleanup.duration_ms", cleanupTime, {
+        this.logger.metric('container.cleanup.duration_ms', cleanupTime, {
           success: cleanupSuccess,
         });
       }
@@ -147,7 +147,7 @@ export class DockerSandbox {
    */
   private async createContainer(language: string) {
     const image =
-      language === "typescript" ? "node:18-alpine" : "python:3.11-alpine";
+      language === 'typescript' ? 'node:18-alpine' : 'python:3.11-alpine';
 
     // Pull image if not exists
     try {
@@ -160,17 +160,17 @@ export class DockerSandbox {
     return this.docker.createContainer({
       Image: image,
       Tty: false,
-      NetworkDisabled: this.config.networkPolicy?.mode === "none",
-      WorkingDir: "/workspace",
+      NetworkDisabled: this.config.networkPolicy?.mode === 'none',
+      WorkingDir: '/workspace',
       Labels: {
-        "mcp.sandbox": "true",
-        "mcp.sandbox.language": language,
-        "mcp.sandbox.created": new Date().toISOString(),
+        'mcp.sandbox': 'true',
+        'mcp.sandbox.language': language,
+        'mcp.sandbox.created': new Date().toISOString(),
       },
       HostConfig: {
-        Memory: this.parseMemory(this.config.resourceLimits?.memory || "512M"),
+        Memory: this.parseMemory(this.config.resourceLimits?.memory || '512M'),
         NanoCpus: Number(this.config.resourceLimits?.cpu || 1) * 1e9,
-        DiskQuota: this.parseDisk(this.config.resourceLimits?.disk || "1G"),
+        DiskQuota: this.parseDisk(this.config.resourceLimits?.disk || '1G'),
       },
     });
   }
@@ -181,9 +181,9 @@ export class DockerSandbox {
   private async copyCodeToContainer(
     container: Docker.Container,
     code: string,
-    language: string,
+    language: string
   ): Promise<void> {
-    const filename = language === "typescript" ? "script.ts" : "script.py";
+    const filename = language === 'typescript' ? 'script.ts' : 'script.py';
 
     // Create tar archive with code file
     const pack = tar.pack();
@@ -193,7 +193,7 @@ export class DockerSandbox {
       pack.finalize();
     });
 
-    await container.putArchive(pack, { path: "/workspace" });
+    await container.putArchive(pack, { path: '/workspace' });
   }
 
   /**
@@ -202,12 +202,12 @@ export class DockerSandbox {
    */
   private async executeInContainer(
     container: Docker.Container,
-    language: string,
+    language: string
   ): Promise<{ output: string }> {
     const command =
-      language === "typescript"
-        ? ["npx", "ts-node", "/workspace/script.ts"]
-        : ["python", "/workspace/script.py"];
+      language === 'typescript'
+        ? ['npx', 'ts-node', '/workspace/script.ts']
+        : ['python', '/workspace/script.py'];
 
     const exec = await container.exec({
       Cmd: command,
@@ -218,7 +218,7 @@ export class DockerSandbox {
     const stream = await exec.start({ Detach: false });
 
     return new Promise((resolve, reject) => {
-      let output = "";
+      let output = '';
       let timeoutHandle: NodeJS.Timeout | null = null;
       let completed = false;
 
@@ -234,18 +234,18 @@ export class DockerSandbox {
         }
       };
 
-      stream.on("data", (chunk: Buffer) => {
+      stream.on('data', (chunk: Buffer) => {
         output += chunk.toString();
       });
 
-      stream.on("end", () => {
+      stream.on('end', () => {
         if (!completed) {
           cleanup();
           resolve({ output });
         }
       });
 
-      stream.on("error", (error) => {
+      stream.on('error', (error) => {
         if (!completed) {
           cleanup();
           reject(error);
@@ -257,13 +257,13 @@ export class DockerSandbox {
       timeoutHandle = setTimeout(() => {
         if (!completed) {
           this.logger.warn(
-            "Execution timeout - container will be force-stopped",
+            'Execution timeout - container will be force-stopped',
             {
               timeout,
-            },
+            }
           );
           cleanup();
-          reject(new Error("Execution timeout"));
+          reject(new Error('Execution timeout'));
         }
       }, timeout);
     });
@@ -273,7 +273,7 @@ export class DockerSandbox {
    * Summarize output to <500 tokens
    */
   private summarizeOutput(output: unknown): string {
-    const str = typeof output === "string" ? output : JSON.stringify(output);
+    const str = typeof output === 'string' ? output : JSON.stringify(output);
 
     if (str.length < 2000) {
       return str;
@@ -294,7 +294,7 @@ export class DockerSandbox {
     const multipliers = { K: 1024, M: 1024 ** 2, G: 1024 ** 3 };
 
     return (
-      parseInt(amount || "512") * multipliers[unit as keyof typeof multipliers]
+      parseInt(amount || '512') * multipliers[unit as keyof typeof multipliers]
     );
   }
 
@@ -348,7 +348,7 @@ export class DockerSandbox {
     if (failedCleanups.length > 0) {
       console.error(
         `Failed to cleanup ${failedCleanups.length} containers:`,
-        failedCleanups,
+        failedCleanups
       );
     }
   }

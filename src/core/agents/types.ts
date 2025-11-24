@@ -8,12 +8,12 @@
 /**
  * Agent categories
  */
-export type AgentCategory = "technical" | "business";
+export type AgentCategory = 'technical' | 'business';
 
 /**
  * Complexity levels for agent activation
  */
-export type ComplexityLevel = "simple" | "moderate" | "complex";
+export type ComplexityLevel = 'simple' | 'moderate' | 'complex';
 
 /**
  * Agent activation configuration
@@ -75,21 +75,21 @@ export interface AgentSelectionResult {
 /**
  * Business panel modes
  */
-export type PanelMode = "discussion" | "debate" | "socratic";
+export type PanelMode = 'discussion' | 'debate' | 'socratic';
 
 /**
  * Business panel expert names
  */
 export type ExpertName =
-  | "christensen"
-  | "porter"
-  | "drucker"
-  | "godin"
-  | "kim-mauborgne"
-  | "collins"
-  | "taleb"
-  | "meadows"
-  | "doumont";
+  | 'christensen'
+  | 'porter'
+  | 'drucker'
+  | 'godin'
+  | 'kim-mauborgne'
+  | 'collins'
+  | 'taleb'
+  | 'meadows'
+  | 'doumont';
 
 /**
  * Business panel configuration
@@ -156,7 +156,7 @@ export interface AgentExecutionResult {
 /**
  * Multi-agent coordination strategy
  */
-export type CoordinationStrategy = "sequential" | "parallel" | "hierarchical";
+export type CoordinationStrategy = 'sequential' | 'parallel' | 'hierarchical';
 
 /**
  * Execution policy for error handling
@@ -180,7 +180,7 @@ export interface ExecutionOptions {
 /**
  * Log level
  */
-export type LogLevel = "debug" | "info" | "warn" | "error";
+export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 /**
  * Log entry
@@ -232,7 +232,7 @@ export interface IAgentOrchestrator {
    * Select appropriate agent(s) for a given query
    */
   selectAgents(
-    criteria: AgentSelectionCriteria,
+    criteria: AgentSelectionCriteria
   ): Promise<AgentSelectionResult[]>;
 
   /**
@@ -241,7 +241,7 @@ export interface IAgentOrchestrator {
   executeAgent(
     agent: Agent,
     context: AgentContext,
-    options?: ExecutionOptions,
+    options?: ExecutionOptions
   ): Promise<AgentExecutionResult>;
 
   /**
@@ -251,7 +251,7 @@ export interface IAgentOrchestrator {
     agents: Agent[],
     context: AgentContext,
     strategy: CoordinationStrategy,
-    options?: ExecutionOptions,
+    options?: ExecutionOptions
   ): Promise<MultiAgentResult>;
 }
 
@@ -294,7 +294,7 @@ export interface IAgentSelector {
    */
   select(
     agents: Agent[],
-    criteria: AgentSelectionCriteria,
+    criteria: AgentSelectionCriteria
   ): AgentSelectionResult[];
 
   /**
@@ -317,7 +317,7 @@ export interface IAgentCoordinator {
    */
   createPlan(
     agents: Agent[],
-    strategy: CoordinationStrategy,
+    strategy: CoordinationStrategy
   ): Promise<MultiAgentPlan>;
 
   /**
@@ -326,7 +326,7 @@ export interface IAgentCoordinator {
   executePlan(
     plan: MultiAgentPlan,
     context: AgentContext,
-    options?: ExecutionOptions,
+    options?: ExecutionOptions
   ): Promise<MultiAgentResult>;
 
   /**
@@ -335,7 +335,7 @@ export interface IAgentCoordinator {
   executeSequential(
     agents: Agent[],
     context: AgentContext,
-    options?: ExecutionOptions,
+    options?: ExecutionOptions
   ): Promise<AgentExecutionResult[]>;
 
   /**
@@ -344,7 +344,7 @@ export interface IAgentCoordinator {
   executeParallel(
     agents: Agent[],
     context: AgentContext,
-    options?: ExecutionOptions,
+    options?: ExecutionOptions
   ): Promise<AgentExecutionResult[]>;
 }
 

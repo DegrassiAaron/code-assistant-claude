@@ -16,9 +16,9 @@ export const CHARS_PER_TOKEN_ESTIMATE = 4;
 /**
  * File system
  */
-export const SKILL_FILE_NAME = "SKILL.md";
-export const RESOURCES_DIR_NAME = "resources";
-export const EXAMPLES_DIR_NAME = "examples";
+export const SKILL_FILE_NAME = 'SKILL.md';
+export const RESOURCES_DIR_NAME = 'resources';
+export const EXAMPLES_DIR_NAME = 'examples';
 
 /**
  * Retry configuration
@@ -30,10 +30,10 @@ export const DEFAULT_RETRY_BASE_DELAY_MS = 100;
  * Valid skill categories
  */
 export const VALID_CATEGORIES = [
-  "core",
-  "domain",
-  "superclaude",
-  "meta",
+  'core',
+  'domain',
+  'superclaude',
+  'meta',
 ] as const;
 
 /**

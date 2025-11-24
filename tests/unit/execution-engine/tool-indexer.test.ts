@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+/// <reference types="vitest" />
 import { ToolIndexer } from '../../../src/core/execution-engine/discovery/tool-indexer';
 import type { Tool, ToolMetadata } from '../../../src/core/execution-engine/types';
 

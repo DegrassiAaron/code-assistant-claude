@@ -1,5 +1,18 @@
-import { describe, it, expect } from 'vitest';
+/// <reference types="vitest" />
+import { vi } from 'vitest';
 import { encoding_for_model } from 'tiktoken';
+
+vi.mock('tiktoken', () => {
+  return {
+    encoding_for_model: () => ({
+      encode: (text: string) => {
+        const length = Math.max(1, Math.ceil(text.length / 4));
+        return Array.from({ length }, (_, i) => i);
+      },
+      free: () => {},
+    }),
+  };
+});
 
 describe('Token Reduction Detailed Benchmarks', () => {
   describe('MCP Code Execution Token Savings', () => {

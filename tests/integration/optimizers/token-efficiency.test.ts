@@ -143,9 +143,10 @@ describe('Token Efficiency Layer Integration', () => {
 
       // Should have warning recommendations
       expect(recommendations.length).toBeGreaterThan(0);
-      expect(
-        recommendations.some(r => r.priority === 'high' || r.priority === 'critical')
-      ).toBe(true);
+      const highPriority = recommendations.filter(
+        r => r.priority === 'high' || r.priority === 'critical'
+      );
+      expect(highPriority.length).toBeGreaterThan(0);
 
       // Generate report
       const report = recommendationEngine.generateReport();

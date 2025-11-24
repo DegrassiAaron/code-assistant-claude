@@ -9,7 +9,7 @@
  * @returns Escaped string safe for use in RegExp
  */
 export function escapeRegex(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /**
@@ -20,7 +20,7 @@ export function escapeRegex(str: string): string {
  */
 export function createWordBoundaryPattern(
   word: string,
-  flags: string = "gi",
+  flags: string = 'gi'
 ): RegExp {
   const escaped = escapeRegex(word);
   return new RegExp(`\\b${escaped}\\b`, flags);
@@ -34,8 +34,8 @@ export function createWordBoundaryPattern(
  */
 export function createAlternationPattern(
   strings: string[],
-  flags: string = "g",
+  flags: string = 'g'
 ): RegExp {
   const escaped = strings.map(escapeRegex);
-  return new RegExp(escaped.join("|"), flags);
+  return new RegExp(escaped.join('|'), flags);
 }

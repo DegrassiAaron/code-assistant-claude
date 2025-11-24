@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+/// <reference types="vitest" />
 import { SandboxManager } from '../../../src/core/execution-engine/sandbox/sandbox-manager';
-import type { SandboxConfig, SandboxLevel } from '../../../src/core/execution-engine/types';
+import type { SandboxConfig } from '../../../src/core/execution-engine/types';
 
 describe('SandboxManager', () => {
   let sandboxManager: SandboxManager;
@@ -20,10 +20,12 @@ describe('SandboxManager', () => {
 
     it('should initialize with custom configuration', () => {
       const config: SandboxConfig = {
-        level: 'docker',
-        timeout: 30000,
-        memoryLimit: 512,
-        cpuLimit: 1.0
+        type: 'process',
+        resourceLimits: {
+          memory: '256M',
+          cpu: 1,
+          timeout: 5000
+        }
       };
 
       const customSandbox = new SandboxManager(config);
@@ -171,7 +173,8 @@ describe('SandboxManager', () => {
       });
 
       expect(result.success).toBe(true);
-      expect(result.result.hasConsole).toBe(true);
+      const payload = result.result as { hasConsole?: boolean } | undefined;
+      expect(payload?.hasConsole).toBe(true);
     });
   });
 

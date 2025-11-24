@@ -3,7 +3,7 @@
  * Parses command-line style parameters and flags with security hardening
  */
 
-import { CommandParameter, ParameterValue } from "./types";
+import { CommandParameter, ParameterValue } from './types';
 
 const MAX_JSON_SIZE = 10000;
 const MAX_JSON_DEPTH = 10;
@@ -19,7 +19,7 @@ export class ParameterParser {
    */
   parseParameters(
     input: string,
-    parameterDefs?: CommandParameter[],
+    parameterDefs?: CommandParameter[]
   ): {
     parameters: Record<string, ParameterValue>;
     flags: Record<string, boolean | string | ParameterValue>;
@@ -36,12 +36,12 @@ export class ParameterParser {
       const token = tokens[i];
       if (!token) continue;
 
-      if (token.startsWith("--")) {
+      if (token.startsWith('--')) {
         // Handle flags: --flag or --key=value
         const flagName = token.substring(2);
 
-        if (flagName.includes("=")) {
-          const [key, value] = flagName.split("=", 2);
+        if (flagName.includes('=')) {
+          const [key, value] = flagName.split('=', 2);
           if (key && value !== undefined) {
             flags[key] = this.parseValue(value);
           }
@@ -51,7 +51,7 @@ export class ParameterParser {
           if (
             i + 1 < tokens.length &&
             nextToken &&
-            !nextToken.startsWith("--")
+            !nextToken.startsWith('--')
           ) {
             flags[flagName] = this.parseValue(nextToken);
             i++; // Skip next token
@@ -66,7 +66,7 @@ export class ParameterParser {
           if (paramDef && paramDef.name) {
             parameters[paramDef.name] = this.parseValue(
               token,
-              paramDef.type || "string",
+              paramDef.type || 'string'
             );
           }
         } else {
@@ -98,9 +98,9 @@ export class ParameterParser {
    */
   private tokenize(input: string): string[] {
     const tokens: string[] = [];
-    let current = "";
+    let current = '';
     let inQuotes = false;
-    let quoteChar = "";
+    let quoteChar = '';
     let escaped = false;
     let wasQuoted = false;
 
@@ -114,7 +114,7 @@ export class ParameterParser {
         continue;
       }
 
-      if (char === "\\") {
+      if (char === '\\') {
         // Next character is escaped
         escaped = true;
         continue;
@@ -128,13 +128,13 @@ export class ParameterParser {
       } else if (char === quoteChar && inQuotes) {
         current += char; // Include the closing quote
         inQuotes = false;
-        quoteChar = "";
+        quoteChar = '';
         // Keep wasQuoted true - we'll check it when adding token
-      } else if (char === " " && !inQuotes) {
+      } else if (char === ' ' && !inQuotes) {
         // Add token if it has content OR if it was a quoted empty string
         if (current || wasQuoted) {
           tokens.push(current);
-          current = "";
+          current = '';
           wasQuoted = false;
         }
       } else {
@@ -163,10 +163,10 @@ export class ParameterParser {
     }
 
     // Security: Check size before parsing JSON
-    if (value.startsWith("[") || value.startsWith("{")) {
+    if (value.startsWith('[') || value.startsWith('{')) {
       if (value.length > MAX_JSON_SIZE) {
         throw new Error(
-          `JSON value too large (max ${MAX_JSON_SIZE} characters)`,
+          `JSON value too large (max ${MAX_JSON_SIZE} characters)`
         );
       }
 
@@ -177,14 +177,14 @@ export class ParameterParser {
         const depth = this.getObjectDepth(parsed);
         if (depth > MAX_JSON_DEPTH) {
           throw new Error(
-            `JSON structure too deep (max depth ${MAX_JSON_DEPTH})`,
+            `JSON structure too deep (max depth ${MAX_JSON_DEPTH})`
           );
         }
 
         return parsed as ParameterValue;
       } catch (error) {
         // If JSON parsing fails, return as string
-        if (error instanceof Error && error.message.includes("JSON")) {
+        if (error instanceof Error && error.message.includes('JSON')) {
           throw error; // Re-throw our security errors
         }
         return value;
@@ -194,7 +194,7 @@ export class ParameterParser {
     // Type-specific parsing
     // Fix: Check for empty/whitespace strings before parsing as number
     if (
-      expectedType === "number" ||
+      expectedType === 'number' ||
       (!expectedType && value.trim() && !isNaN(Number(value)))
     ) {
       const num = Number(value);
@@ -204,13 +204,13 @@ export class ParameterParser {
       }
     }
 
-    if (expectedType === "boolean" || value === "true" || value === "false") {
-      return value === "true";
+    if (expectedType === 'boolean' || value === 'true' || value === 'false') {
+      return value === 'true';
     }
 
-    if (expectedType === "array") {
+    if (expectedType === 'array') {
       // Split by comma if it's a simple array
-      return value.split(",").map((v) => v.trim());
+      return value.split(',').map((v) => v.trim());
     }
 
     return value;
@@ -225,7 +225,7 @@ export class ParameterParser {
       return currentDepth;
     }
 
-    if (typeof obj !== "object" || obj === null) {
+    if (typeof obj !== 'object' || obj === null) {
       return currentDepth;
     }
 
@@ -236,7 +236,7 @@ export class ParameterParser {
       return (
         1 +
         Math.max(
-          ...obj.map((item) => this.getObjectDepth(item, currentDepth + 1)),
+          ...obj.map((item) => this.getObjectDepth(item, currentDepth + 1))
         )
       );
     }
@@ -249,7 +249,7 @@ export class ParameterParser {
     return (
       1 +
       Math.max(
-        ...values.map((value) => this.getObjectDepth(value, currentDepth + 1)),
+        ...values.map((value) => this.getObjectDepth(value, currentDepth + 1))
       )
     );
   }
@@ -260,7 +260,7 @@ export class ParameterParser {
   validateParameters(
     parameters: Record<string, ParameterValue>,
     flags: Record<string, boolean | string | ParameterValue>,
-    parameterDefs?: CommandParameter[],
+    parameterDefs?: CommandParameter[]
   ): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
 
@@ -279,25 +279,25 @@ export class ParameterParser {
 
       if (value !== undefined) {
         // Type validation - Fixed logic
-        const actualType = Array.isArray(value) ? "array" : typeof value;
+        const actualType = Array.isArray(value) ? 'array' : typeof value;
         const expectedType = paramDef.type;
 
         const isValidType =
           actualType === expectedType ||
-          (expectedType === "number" &&
-            typeof value === "number" &&
+          (expectedType === 'number' &&
+            typeof value === 'number' &&
             !isNaN(value));
 
         if (!isValidType) {
           errors.push(
-            `Parameter ${paramDef.name} has wrong type: expected ${expectedType}, got ${actualType}`,
+            `Parameter ${paramDef.name} has wrong type: expected ${expectedType}, got ${actualType}`
           );
         }
 
         // Options validation (enum-like)
         if (paramDef.options && !paramDef.options.includes(String(value))) {
           errors.push(
-            `Parameter ${paramDef.name} has invalid value: ${value}. Valid options: ${paramDef.options.join(", ")}`,
+            `Parameter ${paramDef.name} has invalid value: ${value}. Valid options: ${paramDef.options.join(', ')}`
           );
         }
       }
