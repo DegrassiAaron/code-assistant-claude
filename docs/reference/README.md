@@ -10,10 +10,10 @@
 
 | Document | Topic | Complexity | Pages |
 |----------|-------|------------|-------|
-| [MCP Code Execution](MCP_CODE_EXECUTION.md) | Revolutionary 98.7% token reduction system | Advanced | 38 |
-| [Intelligent Routing](INTELLIGENT_ROUTING.md) | Task classification and resource selection | Intermediate | 49 |
-| [Token Efficiency Layer](TOKEN_EFFICIENCY_LAYER.md) | Optimization strategies and symbol systems | Intermediate | 12 |
-| [Reset & Uninstall](RESET_UNINSTALL.md) | Safe removal and restoration procedures | Beginner | 49 |
+| [MCP Code Execution](mcp-code-execution.md) | Revolutionary 98.7% token reduction system | Advanced | 38 |
+| [Intelligent Routing](intelligent-routing.md) | Task classification and resource selection | Intermediate | 49 |
+| [Token Efficiency Layer](token-efficiency-layer.md) | Optimization strategies and symbol systems | Intermediate | 12 |
+| [Reset & Uninstall](reset-uninstall.md) | Safe removal and restoration procedures | Beginner | 49 |
 
 ---
 
@@ -22,17 +22,17 @@
 ### By Use Case
 
 **Understanding Token Optimization:**
-1. Read [Token Efficiency Layer](TOKEN_EFFICIENCY_LAYER.md) for overview
-2. Study [MCP Code Execution](MCP_CODE_EXECUTION.md) for deep dive
+1. Read [Token Efficiency Layer](token-efficiency-layer.md) for overview
+2. Study [MCP Code Execution](mcp-code-execution.md) for deep dive
 3. Review [Progressive Skill Loading diagram](../diagrams/progressive-skill-loading.md)
 
 **Implementing Custom Features:**
-1. Understand [Intelligent Routing](INTELLIGENT_ROUTING.md) system
+1. Understand [Intelligent Routing](intelligent-routing.md) system
 2. Review routing decision tree
 3. Study task classification patterns
 
 **Troubleshooting:**
-1. Check [Reset & Uninstall](RESET_UNINSTALL.md) for recovery options
+1. Check [Reset & Uninstall](reset-uninstall.md) for recovery options
 2. Review backup procedures
 3. Use safe removal commands
 
@@ -113,10 +113,10 @@ For implementation details:
 
 | Reference Topic | Deep Dive Document |
 |-----------------|-------------------|
-| MCP Code Execution | [MCP Code API Generator](../deep-dive/MCP_CODE_API_GENERATOR_DESIGN.md) |
-| MCP Code Execution | [Sandbox Manager](../deep-dive/SANDBOX_MANAGER_DESIGN.md) |
-| Intelligent Routing | [Task Classification](../deep-dive/TASK_CLASSIFICATION_DESIGN.md) |
-| Intelligent Routing | [Workflow Orchestrator](../deep-dive/WORKFLOW_ORCHESTRATOR_DESIGN.md) |
+| MCP Code Execution | [MCP Code API Generator](../deep-dive/mcp-code-api-generator-design.md) |
+| MCP Code Execution | [Sandbox Manager](../deep-dive/sandbox-manager-design.md) |
+| Intelligent Routing | [Task Classification](../deep-dive/task-classification-design.md) |
+| Intelligent Routing | [Workflow Orchestrator](../deep-dive/workflow-orchestrator-design.md) |
 
 ### Related Diagrams
 
@@ -136,17 +136,17 @@ Visual representations:
 ### For Different User Levels
 
 **Beginners:**
-1. Start with [Reset & Uninstall](RESET_UNINSTALL.md) - understand safety nets
-2. Skim [Token Efficiency Layer](TOKEN_EFFICIENCY_LAYER.md) - basic concepts
+1. Start with [Reset & Uninstall](reset-uninstall.md) - understand safety nets
+2. Skim [Token Efficiency Layer](token-efficiency-layer.md) - basic concepts
 3. Review [user guides](../user-guides/) first, then return to reference docs
 
 **Intermediate Users:**
-4. Study [Intelligent Routing](INTELLIGENT_ROUTING.md) - automation details
-5. Deep dive [Token Efficiency Layer](TOKEN_EFFICIENCY_LAYER.md) - optimization
-6. Read [MCP Code Execution](MCP_CODE_EXECUTION.md) - understand the innovation
+4. Study [Intelligent Routing](intelligent-routing.md) - automation details
+5. Deep dive [Token Efficiency Layer](token-efficiency-layer.md) - optimization
+6. Read [MCP Code Execution](mcp-code-execution.md) - understand the innovation
 
 **Advanced Users / Contributors:**
-7. Master [MCP Code Execution](MCP_CODE_EXECUTION.md) - complete understanding
+7. Master [MCP Code Execution](mcp-code-execution.md) - complete understanding
 8. Review [deep-dive docs](../deep-dive/) - implementation details
 9. Study codebase alongside documentation
 
@@ -197,23 +197,23 @@ Quantitative data for each system:
 
 For users focused on efficiency:
 
-1. [Token Efficiency Layer](TOKEN_EFFICIENCY_LAYER.md) - 15 min
-2. [MCP Code Execution](MCP_CODE_EXECUTION.md) - 30 min
+1. [Token Efficiency Layer](token-efficiency-layer.md) - 15 min
+2. [MCP Code Execution](mcp-code-execution.md) - 30 min
 3. [Progressive Skill Loading Diagram](../diagrams/progressive-skill-loading.md) - 15 min
 
 ### Path 2: System Understanding (2 hours)
 
 For complete system comprehension:
 
-1. [Intelligent Routing](INTELLIGENT_ROUTING.md) - 45 min
-2. [MCP Code Execution](MCP_CODE_EXECUTION.md) - 45 min
-3. [Token Efficiency Layer](TOKEN_EFFICIENCY_LAYER.md) - 30 min
+1. [Intelligent Routing](intelligent-routing.md) - 45 min
+2. [MCP Code Execution](mcp-code-execution.md) - 45 min
+3. [Token Efficiency Layer](token-efficiency-layer.md) - 30 min
 
 ### Path 3: Maintenance & Troubleshooting (30 min)
 
 For operational knowledge:
 
-1. [Reset & Uninstall](RESET_UNINSTALL.md) - 20 min
+1. [Reset & Uninstall](reset-uninstall.md) - 20 min
 2. [Troubleshooting Guide](../user-guides/10-troubleshooting.md) - 10 min
 
 ---

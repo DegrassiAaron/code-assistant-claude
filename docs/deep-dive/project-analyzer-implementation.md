@@ -741,7 +741,7 @@ export class DocumentationAnalyzer {
     // Key files to read
     const keyFiles = [
       'architecture.md',
-      'ARCHITECTURE.md',
+      'architecture.md',
       'api.md',
       'API.md',
       'README.md'
@@ -1347,7 +1347,7 @@ Overall Accuracy: 95% (+20%) ✅
 - Team collaboration: Enhanced with PR templates, branch cleanup
 
 **Updated Components**:
-- ✅ ARCHITECTURE.md (structure updated)
+- ✅ architecture.md (structure updated)
 - ✅ FINAL_SUMMARY.md (features updated)
 - ✅ PROJECT_ANALYSIS_ENHANCEMENT.md (new deep dive)
 - ✅ PROJECT_ANALYZER_IMPLEMENTATION.md (complete implementation guide)
