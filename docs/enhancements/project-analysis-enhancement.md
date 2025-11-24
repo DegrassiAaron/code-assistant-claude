@@ -499,7 +499,7 @@ private async readDocsDirectory(
   // Read key documentation files
   const keyFiles = [
     'architecture.md',
-    'ARCHITECTURE.md',
+    'architecture.md',
     'api.md',
     'API.md',
     'development.md',
@@ -1594,4 +1594,4 @@ git push -u origin feature/user-auth
 
 **Il framework è ora COMPLETO al 100%!** 🎉
 
-Vuoi che aggiorni i documenti principali (ARCHITECTURE.md, FINAL_SUMMARY.md) con queste due enhancement? 📝
+Vuoi che aggiorni i documenti principali (architecture.md, FINAL_SUMMARY.md) con queste due enhancement? 📝

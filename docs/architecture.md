@@ -769,7 +769,7 @@ Status: 🟢 Healthy
 - ✅ **Progressive discovery with searchTools**
 - ✅ **Audit logging and compliance**
 
-**References**: See `docs/MCP_CODE_EXECUTION.md` for complete implementation details
+**References**: See `docs/mcp-code-execution.md` for complete implementation details
 
 ### Phase 5: Agents & Business Panel (Week 7)
 **Goal**: Specialized sub-agents and business analysis

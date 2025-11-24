@@ -56,7 +56,7 @@ graph TB
 
 | Guide | Description | Time |
 |-------|-------------|------|
-| [**FAQ**](FAQ.md) | **Domande frequenti su workflow e MCP** | **10 min** |
+| [**FAQ**](faq.md) | **Domande frequenti su workflow e MCP** | **10 min** |
 | [Installation Guide](user-guides/01-installation.md) | Complete setup walkthrough | 5 min |
 | [Quick Start Tutorial](user-guides/02-quick-start.md) | Your first 5 minutes | 5 min |
 | [Configuration Guide](user-guides/03-configuration.md) | Customize your setup | 10 min |
@@ -76,10 +76,10 @@ graph TB
 
 | Topic | Document | For |
 |-------|----------|-----|
-| **Architecture** | [Architecture Overview](ARCHITECTURE.md) | Understanding system design |
-| **MCP Code Execution** | [MCP Execution](reference/MCP_CODE_EXECUTION.md) | Deep dive into 98.7% reduction |
-| **Intelligent Routing** | [Routing System](reference/INTELLIGENT_ROUTING.md) | Task classification & routing |
-| **Token Efficiency** | [Token Layer](reference/TOKEN_EFFICIENCY_LAYER.md) | Optimization strategies |
+| **Architecture** | [Architecture Overview](architecture.md) | Understanding system design |
+| **MCP Code Execution** | [MCP Execution](reference/mcp-code-execution.md) | Deep dive into 98.7% reduction |
+| **Intelligent Routing** | [Routing System](reference/intelligent-routing.md) | Task classification & routing |
+| **Token Efficiency** | [Token Layer](reference/token-efficiency-layer.md) | Optimization strategies |
 
 ---
 
@@ -137,7 +137,7 @@ graph LR
 ### 🏗️ Architecture & Design
 
 #### System Architecture
-[ARCHITECTURE.md](ARCHITECTURE.md) - Complete system design with diagrams
+[architecture.md](architecture.md) - Complete system design with diagrams
 
 ```mermaid
 graph TB
@@ -187,12 +187,12 @@ graph TB
 #### Deep Dive Topics (`deep-dive/`)
 **Technical implementation details** for contributors and advanced users.
 
-- [Project Analyzer Implementation](deep-dive/PROJECT_ANALYZER_IMPLEMENTATION.md)
-- [MCP Code API Generator Design](deep-dive/MCP_CODE_API_GENERATOR_DESIGN.md)
-- [Progressive Discovery Design](deep-dive/PROGRESSIVE_DISCOVERY_DESIGN.md)
-- [Sandbox Manager Design](deep-dive/SANDBOX_MANAGER_DESIGN.md)
-- [Workflow Orchestrator Design](deep-dive/WORKFLOW_ORCHESTRATOR_DESIGN.md)
-- [Task Classification Design](deep-dive/TASK_CLASSIFICATION_DESIGN.md)
+- [Project Analyzer Implementation](deep-dive/project-analyzer-implementation.md)
+- [MCP Code API Generator Design](deep-dive/mcp-code-api-generator-design.md)
+- [Progressive Discovery Design](deep-dive/progressive-discovery-design.md)
+- [Sandbox Manager Design](deep-dive/sandbox-manager-design.md)
+- [Workflow Orchestrator Design](deep-dive/workflow-orchestrator-design.md)
+- [Task Classification Design](deep-dive/task-classification-design.md)
 
 ---
 
@@ -201,11 +201,11 @@ graph TB
 
 | Document | Topic | Complexity |
 |----------|-------|------------|
-| [**FAQ**](FAQ.md) | **Frequently Asked Questions** | **All levels** |
-| [MCP Code Execution](reference/MCP_CODE_EXECUTION.md) | 98.7% token reduction system | Advanced |
-| [Intelligent Routing](reference/INTELLIGENT_ROUTING.md) | Task classification & routing | Intermediate |
-| [Token Efficiency Layer](reference/TOKEN_EFFICIENCY_LAYER.md) | Optimization strategies | Intermediate |
-| [Reset & Uninstall](reference/RESET_UNINSTALL.md) | Safe removal procedures | Beginner |
+| [**FAQ**](faq.md) | **Frequently Asked Questions** | **All levels** |
+| [MCP Code Execution](reference/mcp-code-execution.md) | 98.7% token reduction system | Advanced |
+| [Intelligent Routing](reference/intelligent-routing.md) | Task classification & routing | Intermediate |
+| [Token Efficiency Layer](reference/token-efficiency-layer.md) | Optimization strategies | Intermediate |
+| [Reset & Uninstall](reference/reset-uninstall.md) | Safe removal procedures | Beginner |
 
 ---
 
@@ -296,7 +296,7 @@ For users who want to get productive fast:
 For users who want deep understanding:
 
 1. 📚 Read all [User Guides](user-guides/) in order (01-10)
-2. 🏗️ Study [Architecture Overview](ARCHITECTURE.md)
+2. 🏗️ Study [Architecture Overview](architecture.md)
 3. 🔬 Review [Deep Dive Topics](deep-dive/)
 4. 💡 Explore [Example Projects](examples/)
 
