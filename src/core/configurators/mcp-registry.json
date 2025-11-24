@@ -1,92 +1,388 @@
 {
-  "serena": {
-    "command": "npx",
-    "args": ["-y", "@serena-ai/mcp-server"],
-    "description": "Project memory & symbol operations",
-    "requiredEnv": [],
-    "recommended": true,
-    "tags": ["core", "memory", "symbols"],
-    "priority": "high"
+  "version": "1.0.0",
+  "description": "Registry of popular MCP servers with pre-configured settings",
+  "lastUpdated": "2025-11-24",
+  "servers": {
+    "serena": {
+      "name": "serena",
+      "displayName": "Serena",
+      "description": "Project memory & symbol operations",
+      "category": "productivity",
+      "official": true,
+      "installation": {
+        "command": "npx",
+        "args": ["-y", "@serena-ai/mcp-server"],
+        "requiresInstall": false
+      },
+      "env": {
+        "required": [],
+        "optional": [
+          {
+            "name": "MAX_FILE_SIZE",
+            "description": "Maximum file size in bytes",
+            "default": "10485760",
+            "type": "number"
+          }
+        ]
+      },
+      "features": [
+        "Symbol indexing",
+        "Code navigation",
+        "Project memory",
+        "Cross-file references"
+      ],
+      "docs": "https://serena.ai/docs/mcp",
+      "repository": "https://github.com/serena-ai/mcp-server",
+      "priority": "high",
+      "recommended": true,
+      "tags": ["core", "memory", "symbols"],
+      "verified": true
+    },
+    "sequential": {
+      "name": "sequential",
+      "displayName": "Sequential Thinking",
+      "description": "Multi-step reasoning engine",
+      "category": "reasoning",
+      "official": true,
+      "installation": {
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"],
+        "requiresInstall": false
+      },
+      "env": {
+        "required": [],
+        "optional": []
+      },
+      "features": [
+        "Multi-step reasoning",
+        "Problem decomposition",
+        "Chain-of-thought processing",
+        "Complex analysis"
+      ],
+      "docs": "https://modelcontextprotocol.io/servers/sequential",
+      "repository": "https://github.com/modelcontextprotocol/servers",
+      "priority": "high",
+      "recommended": true,
+      "tags": ["core", "reasoning", "analysis"],
+      "verified": true
+    },
+    "tavily": {
+      "name": "tavily",
+      "displayName": "Tavily Web Search",
+      "description": "Web search & real-time information",
+      "category": "search",
+      "official": true,
+      "installation": {
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-tavily"],
+        "requiresInstall": false
+      },
+      "env": {
+        "required": [
+          {
+            "name": "TAVILY_API_KEY",
+            "description": "Tavily API key from https://tavily.com",
+            "type": "string",
+            "secret": true
+          }
+        ],
+        "optional": [
+          {
+            "name": "TAVILY_MAX_RESULTS",
+            "description": "Maximum search results to return",
+            "default": "5",
+            "type": "number"
+          }
+        ]
+      },
+      "features": [
+        "Web search",
+        "News search",
+        "Content extraction",
+        "AI-powered summarization"
+      ],
+      "docs": "https://tavily.com/docs/mcp",
+      "repository": "https://github.com/tavily/mcp-server",
+      "priority": "high",
+      "recommended": true,
+      "tags": ["core", "research", "search"],
+      "verified": true
+    },
+    "magic": {
+      "name": "magic",
+      "displayName": "Magic UI Components",
+      "description": "UI components from 21st.dev",
+      "category": "frontend",
+      "official": true,
+      "installation": {
+        "command": "npx",
+        "args": ["-y", "@21st-dev/mcp-server-magic"],
+        "requiresInstall": false
+      },
+      "env": {
+        "required": [],
+        "optional": [
+          {
+            "name": "MAGIC_COMPONENT_LIBRARY",
+            "description": "UI library to use (shadcn, mui, ant-design)",
+            "default": "shadcn",
+            "type": "string"
+          }
+        ]
+      },
+      "features": [
+        "Component generation",
+        "shadcn/ui integration",
+        "Tailwind CSS support",
+        "Responsive design"
+      ],
+      "docs": "https://21st.dev/docs/mcp",
+      "repository": "https://github.com/21st-dev/mcp-server-magic",
+      "priority": "medium",
+      "recommended": false,
+      "tags": ["frontend", "ui", "react", "vue"],
+      "verified": true
+    },
+    "playwright": {
+      "name": "playwright",
+      "displayName": "Playwright Browser Automation",
+      "description": "Browser automation & E2E testing",
+      "category": "testing",
+      "official": true,
+      "installation": {
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-playwright"],
+        "requiresInstall": false
+      },
+      "env": {
+        "required": [],
+        "optional": [
+          {
+            "name": "PLAYWRIGHT_BROWSER",
+            "description": "Browser to use (chromium, firefox, webkit)",
+            "default": "chromium",
+            "type": "string"
+          },
+          {
+            "name": "PLAYWRIGHT_HEADLESS",
+            "description": "Run browser in headless mode",
+            "default": "true",
+            "type": "boolean"
+          }
+        ]
+      },
+      "features": [
+        "E2E testing",
+        "Browser automation",
+        "Screenshot capture",
+        "Network interception"
+      ],
+      "docs": "https://playwright.dev/docs/mcp",
+      "repository": "https://github.com/modelcontextprotocol/servers",
+      "priority": "medium",
+      "recommended": false,
+      "tags": ["testing", "e2e", "browser"],
+      "verified": true
+    },
+    "context7": {
+      "name": "context7",
+      "displayName": "Context7 Documentation",
+      "description": "Official documentation lookup",
+      "category": "search",
+      "official": false,
+      "installation": {
+        "command": "npx",
+        "args": ["-y", "@context7/mcp-server"],
+        "requiresInstall": false
+      },
+      "env": {
+        "required": [],
+        "optional": []
+      },
+      "features": [
+        "Official docs search",
+        "API reference lookup",
+        "Version-specific docs",
+        "Framework documentation"
+      ],
+      "docs": "https://context7.dev/docs",
+      "repository": "https://github.com/context7/mcp-server",
+      "priority": "medium",
+      "recommended": false,
+      "tags": ["documentation", "reference"],
+      "verified": false
+    },
+    "morphllm": {
+      "name": "morphllm",
+      "displayName": "MorphLLM Fast Apply",
+      "description": "Pattern-based code transformations",
+      "category": "productivity",
+      "official": false,
+      "installation": {
+        "command": "npx",
+        "args": ["-y", "@morphllm/mcp-server-fast-apply"],
+        "requiresInstall": false
+      },
+      "env": {
+        "required": [],
+        "optional": []
+      },
+      "features": [
+        "Bulk code editing",
+        "Pattern matching",
+        "Refactoring automation",
+        "Multi-file changes"
+      ],
+      "docs": "https://morphllm.com/docs/mcp",
+      "repository": "https://github.com/morphllm/mcp-server-fast-apply",
+      "priority": "medium",
+      "recommended": false,
+      "tags": ["editing", "refactoring", "bulk"],
+      "verified": false
+    },
+    "chrome-devtools": {
+      "name": "chrome-devtools",
+      "displayName": "Chrome DevTools",
+      "description": "Browser DevTools integration",
+      "category": "testing",
+      "official": true,
+      "installation": {
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-chrome-devtools"],
+        "requiresInstall": false
+      },
+      "env": {
+        "required": [],
+        "optional": [
+          {
+            "name": "DEVTOOLS_PORT",
+            "description": "Chrome DevTools Protocol port",
+            "default": "9222",
+            "type": "number"
+          }
+        ]
+      },
+      "features": [
+        "Performance profiling",
+        "Network inspection",
+        "Console access",
+        "DOM manipulation"
+      ],
+      "docs": "https://developer.chrome.com/docs/devtools",
+      "repository": "https://github.com/modelcontextprotocol/servers",
+      "priority": "low",
+      "recommended": false,
+      "tags": ["debugging", "performance", "frontend"],
+      "verified": true
+    },
+    "figma": {
+      "name": "figma",
+      "displayName": "Figma Design Import",
+      "description": "Design-to-code from Figma",
+      "category": "frontend",
+      "official": false,
+      "installation": {
+        "command": "npx",
+        "args": ["-y", "@figma/mcp-server-figma"],
+        "requiresInstall": false
+      },
+      "env": {
+        "required": [
+          {
+            "name": "FIGMA_ACCESS_TOKEN",
+            "description": "Figma personal access token",
+            "type": "string",
+            "secret": true
+          }
+        ],
+        "optional": []
+      },
+      "features": [
+        "Design import",
+        "Component extraction",
+        "Style conversion",
+        "Asset export"
+      ],
+      "docs": "https://www.figma.com/developers/api",
+      "repository": "https://github.com/figma/mcp-server-figma",
+      "priority": "low",
+      "recommended": false,
+      "tags": ["design", "ui", "frontend"],
+      "verified": false
+    },
+    "github": {
+      "name": "github",
+      "displayName": "GitHub Integration",
+      "description": "GitHub repository operations",
+      "category": "integration",
+      "official": true,
+      "installation": {
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-github"],
+        "requiresInstall": false
+      },
+      "env": {
+        "required": [
+          {
+            "name": "GITHUB_TOKEN",
+            "description": "GitHub personal access token",
+            "type": "string",
+            "secret": true
+          }
+        ],
+        "optional": [
+          {
+            "name": "GITHUB_API_URL",
+            "description": "GitHub API URL (for GitHub Enterprise)",
+            "default": "https://api.github.com",
+            "type": "string"
+          }
+        ]
+      },
+      "features": [
+        "Repository management",
+        "Issue tracking",
+        "Pull request operations",
+        "Code search"
+      ],
+      "docs": "https://docs.github.com/en/rest",
+      "repository": "https://github.com/modelcontextprotocol/servers",
+      "priority": "low",
+      "recommended": false,
+      "tags": ["git", "version-control"],
+      "verified": true
+    }
   },
-  "sequential": {
-    "command": "npx",
-    "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"],
-    "description": "Multi-step reasoning engine",
-    "requiredEnv": [],
-    "recommended": true,
-    "tags": ["core", "reasoning", "analysis"],
-    "priority": "high"
-  },
-  "tavily": {
-    "command": "npx",
-    "args": ["-y", "@modelcontextprotocol/server-tavily"],
-    "description": "Web search & real-time information",
-    "requiredEnv": ["TAVILY_API_KEY"],
-    "recommended": true,
-    "tags": ["core", "research", "search"],
-    "priority": "high"
-  },
-  "magic": {
-    "command": "npx",
-    "args": ["-y", "@21st-dev/mcp-server-magic"],
-    "description": "UI components from 21st.dev",
-    "requiredEnv": [],
-    "recommended": false,
-    "tags": ["frontend", "ui", "react", "vue"],
-    "priority": "medium"
-  },
-  "playwright": {
-    "command": "npx",
-    "args": ["-y", "@modelcontextprotocol/server-playwright"],
-    "description": "Browser automation & E2E testing",
-    "requiredEnv": [],
-    "recommended": false,
-    "tags": ["testing", "e2e", "browser"],
-    "priority": "medium"
-  },
-  "context7": {
-    "command": "npx",
-    "args": ["-y", "@context7/mcp-server"],
-    "description": "Official documentation lookup",
-    "requiredEnv": [],
-    "recommended": false,
-    "tags": ["documentation", "reference"],
-    "priority": "medium"
-  },
-  "morphllm": {
-    "command": "npx",
-    "args": ["-y", "@morphllm/mcp-server-fast-apply"],
-    "description": "Pattern-based code transformations",
-    "requiredEnv": [],
-    "recommended": false,
-    "tags": ["editing", "refactoring", "bulk"],
-    "priority": "medium"
-  },
-  "chrome-devtools": {
-    "command": "npx",
-    "args": ["-y", "@modelcontextprotocol/server-chrome-devtools"],
-    "description": "Browser DevTools integration",
-    "requiredEnv": [],
-    "recommended": false,
-    "tags": ["debugging", "performance", "frontend"],
-    "priority": "low"
-  },
-  "figma": {
-    "command": "npx",
-    "args": ["-y", "@figma/mcp-server-figma"],
-    "description": "Design-to-code from Figma",
-    "requiredEnv": [],
-    "recommended": false,
-    "tags": ["design", "ui", "frontend"],
-    "priority": "low"
-  },
-  "github": {
-    "command": "npx",
-    "args": ["-y", "@modelcontextprotocol/server-github"],
-    "description": "GitHub repository operations",
-    "requiredEnv": ["GITHUB_TOKEN"],
-    "recommended": false,
-    "tags": ["git", "version-control"],
-    "priority": "low"
+  "categories": {
+    "productivity": {
+      "name": "Productivity",
+      "description": "Tools for enhancing development workflow",
+      "icon": "🚀"
+    },
+    "reasoning": {
+      "name": "Reasoning",
+      "description": "Advanced reasoning and problem-solving",
+      "icon": "🧠"
+    },
+    "search": {
+      "name": "Search",
+      "description": "Web and content search capabilities",
+      "icon": "🔍"
+    },
+    "frontend": {
+      "name": "Frontend",
+      "description": "UI/UX development tools",
+      "icon": "🎨"
+    },
+    "testing": {
+      "name": "Testing",
+      "description": "Testing and automation tools",
+      "icon": "🧪"
+    },
+    "integration": {
+      "name": "Integration",
+      "description": "Third-party service integrations",
+      "icon": "🔗"
+    }
   }
 }

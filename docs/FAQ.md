@@ -1269,6 +1269,199 @@ Total tokens: 5.5K (vs 50K traditional)
 
 ## 🔧 Troubleshooting
 
+### D: Come aggiungo un nuovo MCP facilmente?
+
+**R:** Usa il nuovo comando `mcp:add` con wizard interattivo automatico!
+
+#### Metodo 1: Selezione da Registry (Consigliato)
+
+```bash
+# Comando interattivo con wizard
+code-assistant-claude mcp:add
+
+# Output:
+? Select MCP server to add:
+━━━ Recommended ━━━
+⭐ Serena - Project memory & symbol operations
+⭐ Sequential Thinking - Multi-step reasoning engine
+⭐ Tavily Web Search - Web search & real-time information
+
+🚀 Productivity
+✓ Serena - Project memory & symbol operations [Official]
+✓ MorphLLM Fast Apply - Pattern-based code transformations [Community]
+
+🧠 Reasoning
+✓ Sequential Thinking - Multi-step reasoning engine [Official]
+
+🔍 Search
+✓ Tavily Web Search - Web search & real-time information [Official]
+✓ Context7 Documentation - Official documentation lookup [Community]
+
+🎨 Frontend
+✓ Magic UI Components - UI components from 21st.dev [Official]
+✓ Figma Design Import - Design-to-code from Figma [Community]
+
+🧪 Testing
+✓ Playwright Browser Automation - Browser automation & E2E testing [Official]
+✓ Chrome DevTools - Browser DevTools integration [Official]
+
+🔗 Integration
+✓ GitHub Integration - GitHub repository operations [Official]
+
+━━━ Custom ━━━
+🔧 Custom MCP Server (manual configuration)
+
+> [Seleziona con frecce ↑↓, conferma con Enter]
+```
+
+**Processo automatico:**
+1. ✅ Configurazione automatica da registry
+2. ✅ Richiesta environment variables (se necessarie)
+3. ✅ Test connessione MCP via JSON-RPC
+4. ✅ Introspection automatica tools disponibili
+5. ✅ Generazione schema JSON
+6. ✅ Salvataggio in `.claude/.mcp.json`
+
+#### Metodo 2: MCP Specifico (Non-interactive)
+
+```bash
+# Aggiungi MCP by name (usa configurazione predefinita)
+code-assistant-claude mcp:add --name serena
+
+# Senza test di connessione (più veloce)
+code-assistant-claude mcp:add --name serena --no-test
+```
+
+#### Metodo 3: Custom MCP (Non nel Registry)
+
+```bash
+# Seleziona "Custom MCP Server" dal wizard
+code-assistant-claude mcp:add
+
+? MCP server name: my-custom-mcp
+? Display name: My Custom MCP
+? Description: Custom integration for XYZ
+? How to launch the server?
+  ❯ npx package (e.g., npx -y @org/package)
+    Node.js script (e.g., node ./server.js)
+    Python script (e.g., python ./server.py)
+    Custom command
+
+? npm package name: @myorg/mcp-server
+
+# Wizard procede con test e configurazione automatica
+```
+
+#### Esempio Completo: Aggiunta Tavily
+
+```bash
+$ code-assistant-claude mcp:add
+
+? Select MCP server to add: Tavily Web Search
+
+🔐 Required Environment Variables
+
+? TAVILY_API_KEY: Tavily API key from https://tavily.com
+  > [input nascosto] ********
+
+? Configure optional environment variables? No
+
+⠋ Testing MCP connection...
+⠋ Fetching available tools...
+✔ Connection successful! Found 4 tools
+
+✓ Generated schema: templates/mcp-tools/tavily-tools.json
+
+✓ Configuration saved: .claude/.mcp.json
+
+✨ MCP Server Added Successfully!
+
+Server: Tavily Web Search
+Description: Web search & real-time information
+
+Available Tools:
+  • tavily_search: Perform web search with AI-powered results
+  • tavily_news: Search recent news articles
+  • tavily_extract: Extract content from URL
+  • tavily_summarize: Summarize web content
+
+Features:
+  • Web search
+  • News search
+  • Content extraction
+  • AI-powered summarization
+
+Documentation: https://tavily.com/docs/mcp
+
+💡 Next steps:
+  • The MCP server is now available in your project
+  • Claude will automatically discover and use the tools
+  • Check .claude/.mcp.json for configuration
+```
+
+#### Cosa viene creato automaticamente:
+
+**1. File `.claude/.mcp.json` aggiornato:**
+```json
+{
+  "mcpServers": {
+    "tavily": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-tavily"],
+      "env": {
+        "TAVILY_API_KEY": "tvly-xxxxx..."
+      }
+    }
+  }
+}
+```
+
+**2. Schema tools generato: `templates/mcp-tools/tavily-tools.json`:**
+```json
+{
+  "version": "1.0.0",
+  "mcp": "tavily",
+  "generatedAt": "2025-11-24T...",
+  "tools": [
+    {
+      "name": "tavily_search",
+      "description": "Perform web search",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": { "type": "string" }
+        }
+      },
+      "outputSchema": { "type": "object" }
+    }
+  ]
+}
+```
+
+**3. MCP server pronto all'uso!**
+
+Claude può subito usare il nuovo MCP:
+```typescript
+// Claude genera automaticamente questo codice:
+const results = await tavily_search("React best practices 2025");
+console.log(results);
+```
+
+#### Vantaggi del comando `mcp:add`:
+
+| Caratteristica | Manuale | Con `mcp:add` |
+|----------------|---------|---------------|
+| **Conoscenza comando** | Devi sapere come lanciare il server | ✅ Automatico da registry |
+| **Environment vars** | Devi conoscerle | ✅ Richieste automaticamente |
+| **Test connessione** | Manuale | ✅ Test automatico |
+| **Schema tools** | Creazione manuale JSON | ✅ Generato da introspection |
+| **Configurazione** | Edita .mcp.json a mano | ✅ Salvato automaticamente |
+| **Tempo richiesto** | 15-20 minuti | ✅ 2-3 minuti |
+
+**File di riferimento:** `src/cli/commands/mcp-add.ts:1`
+
+---
+
 ### D: L'MCP non si avvia, come debuggo?
 
 **R:** Segui questa checklist:
@@ -1545,6 +1738,10 @@ Review Summary:
 # Installazione
 npm install -g code-assistant-claude
 code-assistant-claude init
+
+# Gestione MCP
+code-assistant-claude mcp:add              # Wizard interattivo aggiungi MCP
+code-assistant-claude mcp:add --name serena # Aggiungi MCP specifico
 
 # Sviluppo quotidiano
 /sc:implement [feature]    # Feature completa
