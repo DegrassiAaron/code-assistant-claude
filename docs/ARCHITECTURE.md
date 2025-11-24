@@ -22,7 +22,117 @@
 - Security-first sandboxing with Docker/VM isolation
 - PII tokenization for privacy-preserving operations
 
-## Architecture Overview
+---
+
+## System Architecture Overview
+
+### High-Level Architecture
+
+```mermaid
+graph TB
+    subgraph "User Interface Layer"
+        CLI[CLI Engine<br/>Commander.js + Inquirer.js]
+        Wizard[Interactive Wizard]
+    end
+
+    subgraph "Intelligence Layer"
+        Analyzer[Project Analyzer<br/>Tech Stack Detection]
+        Router[Intelligent Router<br/>Task Classification]
+        Optimizer[Token Optimizer<br/>90% Reduction Target]
+    end
+
+    subgraph "Execution Layer"
+        Skills[Skills System<br/>Progressive Loading]
+        Commands[Commands System<br/>Workflow Automation]
+        Agents[Agents System<br/>Specialized Sub-agents]
+        MCP[MCP Manager<br/>Code Execution 98.7%]
+    end
+
+    subgraph "Security Layer"
+        Sandbox[Sandbox Manager<br/>Docker/VM/Process]
+        Validator[Code Validator<br/>Pattern Detection]
+        Audit[Audit System<br/>Comprehensive Logging]
+        PII[PII Tokenizer<br/>Privacy Protection]
+    end
+
+    subgraph "Storage Layer"
+        ConfigLocal[Local Config<br/>.claude/]
+        ConfigGlobal[Global Config<br/>~/.claude/]
+        Cache[Cache Manager<br/>File-based]
+    end
+
+    CLI --> Wizard
+    Wizard --> Analyzer
+    Analyzer --> Router
+    Router --> Optimizer
+
+    Optimizer --> Skills
+    Optimizer --> Commands
+    Optimizer --> Agents
+
+    Skills --> MCP
+    Commands --> MCP
+    Agents --> MCP
+
+    MCP --> Sandbox
+    Sandbox --> Validator
+    Validator --> Audit
+    Audit --> PII
+
+    Skills -.-> ConfigLocal
+    Commands -.-> ConfigLocal
+    Agents -.-> ConfigLocal
+    Skills -.-> ConfigGlobal
+    Skills -.-> Cache
+
+    style CLI fill:#4A90E2,color:#fff
+    style Router fill:#F5A623,color:#fff
+    style Skills fill:#7ED321,color:#fff
+    style Sandbox fill:#D0021B,color:#fff
+    style MCP fill:#BD10E0,color:#fff
+```
+
+### Component Interaction Flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant User
+    participant CLI
+    participant Analyzer
+    participant Router
+    participant Skills
+    participant MCP
+    participant Sandbox
+
+    User->>CLI: code-assistant-claude init
+    CLI->>Analyzer: Detect project type
+    Analyzer->>Analyzer: Read package.json, README, CLAUDE.md
+    Analyzer-->>CLI: Project profile
+
+    CLI->>Router: Generate config
+    Router->>Router: Select optimal skills/MCPs
+    Router-->>CLI: Configuration ready
+    CLI-->>User: Setup complete
+
+    Note over User,Sandbox: Runtime Execution
+
+    User->>CLI: Task request
+    CLI->>Router: Classify task
+    Router->>Skills: Load required skills (progressive)
+    Skills-->>Router: Skills activated
+
+    Router->>MCP: Execute with code approach
+    MCP->>Sandbox: Run in isolated environment
+    Sandbox->>Sandbox: Validate & audit
+    Sandbox-->>MCP: Results
+    MCP-->>CLI: Compressed output (98.7% saving)
+    CLI-->>User: Response
+```
+
+---
+
+## Architecture Overview (Directory Structure)
 
 ```
 code-assistant-claude/
