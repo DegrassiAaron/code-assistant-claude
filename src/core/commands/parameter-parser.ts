@@ -48,7 +48,11 @@ export class ParameterParser {
         } else {
           // Boolean flag or flag with next token as value
           const nextToken = tokens[i + 1];
-          if (i + 1 < tokens.length && nextToken && !nextToken.startsWith("--")) {
+          if (
+            i + 1 < tokens.length &&
+            nextToken &&
+            !nextToken.startsWith("--")
+          ) {
             flags[flagName] = this.parseValue(nextToken);
             i++; // Skip next token
           } else {

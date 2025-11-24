@@ -170,7 +170,11 @@ export class ExecutionOrchestrator {
       // Convert SandboxResult to ExecutionResult with required fields
       const result: ExecutionResult = {
         ...sandboxResult,
-        summary: sandboxResult.summary || (sandboxResult.success ? "Execution completed successfully" : "Execution failed"),
+        summary:
+          sandboxResult.summary ||
+          (sandboxResult.success
+            ? "Execution completed successfully"
+            : "Execution failed"),
         metrics: sandboxResult.metrics || {
           executionTime: 0,
           memoryUsed: "0M",

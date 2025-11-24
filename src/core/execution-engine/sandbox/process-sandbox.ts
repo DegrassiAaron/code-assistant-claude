@@ -124,14 +124,25 @@ export class ProcessSandbox {
         PATH: process.env.PATH || "/usr/local/bin:/usr/bin:/bin",
         // Only include whitelisted variables that exist (type-safe)
         ...Object.fromEntries(
-          (SAFE_ENV_VARS.map((key: string) => [key, process.env[key]]) as Array<[string, string | undefined]>)
-            .filter((entry): entry is [string, string] => entry[1] !== undefined),
+          (
+            SAFE_ENV_VARS.map((key: string) => [
+              key,
+              process.env[key],
+            ]) as Array<[string, string | undefined]>
+          ).filter(
+            (entry): entry is [string, string] => entry[1] !== undefined,
+          ),
         ),
         // Include custom allowed variables if validated
         ...Object.fromEntries(
-          (customAllowedVars
-            .map((key: string) => [key, process.env[key]]) as Array<[string, string | undefined]>)
-            .filter((entry): entry is [string, string] => entry[1] !== undefined),
+          (
+            customAllowedVars.map((key: string) => [
+              key,
+              process.env[key],
+            ]) as Array<[string, string | undefined]>
+          ).filter(
+            (entry): entry is [string, string] => entry[1] !== undefined,
+          ),
         ),
       };
 

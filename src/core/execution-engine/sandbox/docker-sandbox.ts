@@ -292,7 +292,9 @@ export class DockerSandbox {
     const [, amount, unit] = match;
     const multipliers = { K: 1024, M: 1024 ** 2, G: 1024 ** 3 };
 
-    return parseInt(amount || "512") * multipliers[unit as keyof typeof multipliers];
+    return (
+      parseInt(amount || "512") * multipliers[unit as keyof typeof multipliers]
+    );
   }
 
   /**
