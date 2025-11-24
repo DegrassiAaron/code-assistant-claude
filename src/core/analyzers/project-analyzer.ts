@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { DocumentationAnalyzer } from "./documentation-analyzer";
 import { GitWorkflowAnalyzer } from "./git-workflow-analyzer";
 import { TechStackDetector } from "./tech-stack-detector";

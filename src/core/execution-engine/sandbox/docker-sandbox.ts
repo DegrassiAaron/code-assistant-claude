@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import Docker from "dockerode";
 import { SandboxConfig, ExecutionResult } from "../types";
 import * as tar from "tar-stream";
