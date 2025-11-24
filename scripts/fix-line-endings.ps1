@@ -20,5 +20,5 @@ Write-Host "`nGit Status:" -ForegroundColor Yellow
 git status
 
 Write-Host "`n✅ Line endings normalized!" -ForegroundColor Green
-Write-Host "Now you can commit the changes with:" -ForegroundColor Cyan
-Write-Host '  git commit -m "fix: normalize line endings to LF"' -ForegroundColor White
+Write-Host "`nNow you can commit the changes with:" -ForegroundColor Cyan
+Write-Host "`ngit commit -m test" -ForegroundColor White
