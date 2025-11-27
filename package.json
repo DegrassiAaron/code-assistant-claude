@@ -24,6 +24,7 @@
   },
   "license": "MIT",
   "author": "Aaron Degrassi <badsworm@gmail.com>",
+  "type": "module",
   "main": "dist/index.js",
   "bin": {
     "code-assistant-claude": "dist/cli/index.js"

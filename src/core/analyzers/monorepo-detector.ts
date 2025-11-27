@@ -647,6 +647,7 @@ export class MonorepoDetector {
       const includeRegex = /include\s+([^\n]+)/g;
       let match;
       while ((match = includeRegex.exec(content)) !== null) {
+        if (!match[1]) continue;
         const remainder = match[1]
           .replace(/[()]/g, '') // drop optional parentheses
           .trim();

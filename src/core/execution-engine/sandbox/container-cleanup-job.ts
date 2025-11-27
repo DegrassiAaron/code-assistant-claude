@@ -47,13 +47,18 @@ export class ContainerCleanupJob {
       maxPerRun: this.maxCleanupPerRun,
     });
 
-    // Run immediately on start
-    this.cleanup().catch((error) => {
-      this.logger.error(
-        'Initial cleanup failed',
-        error instanceof Error ? error : undefined
-      );
-    });
+    // Run immediately on start with concurrency protection
+    this.cleanupInProgress = true;
+    this.cleanup()
+      .catch((error) => {
+        this.logger.error(
+          'Initial cleanup failed',
+          error instanceof Error ? error : undefined
+        );
+      })
+      .finally(() => {
+        this.cleanupInProgress = false;
+      });
 
     // Then run periodically with concurrency protection
     this.interval = setInterval(async () => {

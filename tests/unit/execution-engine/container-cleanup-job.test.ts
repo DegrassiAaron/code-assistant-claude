@@ -63,7 +63,10 @@ vi.mock('dockerode', () => {
         return container;
       }
 
-      async listContainers(): Promise<
+      async listContainers(filters?: {
+        all?: boolean;
+        filters?: { label?: string[] };
+      }): Promise<
         Array<{
           Id: string;
           Image: string;
@@ -71,9 +74,21 @@ vi.mock('dockerode', () => {
           Labels: Record<string, string>;
         }>
       > {
-        return Array.from(mockContainers.values()).map((info) => ({
+        let items = Array.from(mockContainers.values()).map((info) => ({
           ...info,
         }));
+
+        const labelFilters = filters?.filters?.label ?? [];
+        if (labelFilters.length > 0) {
+          items = items.filter((info) =>
+            labelFilters.every((rule) => {
+              const [key, value] = rule.split('=');
+              return info.Labels[key] === value;
+            })
+          );
+        }
+
+        return items;
       }
 
       getContainer(id: string): {
@@ -234,11 +249,26 @@ describe('ContainerCleanupJob', () => {
 
   describe('Label-based Filtering', () => {
     it('should only cleanup containers with mcp.sandbox label', async () => {
-      // This is implicitly tested by the cleanup job using label filters
-      // If it cleaned up non-labeled containers, other tests would fail
+      // Create one labeled (old) and one unlabeled container
+      const labeled = await docker.createContainer({
+        Image: 'node:18-alpine',
+        Labels: { 'mcp.sandbox': 'true' },
+      });
+      mockContainers.set(labeled.info.Id, labeled.info);
+
+      const unlabeledId = 'mock-unlabeled';
+      mockContainers.set(unlabeledId, {
+        Id: unlabeledId,
+        Image: 'node:18-alpine',
+        Created: Math.floor(Date.now() / 1000) - 60 * 60 * 2,
+        Labels: {},
+      });
+
       await cleanupJob.runOnce();
 
-      expect(true).toBe(true);
+      const remainingIds = Array.from(mockContainers.keys());
+      expect(remainingIds).toContain(unlabeledId);
+      expect(remainingIds).not.toContain(labeled.info.Id);
     });
   });
 });

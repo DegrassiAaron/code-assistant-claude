@@ -7,7 +7,11 @@ import { vi } from 'vitest';
 vi.mock('dockerode', () => {
   const { EventEmitter } = require('events');
   let nextId = 0;
-  const containers = new Map<string, any>();
+  const containers = new Map<
+    string,
+    { id: string; labels: Record<string, string> }
+  >();
+  let lastCreateLabels: Record<string, string> | null = null;
 
   class MockStream extends EventEmitter {
     destroyed = false;
@@ -30,9 +34,11 @@ vi.mock('dockerode', () => {
 
   class MockContainer {
     id: string;
-    constructor() {
+    labels: Record<string, string>;
+    constructor(labels: Record<string, string> = {}) {
       this.id = `mock-${++nextId}`;
-      containers.set(this.id, this);
+      this.labels = labels;
+      containers.set(this.id, { id: this.id, labels });
     }
 
     async putArchive(): Promise<void> {
@@ -69,16 +75,35 @@ vi.mock('dockerode', () => {
       return;
     }
 
-    async createContainer(): Promise<MockContainer> {
-      return new MockContainer();
+    async createContainer(opts: { Labels?: Record<string, string> }): Promise<MockContainer> {
+      lastCreateLabels = opts?.Labels ?? {};
+      this.lastCreateLabels = lastCreateLabels;
+      return new MockContainer(lastCreateLabels);
     }
 
-    async listContainers(): Promise<Array<{ Id: string }>> {
-      return Array.from(containers.keys()).map((id) => ({ Id: id }));
+    async listContainers(opts?: {
+      filters?: { label?: string[] };
+    }): Promise<Array<{ Id: string; Labels: Record<string, string> }>> {
+      let values = Array.from(containers.values());
+      const labelFilters = opts?.filters?.label ?? [];
+      if (labelFilters.length > 0) {
+        values = values.filter(({ labels }) =>
+          labelFilters.every((rule) => {
+            const [key, value] = rule.split('=');
+            return labels[key] === value;
+          })
+        );
+      }
+      return values.map(({ id, labels }) => ({ Id: id, Labels: labels }));
     }
 
     getContainer(id: string): MockContainer | undefined {
-      return containers.get(id);
+      const item = containers.get(id);
+      return item ? new MockContainer(item.labels) : undefined;
+    }
+
+    getLastCreateLabels(): Record<string, string> | null {
+      return lastCreateLabels;
     }
   }
 
@@ -306,13 +331,15 @@ describe('DockerSandbox Cleanup', () => {
 
   describe('Docker Labels', () => {
     it('should add mcp.sandbox labels to containers', async () => {
-      // Note: This test would require inspecting containers during execution
-      // For now, we verify through the cleanup job's label filtering
       await sandbox.execute('console.log("test")', 'typescript');
 
-      // Container should be cleaned up, so we can't inspect it
-      // But the cleanup working proves labels are set correctly
-      expect(true).toBe(true);
+      const labels =
+        (docker as any).getLastCreateLabels?.() ??
+        (docker as any).lastCreateLabels ??
+        {};
+
+      expect(labels['mcp.sandbox']).toBe('true');
+      expect(labels['mcp.sandbox.language']).toBe('typescript');
     }, 30000);
   });
 });

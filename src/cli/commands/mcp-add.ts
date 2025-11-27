@@ -632,6 +632,8 @@ async function testMCPConnection(
   while (attempt < CONFIG.MAX_RETRIES) {
     const spinner = ora('Testing MCP connection...').start();
 
+    let client: MCPClient | null = null;
+
     try {
       logger.debug('Attempting MCP connection', {
         attempt: attempt + 1,
@@ -639,7 +641,7 @@ async function testMCPConnection(
       });
 
       // Spawn MCP server process
-      const client = new MCPClient(
+      client = new MCPClient(
         mcpEntry.installation.command,
         mcpEntry.installation.args,
         envConfig
@@ -656,8 +658,6 @@ async function testMCPConnection(
         `Connection successful! Found ${chalk.bold(tools.length)} tools`
       );
       logger.info('MCP connection successful', { toolCount: tools.length });
-
-      await client.disconnect();
 
       return tools;
     } catch (error) {
@@ -709,6 +709,19 @@ async function testMCPConnection(
         }
 
         return [];
+      }
+    } finally {
+      if (client) {
+        try {
+          await client.disconnect();
+        } catch (disconnectError) {
+          logger.warn('Failed to disconnect MCP client', {
+            error:
+              disconnectError instanceof Error
+                ? disconnectError.message
+                : String(disconnectError),
+          });
+        }
       }
     }
   }
