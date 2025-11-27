@@ -69,6 +69,10 @@ program
 program
   .command('reset')
   .description('Reset Claude Code to vanilla state')
+  .option('--local', 'Reset local project configuration only (.claude/)')
+  .option('--global', 'Reset global configuration only (~/.claude/)')
+  .option('--cache', 'Also remove cache directory (.cache/)')
+  .option('--workspace', 'Also remove workspace directory (.workspace/)')
   .option('--backup', 'Create backup before reset (default: true)')
   .option('--no-backup', 'Skip backup creation')
   .action(resetCommand);
