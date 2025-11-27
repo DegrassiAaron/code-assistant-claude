@@ -3,9 +3,7 @@ export class CleanupManager {
   private autoCleanup: boolean;
   private autoCleanupInterval?: NodeJS.Timeout;
 
-  private isOptions(
-    value: unknown
-  ): value is {
+  private isOptions(value: unknown): value is {
     autoCleanup?: boolean;
   } {
     return Boolean(

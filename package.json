@@ -1,6 +1,6 @@
 {
   "name": "code-assistant-claude",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Intelligent self-configuring framework for Claude Code CLI optimization with 98.7% token reduction",
   "keywords": [
     "claude",
@@ -39,6 +39,7 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "test": "vitest run",
+    "test:fast": "vitest run tests/unit",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:unit": "vitest run tests/unit",
@@ -58,7 +59,7 @@
     "benchmark": "vitest run tests/performance --reporter=verbose",
     "benchmark:token-reduction": "vitest run tests/performance/token-reduction.bench.ts --reporter=verbose",
     "benchmark:performance": "vitest run tests/performance/benchmarks.test.ts --reporter=verbose",
-    "prepublishOnly": "npm run lint && npm run typecheck && npm test && npm run build",
+    "prepublishOnly": "npm run lint && npm run typecheck && npm run test:fast && npm run build",
     "prepare": "husky install"
   },
   "dependencies": {

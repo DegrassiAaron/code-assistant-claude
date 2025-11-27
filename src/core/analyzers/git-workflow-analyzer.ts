@@ -98,7 +98,9 @@ export class GitWorkflowAnalyzer {
         b.match(/^\d+/) // Issue numbers
     );
 
-    return hasMain && noDevelop && hasFeatureBranches && nonMainBranches.length > 0;
+    return (
+      hasMain && noDevelop && hasFeatureBranches && nonMainBranches.length > 0
+    );
   }
 
   private isTrunkBased(branches: string[]): boolean {

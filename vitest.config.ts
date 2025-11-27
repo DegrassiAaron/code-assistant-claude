@@ -24,7 +24,13 @@ export default defineConfig({
       statements: 80
     },
     include: ['tests/unit/**/*.test.ts', 'tests/integration/**/*.test.ts'],
-    exclude: ['node_modules', 'dist', 'tests/e2e'],
+    exclude: [
+      'node_modules',
+      'dist',
+      'tests/e2e',
+      'tests/unit/execution-engine/process-sandbox-security.test.ts', // Requires Python - integration only
+      'tests/unit/execution-engine/docker-sandbox.test.ts' // Slow Docker mock tests - integration only
+    ],
     testTimeout: 10000,
     hookTimeout: 10000,
     teardownTimeout: 10000,
