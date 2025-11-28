@@ -88,12 +88,27 @@ export class CodeAPIGenerator {
       // From dist/core bundle
       path.join(__dirname, '../core/execution-engine/mcp-code-api/templates'),
       // Development (cwd = repo root)
-      path.join(process.cwd(), 'dist/core/execution-engine/mcp-code-api/templates'),
-      path.join(process.cwd(), 'dist/cli/execution-engine/mcp-code-api/templates'),
-      path.join(process.cwd(), 'src/core/execution-engine/mcp-code-api/templates'),
+      path.join(
+        process.cwd(),
+        'dist/core/execution-engine/mcp-code-api/templates'
+      ),
+      path.join(
+        process.cwd(),
+        'dist/cli/execution-engine/mcp-code-api/templates'
+      ),
+      path.join(
+        process.cwd(),
+        'src/core/execution-engine/mcp-code-api/templates'
+      ),
       // npm install paths
-      path.join(process.cwd(), 'node_modules/code-assistant-claude/dist/core/execution-engine/mcp-code-api/templates'),
-      path.join(process.cwd(), 'node_modules/code-assistant-claude/dist/cli/execution-engine/mcp-code-api/templates'),
+      path.join(
+        process.cwd(),
+        'node_modules/code-assistant-claude/dist/core/execution-engine/mcp-code-api/templates'
+      ),
+      path.join(
+        process.cwd(),
+        'node_modules/code-assistant-claude/dist/cli/execution-engine/mcp-code-api/templates'
+      ),
     ];
 
     let tsTemplateContent: string | null = null;

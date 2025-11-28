@@ -56,9 +56,15 @@ export async function mcpExecuteCommand(
         // Local development (cwd = repo root)
         path.join(process.cwd(), 'templates/mcp-tools'),
         // npm install in local project
-        path.join(process.cwd(), 'node_modules/code-assistant-claude/templates/mcp-tools'),
+        path.join(
+          process.cwd(),
+          'node_modules/code-assistant-claude/templates/mcp-tools'
+        ),
         // npm install -g (find package root from __dirname)
-        path.join(__dirname, '../../../lib/node_modules/code-assistant-claude/templates/mcp-tools'),
+        path.join(
+          __dirname,
+          '../../../lib/node_modules/code-assistant-claude/templates/mcp-tools'
+        ),
       ];
 
       for (const tryPath of possiblePaths) {
@@ -72,10 +78,14 @@ export async function mcpExecuteCommand(
       }
 
       if (!toolsDir) {
-        console.error(chalk.yellow('\nCould not auto-discover MCP tools directory.'));
+        console.error(
+          chalk.yellow('\nCould not auto-discover MCP tools directory.')
+        );
         console.error(chalk.gray('Tried paths:'));
         possiblePaths.forEach((p) => console.error(chalk.gray(`  • ${p}`)));
-        console.error(chalk.yellow('\nPlease specify with --tools-dir flag.\n'));
+        console.error(
+          chalk.yellow('\nPlease specify with --tools-dir flag.\n')
+        );
         throw new Error(
           'MCP tools directory not found. Use --tools-dir to specify manually.'
         );
