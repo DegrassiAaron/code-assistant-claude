@@ -75,17 +75,35 @@ export class CodeAPIGenerator {
    * Load Handlebars templates from filesystem
    */
   private async loadTemplates(): Promise<void> {
-    const tsTemplatePath = path.join(
-      __dirname,
-      'templates/typescript-wrapper.ts.hbs'
-    );
-    const pyTemplatePath = path.join(
-      __dirname,
-      'templates/python-wrapper.py.hbs'
-    );
+    // Try multiple possible paths (development vs build)
+    const possibleBasePaths = [
+      path.join(__dirname, 'templates'), // Build: dist/core/execution-engine/mcp-code-api/templates
+      path.join(__dirname, '../../../src/core/execution-engine/mcp-code-api/templates'), // Test from dist
+      path.join(process.cwd(), 'src/core/execution-engine/mcp-code-api/templates'), // Development
+    ];
 
-    const tsTemplateContent = await fs.readFile(tsTemplatePath, 'utf-8');
-    const pyTemplateContent = await fs.readFile(pyTemplatePath, 'utf-8');
+    let tsTemplateContent: string | null = null;
+    let pyTemplateContent: string | null = null;
+
+    for (const basePath of possibleBasePaths) {
+      try {
+        const tsPath = path.join(basePath, 'typescript-wrapper.ts.hbs');
+        const pyPath = path.join(basePath, 'python-wrapper.py.hbs');
+
+        tsTemplateContent = await fs.readFile(tsPath, 'utf-8');
+        pyTemplateContent = await fs.readFile(pyPath, 'utf-8');
+        break; // Success, stop trying
+      } catch {
+        // Try next path
+      }
+    }
+
+    if (!tsTemplateContent || !pyTemplateContent) {
+      throw new Error(
+        'Could not find MCP code generation templates. Tried paths: ' +
+          possibleBasePaths.join(', ')
+      );
+    }
 
     this.tsTemplate = Handlebars.compile(tsTemplateContent);
     this.pyTemplate = Handlebars.compile(pyTemplateContent);
