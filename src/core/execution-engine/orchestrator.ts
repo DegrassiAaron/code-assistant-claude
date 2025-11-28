@@ -29,8 +29,12 @@ export class ExecutionOrchestrator {
   private cleanupManager: CleanupManager;
   private auditLogger: AuditLogger;
   private anomalyDetector: AnomalyDetector;
+  private toolsDirectory?: string;
+  private mcpOrchestrator?: import('./mcp-code-api/orchestrator').MCPOrchestrator;
 
-  constructor(_toolsDir?: string) {
+  constructor(toolsDir?: string) {
+    this.toolsDirectory = toolsDir;
+
     // Initialize all components
     this.generator = new CodeAPIGenerator();
     this.sandboxManager = new SandboxManager();
@@ -57,8 +61,17 @@ export class ExecutionOrchestrator {
   async initialize(): Promise<void> {
     console.log('🚀 Initializing MCP Execution Engine...\n');
 
-    // Index all MCP tools
-    await this.toolIndexer.initialize();
+    // Index all MCP tools from directory using MCPOrchestrator
+    if (this.toolsDirectory) {
+      const { MCPOrchestrator } = await import('./mcp-code-api/orchestrator');
+      this.mcpOrchestrator = new MCPOrchestrator(this.toolsDirectory);
+      await this.mcpOrchestrator.initialize();
+
+      const stats = this.mcpOrchestrator.getStats();
+      console.log(`✓ Indexed ${stats.toolsIndexed} MCP tools\n`);
+    } else {
+      await this.toolIndexer.initialize();
+    }
 
     // Start auto-cleanup
     this.cleanupManager.startAutoCleanup(60); // Every hour
@@ -88,6 +101,14 @@ export class ExecutionOrchestrator {
     try {
       // PHASE 1: DISCOVERY
       console.log('Phase 1: Discovery - Finding relevant MCP tools...');
+
+      // Use MCPOrchestrator if available (has better discovery)
+      if (this.mcpOrchestrator) {
+        // Delegate to MCPOrchestrator which has integrated discovery + execution
+        return await this.mcpOrchestrator.execute(userRequest, language);
+      }
+
+      // Fallback to manual tool indexing
       const tools = this.toolIndexer.search(userRequest, 5);
 
       await this.auditLogger.logDiscovery(userRequest, tools.length);

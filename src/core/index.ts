@@ -10,6 +10,9 @@ export { ConfigurationGenerator } from './configurators/config-generator';
 // Skills system
 export * from './skills';
 
+// Execution Engine - Main Orchestrator
+export { ExecutionOrchestrator } from './execution-engine/orchestrator';
+
 // Execution Engine - MCP Code API
 export { MCPOrchestrator } from './execution-engine/mcp-code-api/orchestrator';
 export { SchemaParser } from './execution-engine/mcp-code-api/schema-parser';

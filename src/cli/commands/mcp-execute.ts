@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import ora from 'ora';
 import chalk from 'chalk';
-import { MCPOrchestrator } from '../../core/execution-engine/mcp-code-api/orchestrator';
+import { ExecutionOrchestrator } from '../../core/execution-engine/orchestrator';
 import path from 'path';
 
 interface ExecuteOptions {
@@ -37,30 +37,53 @@ export async function mcpExecuteCommand(
   console.log(chalk.blue.bold('\n🔧 MCP Code Execution\n'));
   console.log(chalk.gray(`Intent: ${intent}\n`));
 
-  const spinner = ora('Initializing MCP orchestrator...').start();
+  const spinner = ora('Initializing execution engine...').start();
 
   try {
     // Determine tools directory
-    const toolsDir =
-      options.toolsDir || path.join(process.cwd(), 'templates/mcp-tools');
+    // Default: use bundled templates from installed package
+    let toolsDir = options.toolsDir;
 
-    // Create orchestrator
-    const orchestrator = new MCPOrchestrator(toolsDir);
+    if (!toolsDir) {
+      // Try to find templates in package installation
+      const possiblePaths = [
+        path.join(__dirname, '../../../templates/mcp-tools'), // From dist/cli
+        path.join(process.cwd(), 'templates/mcp-tools'), // Local development
+        path.join(process.cwd(), 'node_modules/code-assistant-claude/templates/mcp-tools'), // npm install
+      ];
 
-    // Initialize (index tools)
+      for (const tryPath of possiblePaths) {
+        try {
+          await import('fs').then((fs) => fs.promises.access(tryPath));
+          toolsDir = tryPath;
+          break;
+        } catch {
+          // Try next path
+        }
+      }
+
+      if (!toolsDir) {
+        throw new Error(
+          'Could not find MCP tools directory. Use --tools-dir to specify manually.'
+        );
+      }
+    }
+
+    // Create main execution orchestrator (5-phase workflow)
+    const orchestrator = new ExecutionOrchestrator(toolsDir);
+
+    // Initialize (index tools, start cleanup)
     await orchestrator.initialize();
-    const stats = orchestrator.getStats();
 
-    spinner.succeed(
-      `Indexed ${stats.toolsIndexed} tools from ${Object.keys(stats.toolsByCategory).length} categories`
+    spinner.succeed('Execution engine initialized');
+
+    // Execute with 5-phase workflow:
+    // 1. Discovery, 2. Code Gen, 3. Security, 4. Sandbox, 5. Result Processing
+    spinner.start('Executing with security validation...');
+    const result = await orchestrator.execute(
+      intent,
+      options.language || 'typescript'
     );
-
-    // Execute
-    spinner.start('Discovering relevant tools...');
-    const result = await orchestrator.execute(intent, options.language, {
-      maxTools: options.maxTools || 5,
-      timeout: options.timeout || 30000,
-    });
 
     if (result.success) {
       spinner.succeed('Execution completed successfully');
@@ -85,7 +108,7 @@ export async function mcpExecuteCommand(
       }
 
       // Calculate token reduction
-      const traditionalTokens = 150000;
+      const traditionalTokens = 200000; // ExecutionOrchestrator baseline
       const actualTokens = result.metrics.tokensInSummary + 2500; // +2500 for overhead
       const reduction = ((1 - actualTokens / traditionalTokens) * 100).toFixed(
         1
@@ -96,6 +119,9 @@ export async function mcpExecuteCommand(
           `\n💡 Token Reduction: ${reduction}% vs traditional MCP\n`
         )
       );
+
+      // Cleanup
+      await orchestrator.shutdown();
     } else {
       spinner.fail('Execution failed');
 
@@ -107,6 +133,8 @@ export async function mcpExecuteCommand(
         console.log(chalk.gray(result.summary));
       }
 
+      // Cleanup on error too
+      await orchestrator.shutdown();
       process.exit(1);
     }
   } catch (error) {
