@@ -4,6 +4,7 @@ import { initCommand } from './commands/init';
 import { configCommand } from './commands/config';
 import { resetCommand } from './commands/reset';
 import { mcpAddCommand } from './commands/mcp-add';
+import { registerMcpExecuteCommand } from './commands/mcp-execute';
 import { Logger } from '../core/utils/logger';
 
 const program = new Command();
@@ -87,6 +88,9 @@ program
   .option('--no-test', 'Skip connection testing')
   .option('--no-interactive', 'Non-interactive mode (use defaults)')
   .action(mcpAddCommand);
+
+// MCP Execute command - Execute MCP tools via code generation
+registerMcpExecuteCommand(program);
 
 // Global error handler
 program.exitOverride((err) => {
