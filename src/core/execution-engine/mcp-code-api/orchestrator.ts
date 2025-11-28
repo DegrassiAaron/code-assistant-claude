@@ -102,7 +102,10 @@ export class MCPOrchestrator {
       // Debug: Show discovered tools
       if (debug.isEnabled()) {
         debug.info(`Discovered ${discoveredTools.length} relevant tools`, {
-          tools: discoveredTools.map((t) => ({ name: t.name, score: t.relevanceScore })),
+          tools: discoveredTools.map((t) => ({
+            name: t.name,
+            score: t.relevanceScore,
+          })),
         });
       }
 
@@ -126,7 +129,11 @@ export class MCPOrchestrator {
 
       // Debug: Show sandbox execution
       if (debug.isEnabled()) {
-        debug.phase(3, 'Sandbox Execution', 'Running generated code in isolated environment');
+        debug.phase(
+          3,
+          'Sandbox Execution',
+          'Running generated code in isolated environment'
+        );
       }
 
       const startExec = Date.now();

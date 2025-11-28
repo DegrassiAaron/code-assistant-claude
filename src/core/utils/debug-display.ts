@@ -19,9 +19,17 @@ export class DebugDisplay {
     this.startTime = Date.now();
     this.sessionTokens = 0;
 
-    console.log(chalk.cyan('\n╔════════════════════════════════════════════════════════╗'));
-    console.log(chalk.cyan('║') + chalk.bold(' Code-Assistant-Claude Debug Mode ACTIVE ') + chalk.cyan('      ║'));
-    console.log(chalk.cyan('╚════════════════════════════════════════════════════════╝\n'));
+    console.log(
+      chalk.cyan('\n╔════════════════════════════════════════════════════════╗')
+    );
+    console.log(
+      chalk.cyan('║') +
+        chalk.bold(' Code-Assistant-Claude Debug Mode ACTIVE ') +
+        chalk.cyan('      ║')
+    );
+    console.log(
+      chalk.cyan('╚════════════════════════════════════════════════════════╝\n')
+    );
   }
 
   /**
@@ -45,7 +53,11 @@ export class DebugDisplay {
   /**
    * Print skill activation
    */
-  static skillActivated(skillName: string, reason: string, tokens: number): void {
+  static skillActivated(
+    skillName: string,
+    reason: string,
+    tokens: number
+  ): void {
     if (!this.enabled) return;
 
     this.sessionTokens += tokens;
@@ -54,9 +66,18 @@ export class DebugDisplay {
     console.log(chalk.yellow('│'));
     console.log(chalk.yellow('├─'), chalk.bold(skillName));
     console.log(chalk.yellow('├─'), chalk.gray(`Reason: ${reason}`));
-    console.log(chalk.yellow('├─'), chalk.gray(`Tokens: ${tokens} (~${this.estimateSize(tokens)})`));
-    console.log(chalk.yellow('├─'), chalk.gray(`Session Total: ${this.sessionTokens} tokens`));
-    console.log(chalk.yellow('└─'), this.getTokenBar(this.sessionTokens, 200000));
+    console.log(
+      chalk.yellow('├─'),
+      chalk.gray(`Tokens: ${tokens} (~${this.estimateSize(tokens)})`)
+    );
+    console.log(
+      chalk.yellow('├─'),
+      chalk.gray(`Session Total: ${this.sessionTokens} tokens`)
+    );
+    console.log(
+      chalk.yellow('└─'),
+      this.getTokenBar(this.sessionTokens, 200000)
+    );
   }
 
   /**
@@ -75,7 +96,12 @@ export class DebugDisplay {
   /**
    * Print MCP result
    */
-  static mcpCompleted(server: string, tool: string, tokens: number, duration: number): void {
+  static mcpCompleted(
+    server: string,
+    tool: string,
+    tokens: number,
+    duration: number
+  ): void {
     if (!this.enabled) return;
 
     this.sessionTokens += tokens;
@@ -83,15 +109,27 @@ export class DebugDisplay {
     console.log(chalk.green('\n└─ MCP COMPLETED'));
     console.log(chalk.green('  ├─'), chalk.bold(`${server}::${tool}`));
     console.log(chalk.green('  ├─'), chalk.gray(`Duration: ${duration}ms`));
-    console.log(chalk.green('  ├─'), chalk.gray(`Tokens Saved: ${this.calculateSavings(tokens)}`));
-    console.log(chalk.green('  ├─'), chalk.gray(`Session Total: ${this.sessionTokens} tokens`));
-    console.log(chalk.green('  └─'), this.getTokenBar(this.sessionTokens, 200000));
+    console.log(
+      chalk.green('  ├─'),
+      chalk.gray(`Tokens Saved: ${this.calculateSavings(tokens)}`)
+    );
+    console.log(
+      chalk.green('  ├─'),
+      chalk.gray(`Session Total: ${this.sessionTokens} tokens`)
+    );
+    console.log(
+      chalk.green('  └─'),
+      this.getTokenBar(this.sessionTokens, 200000)
+    );
   }
 
   /**
    * Print command execution
    */
-  static commandExecuting(command: string, params: Record<string, unknown>): void {
+  static commandExecuting(
+    command: string,
+    params: Record<string, unknown>
+  ): void {
     if (!this.enabled) return;
 
     console.log(chalk.magenta('\n┌─ COMMAND EXECUTING'));
@@ -100,7 +138,10 @@ export class DebugDisplay {
     if (this.verbose && Object.keys(params).length > 0) {
       console.log(chalk.magenta('├─'), chalk.gray('Parameters:'));
       Object.entries(params).forEach(([key, value]) => {
-        console.log(chalk.magenta('│  ├─'), chalk.gray(`${key}: ${JSON.stringify(value)}`));
+        console.log(
+          chalk.magenta('│  ├─'),
+          chalk.gray(`${key}: ${JSON.stringify(value)}`)
+        );
       });
     }
     console.log(chalk.magenta('└─'), chalk.dim(this.getElapsedTime()));
@@ -109,7 +150,10 @@ export class DebugDisplay {
   /**
    * Print agent selection
    */
-  static agentSelected(agents: Array<{ name: string; score: number }>, reason: string): void {
+  static agentSelected(
+    agents: Array<{ name: string; score: number }>,
+    reason: string
+  ): void {
     if (!this.enabled) return;
 
     console.log(chalk.cyan('\n┌─ AGENTS SELECTED'));
@@ -119,7 +163,11 @@ export class DebugDisplay {
     agents.forEach((agent, idx) => {
       const isLast = idx === agents.length - 1;
       const prefix = isLast ? '└─' : '├─';
-      console.log(chalk.cyan(prefix), chalk.bold(agent.name), chalk.dim(`(score: ${agent.score})`));
+      console.log(
+        chalk.cyan(prefix),
+        chalk.bold(agent.name),
+        chalk.dim(`(score: ${agent.score})`)
+      );
     });
   }
 
@@ -130,18 +178,26 @@ export class DebugDisplay {
     if (!this.enabled) return;
 
     const percentage = ((used / total) * 100).toFixed(1);
-    const status = used / total < 0.75 ? '🟢' : used / total < 0.9 ? '🟡' : '🔴';
+    const status =
+      used / total < 0.75 ? '🟢' : used / total < 0.9 ? '🟡' : '🔴';
 
     console.log(chalk.gray('\n┌─ TOKEN BUDGET'));
     console.log(chalk.gray('├─'), chalk.bold(category));
-    console.log(chalk.gray('├─'), `${status} ${used.toLocaleString()} / ${total.toLocaleString()} (${percentage}%)`);
+    console.log(
+      chalk.gray('├─'),
+      `${status} ${used.toLocaleString()} / ${total.toLocaleString()} (${percentage}%)`
+    );
     console.log(chalk.gray('└─'), this.getTokenBar(used, total));
   }
 
   /**
    * Print code generation
    */
-  static codeGenerated(language: string, tokens: number, traditional: number): void {
+  static codeGenerated(
+    language: string,
+    tokens: number,
+    traditional: number
+  ): void {
     if (!this.enabled) return;
 
     this.sessionTokens += tokens;
@@ -159,10 +215,15 @@ export class DebugDisplay {
   /**
    * Print security validation
    */
-  static securityValidated(riskScore: number, level: string, issues: number): void {
+  static securityValidated(
+    riskScore: number,
+    level: string,
+    issues: number
+  ): void {
     if (!this.enabled) return;
 
-    const statusColor = riskScore < 40 ? chalk.green : riskScore < 70 ? chalk.yellow : chalk.red;
+    const statusColor =
+      riskScore < 40 ? chalk.green : riskScore < 70 ? chalk.yellow : chalk.red;
 
     console.log(statusColor('\n┌─ SECURITY VALIDATION'));
     console.log(statusColor('│'));
@@ -190,7 +251,11 @@ export class DebugDisplay {
   /**
    * Print sandbox result
    */
-  static sandboxCompleted(success: boolean, duration: number, memory: string): void {
+  static sandboxCompleted(
+    success: boolean,
+    duration: number,
+    memory: string
+  ): void {
     if (!this.enabled) return;
 
     const statusColor = success ? chalk.green : chalk.red;
@@ -205,15 +270,28 @@ export class DebugDisplay {
   /**
    * Print progressive loading
    */
-  static progressiveLoad(type: 'metadata' | 'full' | 'resources', name: string, tokens: number): void {
+  static progressiveLoad(
+    type: 'metadata' | 'full' | 'resources',
+    name: string,
+    tokens: number
+  ): void {
     if (!this.enabled) return;
 
     this.sessionTokens += tokens;
 
     const emoji = type === 'metadata' ? '📋' : type === 'full' ? '📄' : '📦';
-    const label = type === 'metadata' ? 'Metadata' : type === 'full' ? 'Full Content' : 'Resources';
+    const label =
+      type === 'metadata'
+        ? 'Metadata'
+        : type === 'full'
+          ? 'Full Content'
+          : 'Resources';
 
-    console.log(chalk.gray(`  ${emoji} Loading ${label}: ${chalk.bold(name)} (${tokens} tokens)`));
+    console.log(
+      chalk.gray(
+        `  ${emoji} Loading ${label}: ${chalk.bold(name)} (${tokens} tokens)`
+      )
+    );
   }
 
   /**
@@ -264,13 +342,44 @@ export class DebugDisplay {
     const minutes = Math.floor(duration / 60000);
     const seconds = Math.floor((duration % 60000) / 1000);
 
-    console.log(chalk.cyan('\n╔════════════════════════════════════════════════════════╗'));
-    console.log(chalk.cyan('║') + chalk.bold('         SESSION SUMMARY                           ') + chalk.cyan('║'));
-    console.log(chalk.cyan('╠════════════════════════════════════════════════════════╣'));
-    console.log(chalk.cyan('║') + ` Duration: ${minutes}m ${seconds}s` + ' '.repeat(44 - (`Duration: ${minutes}m ${seconds}s`.length)) + chalk.cyan('║'));
-    console.log(chalk.cyan('║') + ` Total Tokens: ${this.sessionTokens.toLocaleString()}` + ' '.repeat(44 - (`Total Tokens: ${this.sessionTokens.toLocaleString()}`.length)) + chalk.cyan('║'));
-    console.log(chalk.cyan('║') + ` Avg Token/min: ${Math.floor(this.sessionTokens / Math.max(minutes, 1))}` + ' '.repeat(44 - (`Avg Token/min: ${Math.floor(this.sessionTokens / Math.max(minutes, 1))}`.length)) + chalk.cyan('║'));
-    console.log(chalk.cyan('╚════════════════════════════════════════════════════════╝\n'));
+    console.log(
+      chalk.cyan('\n╔════════════════════════════════════════════════════════╗')
+    );
+    console.log(
+      chalk.cyan('║') +
+        chalk.bold('         SESSION SUMMARY                           ') +
+        chalk.cyan('║')
+    );
+    console.log(
+      chalk.cyan('╠════════════════════════════════════════════════════════╣')
+    );
+    console.log(
+      chalk.cyan('║') +
+        ` Duration: ${minutes}m ${seconds}s` +
+        ' '.repeat(44 - `Duration: ${minutes}m ${seconds}s`.length) +
+        chalk.cyan('║')
+    );
+    console.log(
+      chalk.cyan('║') +
+        ` Total Tokens: ${this.sessionTokens.toLocaleString()}` +
+        ' '.repeat(
+          44 - `Total Tokens: ${this.sessionTokens.toLocaleString()}`.length
+        ) +
+        chalk.cyan('║')
+    );
+    console.log(
+      chalk.cyan('║') +
+        ` Avg Token/min: ${Math.floor(this.sessionTokens / Math.max(minutes, 1))}` +
+        ' '.repeat(
+          44 -
+            `Avg Token/min: ${Math.floor(this.sessionTokens / Math.max(minutes, 1))}`
+              .length
+        ) +
+        chalk.cyan('║')
+    );
+    console.log(
+      chalk.cyan('╚════════════════════════════════════════════════════════╝\n')
+    );
   }
 
   /**
@@ -282,9 +391,18 @@ export class DebugDisplay {
     const filled = Math.floor(percentage * barLength);
     const empty = barLength - filled;
 
-    const color = percentage < 0.75 ? chalk.green : percentage < 0.9 ? chalk.yellow : chalk.red;
+    const color =
+      percentage < 0.75
+        ? chalk.green
+        : percentage < 0.9
+          ? chalk.yellow
+          : chalk.red;
 
-    return color('█'.repeat(filled)) + chalk.gray('░'.repeat(empty)) + chalk.gray(` ${(percentage * 100).toFixed(1)}%`);
+    return (
+      color('█'.repeat(filled)) +
+      chalk.gray('░'.repeat(empty)) +
+      chalk.gray(` ${(percentage * 100).toFixed(1)}%`)
+    );
   }
 
   /**
@@ -296,9 +414,14 @@ export class DebugDisplay {
     const filled = Math.floor(percentage * barLength);
     const empty = barLength - filled;
 
-    const color = score < 40 ? chalk.green : score < 70 ? chalk.yellow : chalk.red;
+    const color =
+      score < 40 ? chalk.green : score < 70 ? chalk.yellow : chalk.red;
 
-    return color('█'.repeat(filled)) + chalk.gray('░'.repeat(empty)) + chalk.gray(` ${score}/100`);
+    return (
+      color('█'.repeat(filled)) +
+      chalk.gray('░'.repeat(empty)) +
+      chalk.gray(` ${score}/100`)
+    );
   }
 
   /**
@@ -365,8 +488,11 @@ export const debug = {
   sandboxDone: (success: boolean, duration: number, memory: string) =>
     DebugDisplay.sandboxCompleted(success, duration, memory),
 
-  progressive: (type: 'metadata' | 'full' | 'resources', name: string, tokens: number) =>
-    DebugDisplay.progressiveLoad(type, name, tokens),
+  progressive: (
+    type: 'metadata' | 'full' | 'resources',
+    name: string,
+    tokens: number
+  ) => DebugDisplay.progressiveLoad(type, name, tokens),
 
   phase: (number: number, name: string, description?: string) =>
     DebugDisplay.phase(number, name, description),

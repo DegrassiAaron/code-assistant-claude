@@ -36,7 +36,8 @@ export async function mcpExecuteCommand(
   options: ExecuteOptions
 ): Promise<void> {
   // Enable debug mode if DEBUG env var or --debug flag is set
-  const debugEnabled = process.env.DEBUG === 'true' || process.env.DEBUG === '1';
+  const debugEnabled =
+    process.env.DEBUG === 'true' || process.env.DEBUG === '1';
   if (debugEnabled) {
     debug.enable(true); // Verbose mode
   }
