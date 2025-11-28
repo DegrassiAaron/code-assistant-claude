@@ -1,6 +1,6 @@
 {
   "name": "code-assistant-claude",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Intelligent self-configuring framework for Claude Code CLI optimization with 98.7% token reduction",
   "keywords": [
     "claude",
