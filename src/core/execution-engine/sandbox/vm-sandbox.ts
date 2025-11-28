@@ -1,5 +1,5 @@
-import { SandboxConfig, ExecutionResult } from '../types';
-import { VM } from 'vm2';
+import { SandboxConfig, ExecutionResult } from "../types";
+import * as vm from "vm";
 
 /**
  * VM-based sandbox for isolated code execution
@@ -17,19 +17,19 @@ export class VMSandbox {
    */
   async execute(
     code: string,
-    language: 'typescript' | 'python'
+    language: "typescript" | "python",
   ): Promise<ExecutionResult> {
     const startTime = Date.now();
 
-    if (language === 'python') {
+    if (language === "python") {
       return {
         success: false,
         error:
-          'VM sandbox does not support Python. Use Docker or Process sandbox instead.',
-        summary: 'Unsupported language for VM sandbox',
+          "VM sandbox does not support Python. Use Docker or Process sandbox instead.",
+        summary: "Unsupported language for VM sandbox",
         metrics: {
           executionTime: 0,
-          memoryUsed: '0M',
+          memoryUsed: "0M",
           tokensInSummary: 0,
         },
         piiTokenized: false,
@@ -37,14 +37,14 @@ export class VMSandbox {
     }
 
     try {
-      // Create VM instance with timeout
-      const vm = new VM({
-        timeout: this.config.resourceLimits.timeout,
-        sandbox: this.createSandboxContext(),
-      });
+      // Create sandbox context
+      const context = vm.createContext(this.createSandboxContext());
 
-      // Execute code
-      const result = vm.run(code);
+      // Execute code with timeout
+      const result = vm.runInContext(code, context, {
+        timeout: this.config.resourceLimits.timeout,
+        displayErrors: true,
+      });
 
       const executionTime = Date.now() - startTime;
       const memoryUsed = process.memoryUsage().heapUsed;
@@ -63,11 +63,11 @@ export class VMSandbox {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        summary: 'VM execution failed',
+        error: error instanceof Error ? error.message : "Unknown error",
+        summary: "VM execution failed",
         metrics: {
           executionTime: Date.now() - startTime,
-          memoryUsed: '0M',
+          memoryUsed: "0M",
           tokensInSummary: 0,
         },
         piiTokenized: false,
@@ -81,9 +81,9 @@ export class VMSandbox {
   private createSandboxContext(): Record<string, unknown> {
     return {
       console: {
-        log: (...args: unknown[]) => console.log('[Sandbox]', ...args),
-        error: (...args: unknown[]) => console.error('[Sandbox]', ...args),
-        warn: (...args: unknown[]) => console.warn('[Sandbox]', ...args),
+        log: (...args: unknown[]) => console.log("[Sandbox]", ...args),
+        error: (...args: unknown[]) => console.error("[Sandbox]", ...args),
+        warn: (...args: unknown[]) => console.warn("[Sandbox]", ...args),
       },
       setTimeout: undefined, // Disable timers
       setInterval: undefined,
@@ -96,7 +96,7 @@ export class VMSandbox {
    * Summarize output to <500 tokens
    */
   private summarizeOutput(output: unknown): string {
-    const str = typeof output === 'string' ? output : JSON.stringify(output);
+    const str = typeof output === "string" ? output : JSON.stringify(output);
 
     if (str.length < 2000) {
       return str;

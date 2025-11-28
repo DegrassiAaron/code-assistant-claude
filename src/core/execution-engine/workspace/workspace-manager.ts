@@ -41,7 +41,7 @@ export class WorkspaceManager {
     try {
       await fs.rm(sessionPath, { recursive: true, force: true });
       this.sessions.delete(sessionId);
-    } catch (error) {
+    } catch (_error) {
       // Ignore cleanup errors
     }
   }

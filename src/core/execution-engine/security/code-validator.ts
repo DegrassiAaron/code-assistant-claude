@@ -140,7 +140,7 @@ export class CodeValidator {
 
       // Load suspicious patterns
       this.loadDefaultSuspiciousPatterns();
-    } catch (error) {
+    } catch (_error) {
       // Fallback to hardcoded patterns
       this.loadDefaultDangerousPatterns();
       this.loadDefaultSuspiciousPatterns();

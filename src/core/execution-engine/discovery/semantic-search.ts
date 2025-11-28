@@ -65,7 +65,7 @@ export class SemanticSearch {
     descWords.forEach((w) => keywords.add(w));
 
     // From parameters
-    schema.parameters.forEach((param) => {
+    schema.parameters?.forEach((param) => {
       keywords.add(param.name.toLowerCase());
       param.description.split(/\W+/).forEach((w) => {
         if (w.length > 3) keywords.add(w.toLowerCase());

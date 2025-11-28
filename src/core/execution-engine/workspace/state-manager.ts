@@ -49,7 +49,7 @@ export class StateManager {
       }
 
       return workspaces;
-    } catch (error) {
+    } catch (_error) {
       // State file doesn't exist or is invalid
       return new Map();
     }
@@ -61,7 +61,7 @@ export class StateManager {
   async clearState(): Promise<void> {
     try {
       await fs.unlink(this.stateFile);
-    } catch (error) {
+    } catch (_error) {
       // File doesn't exist, ignore
     }
   }

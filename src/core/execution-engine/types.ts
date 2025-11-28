@@ -7,14 +7,26 @@
 
 /**
  * MCP tool schema parsed from JSON
+ * Supports both internal format (parameters/returns) and MCP protocol format (inputSchema/outputSchema)
  */
 export interface MCPToolSchema {
   name: string;
   description: string;
-  parameters: MCPParameter[];
+  parameters?: MCPParameter[];
   returns?: MCPReturnType;
   examples?: MCPExample[];
   category?: string;
+  // MCP protocol format (JSON Schema)
+  inputSchema?: {
+    type: string;
+    properties?: Record<string, unknown>;
+    items?: unknown;
+    required?: string[];
+  };
+  outputSchema?: {
+    type: string;
+    properties?: Record<string, unknown>;
+  };
 }
 
 export interface MCPParameter {
