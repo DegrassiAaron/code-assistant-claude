@@ -248,7 +248,10 @@ export class MCPOrchestrator {
       // indexTools expects an array
       this.indexer.indexTools(schemas);
     } catch (error) {
-      console.warn(`[MCPOrchestrator] Could not index file ${filePath}:`, error);
+      console.warn(
+        `[MCPOrchestrator] Could not index file ${filePath}:`,
+        error
+      );
     }
   }
 

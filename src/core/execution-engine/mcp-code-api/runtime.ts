@@ -167,7 +167,6 @@ export class MCPCodeRuntime {
     }
   }
 
-
   /**
    * Clear execution environment
    */

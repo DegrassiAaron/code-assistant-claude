@@ -1,7 +1,7 @@
-import * as vm from "vm";
-import type { SandboxConfig } from "../types";
+import * as vm from 'vm';
+import type { SandboxConfig } from '../types';
 
-type SandboxLevel = "docker" | "vm" | "process";
+type SandboxLevel = 'docker' | 'vm' | 'process';
 
 interface SandboxExecutionOptions {
   level: SandboxLevel;
@@ -39,26 +39,26 @@ export class SandboxManager {
     operations: string[];
   }): SandboxLevel {
     return riskAssessment.riskScore >= 0.7
-      ? "docker"
+      ? 'docker'
       : riskAssessment.riskScore >= 0.4
-        ? "vm"
-        : "process";
+        ? 'vm'
+        : 'process';
   }
 
   async executeInSandbox(
     code: string,
-    options: SandboxExecutionOptions,
+    options: SandboxExecutionOptions
   ): Promise<SandboxResult> {
     try {
       switch (options.level) {
-        case "vm":
+        case 'vm':
           return await this.executeInVM(code, options);
-        case "process":
+        case 'process':
           return await this.executeInProcess(code, options);
-        case "docker":
+        case 'docker':
           return {
             success: false,
-            error: "Docker sandbox not yet implemented",
+            error: 'Docker sandbox not yet implemented',
           };
         default:
           return {
@@ -76,11 +76,11 @@ export class SandboxManager {
 
   private async executeInVM(
     code: string,
-    options: SandboxExecutionOptions,
+    options: SandboxExecutionOptions
   ): Promise<SandboxResult> {
     return new Promise((resolve) => {
       const timer = setTimeout(() => {
-        resolve({ success: false, error: "Execution timeout exceeded" });
+        resolve({ success: false, error: 'Execution timeout exceeded' });
       }, options.timeout);
       try {
         const context = vm.createContext({});
@@ -102,11 +102,11 @@ export class SandboxManager {
 
   private async executeInProcess(
     code: string,
-    options: SandboxExecutionOptions,
+    options: SandboxExecutionOptions
   ): Promise<SandboxResult> {
     return new Promise((resolve) => {
       const timer = setTimeout(() => {
-        resolve({ success: false, error: "Execution timeout exceeded" });
+        resolve({ success: false, error: 'Execution timeout exceeded' });
       }, options.timeout);
       try {
         const fn = new Function(code);
@@ -134,10 +134,10 @@ export class SandboxManager {
   async execute(
     _code: string,
     _language?: string,
-    _config?: SandboxConfig,
+    _config?: SandboxConfig
   ): Promise<SandboxResult> {
     const options: SandboxExecutionOptions = {
-      level: "process",
+      level: 'process',
       timeout: 5000,
     };
     return this.executeInSandbox(_code, options);

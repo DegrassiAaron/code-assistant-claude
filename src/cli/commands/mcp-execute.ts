@@ -49,7 +49,10 @@ export async function mcpExecuteCommand(
       const possiblePaths = [
         path.join(__dirname, '../../../templates/mcp-tools'), // From dist/cli
         path.join(process.cwd(), 'templates/mcp-tools'), // Local development
-        path.join(process.cwd(), 'node_modules/code-assistant-claude/templates/mcp-tools'), // npm install
+        path.join(
+          process.cwd(),
+          'node_modules/code-assistant-claude/templates/mcp-tools'
+        ), // npm install
       ];
 
       for (const tryPath of possiblePaths) {
@@ -155,8 +158,14 @@ export async function mcpExecuteCommand(
 export function registerMcpExecuteCommand(program: Command): void {
   program
     .command('mcp-execute <intent>')
-    .description('Execute MCP tools using code generation (98.7% token reduction)')
-    .option('-l, --language <lang>', 'Target language (typescript|python)', 'typescript')
+    .description(
+      'Execute MCP tools using code generation (98.7% token reduction)'
+    )
+    .option(
+      '-l, --language <lang>',
+      'Target language (typescript|python)',
+      'typescript'
+    )
     .option('-t, --timeout <ms>', 'Execution timeout in milliseconds', '30000')
     .option('-m, --max-tools <number>', 'Maximum tools to discover', '5')
     .option('-d, --tools-dir <path>', 'Custom MCP tools directory')

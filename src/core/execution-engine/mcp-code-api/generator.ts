@@ -78,8 +78,14 @@ export class CodeAPIGenerator {
     // Try multiple possible paths (development vs build)
     const possibleBasePaths = [
       path.join(__dirname, 'templates'), // Build: dist/core/execution-engine/mcp-code-api/templates
-      path.join(__dirname, '../../../src/core/execution-engine/mcp-code-api/templates'), // Test from dist
-      path.join(process.cwd(), 'src/core/execution-engine/mcp-code-api/templates'), // Development
+      path.join(
+        __dirname,
+        '../../../src/core/execution-engine/mcp-code-api/templates'
+      ), // Test from dist
+      path.join(
+        process.cwd(),
+        'src/core/execution-engine/mcp-code-api/templates'
+      ), // Development
     ];
 
     let tsTemplateContent: string | null = null;
