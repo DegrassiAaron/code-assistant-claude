@@ -38,6 +38,9 @@ export class ConfigurationGenerator {
     // Create .claude directory structure
     await this.createDirectoryStructure(claudeDir);
 
+    // Copy template files (skills, commands, agents)
+    await this.copyTemplates(claudeDir, answers);
+
     // Generate CLAUDE.md
     await this.generateClaudeMd(claudeDir, projectContext, answers);
 
@@ -62,6 +65,9 @@ export class ConfigurationGenerator {
 
     // Create .claude directory structure
     await this.createDirectoryStructure(claudeDir);
+
+    // Copy template files (skills, commands, agents)
+    await this.copyTemplates(claudeDir, answers);
 
     // Generate CLAUDE.md (global template)
     await this.generateGlobalClaudeMd(claudeDir);
@@ -285,6 +291,143 @@ MCP servers enabled globally provide consistent capabilities across projects.
       command: 'npx',
       args: ['-y', `mcp-server-${mcpName}`],
     };
+  }
+
+  /**
+   * Copy template files to destination directory
+   */
+  private async copyTemplates(
+    claudeDir: string,
+    answers: SetupAnswers
+  ): Promise<void> {
+    // Try to find templates directory
+    // In development: src/core/configurators -> ../../../templates
+    // In build (dist): dist/core -> ../../templates
+    // In npm package: node_modules/code-assistant-claude/dist/core -> ../../templates
+    const possiblePaths = [
+      path.join(__dirname, '../../../templates'), // Development
+      path.join(__dirname, '../../templates'), // Built
+      path.join(__dirname, '../templates'), // Alternative build
+    ];
+
+    let templatesDir: string | undefined;
+    for (const tryPath of possiblePaths) {
+      try {
+        await fs.access(tryPath);
+        templatesDir = tryPath;
+        break;
+      } catch {
+        // Try next path
+      }
+    }
+
+    if (!templatesDir) {
+      console.warn(
+        'Templates directory not found, skipping template file copy'
+      );
+      return;
+    }
+
+    // Copy enabled skills
+    for (const skillName of answers.enableSkills) {
+      const skillTemplate = await this.findSkillTemplate(
+        templatesDir,
+        skillName
+      );
+      if (skillTemplate) {
+        const destDir = path.join(claudeDir, 'skills', skillName);
+        await this.copyDirectoryRecursive(skillTemplate, destDir);
+      } else {
+        console.warn(`Skill template not found: ${skillName}`);
+      }
+    }
+
+    // Copy common commands (always copy these)
+    const commonCommands = ['git', 'workflow', 'skills'];
+    for (const cmdCategory of commonCommands) {
+      const cmdTemplate = path.join(templatesDir, 'commands', cmdCategory);
+      try {
+        await fs.access(cmdTemplate);
+        const destDir = path.join(claudeDir, 'commands', cmdCategory);
+        await this.copyDirectoryRecursive(cmdTemplate, destDir);
+      } catch {
+        // Command category doesn't exist, skip
+      }
+    }
+
+    // Copy common agents (code-reviewer, security-auditor, test-engineer)
+    const commonAgents = [
+      'code-reviewer-agent.md',
+      'security-auditor-agent.md',
+      'test-engineer-agent.md',
+    ];
+    for (const agentFile of commonAgents) {
+      const agentTemplate = path.join(templatesDir, 'agents', agentFile);
+      try {
+        await fs.access(agentTemplate);
+        const destFile = path.join(claudeDir, 'agents', agentFile);
+        await fs.copyFile(agentTemplate, destFile);
+      } catch {
+        // Agent doesn't exist, skip
+      }
+    }
+  }
+
+  /**
+   * Find skill template directory in templates/skills/
+   * Searches through all category subdirectories
+   */
+  private async findSkillTemplate(
+    templatesDir: string,
+    skillName: string
+  ): Promise<string | null> {
+    const skillsDir = path.join(templatesDir, 'skills');
+
+    try {
+      const categories = await fs.readdir(skillsDir);
+
+      for (const category of categories) {
+        const categoryPath = path.join(skillsDir, category);
+        const stat = await fs.stat(categoryPath);
+
+        if (stat.isDirectory()) {
+          const skillPath = path.join(categoryPath, skillName);
+          try {
+            await fs.access(skillPath);
+            return skillPath;
+          } catch {
+            // Skill not in this category, continue
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error searching for skill template:', error);
+    }
+
+    return null;
+  }
+
+  /**
+   * Recursively copy directory contents
+   */
+  private async copyDirectoryRecursive(
+    source: string,
+    destination: string
+  ): Promise<void> {
+    await ensureDir(destination);
+
+    const entries = await fs.readdir(source, { withFileTypes: true });
+
+    for (const entry of entries) {
+      const srcPath = path.join(source, entry.name);
+      const destPath = path.join(destination, entry.name);
+
+      if (entry.isDirectory()) {
+        await this.copyDirectoryRecursive(srcPath, destPath);
+      } else {
+        await fs.copyFile(srcPath, destPath);
+      }
+    }
   }
 
   private generateGitWorkflowInstructions(
