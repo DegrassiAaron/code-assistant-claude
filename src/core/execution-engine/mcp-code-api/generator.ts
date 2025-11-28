@@ -2,7 +2,12 @@
 import Handlebars from 'handlebars';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { MCPToolSchema, CodeWrapper } from '../types';
+
+// Get directory of this module (works in both ESM and bundled code)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Generates TypeScript/Python wrapper code from MCP schemas
@@ -75,14 +80,20 @@ export class CodeAPIGenerator {
    * Load Handlebars templates from filesystem
    */
   private async loadTemplates(): Promise<void> {
-    // Try multiple possible paths (development vs build vs npm)
+    // When tsup bundles, __dirname is the dist/cli or dist/core directory
+    // Templates are copied to dist/{cli|core}/execution-engine/mcp-code-api/templates/
     const possibleBasePaths = [
-      path.join(__dirname, 'templates'), // Build: dist/core/execution-engine/mcp-code-api/templates (when imported from core)
-      path.join(__dirname, '../core/execution-engine/mcp-code-api/templates'), // From dist/cli bundle
-      path.join(__dirname, '../../core/execution-engine/mcp-code-api/templates'), // From dist/ root
-      path.join(process.cwd(), 'dist/core/execution-engine/mcp-code-api/templates'), // Built in project root
-      path.join(process.cwd(), 'src/core/execution-engine/mcp-code-api/templates'), // Development
-      path.join(process.cwd(), 'node_modules/code-assistant-claude/dist/core/execution-engine/mcp-code-api/templates'), // npm install
+      // From dist/cli bundle (most common case)
+      path.join(__dirname, 'execution-engine/mcp-code-api/templates'),
+      // From dist/core bundle
+      path.join(__dirname, '../core/execution-engine/mcp-code-api/templates'),
+      // Development (cwd = repo root)
+      path.join(process.cwd(), 'dist/core/execution-engine/mcp-code-api/templates'),
+      path.join(process.cwd(), 'dist/cli/execution-engine/mcp-code-api/templates'),
+      path.join(process.cwd(), 'src/core/execution-engine/mcp-code-api/templates'),
+      // npm install paths
+      path.join(process.cwd(), 'node_modules/code-assistant-claude/dist/core/execution-engine/mcp-code-api/templates'),
+      path.join(process.cwd(), 'node_modules/code-assistant-claude/dist/cli/execution-engine/mcp-code-api/templates'),
     ];
 
     let tsTemplateContent: string | null = null;
