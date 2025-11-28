@@ -75,17 +75,14 @@ export class CodeAPIGenerator {
    * Load Handlebars templates from filesystem
    */
   private async loadTemplates(): Promise<void> {
-    // Try multiple possible paths (development vs build)
+    // Try multiple possible paths (development vs build vs npm)
     const possibleBasePaths = [
-      path.join(__dirname, 'templates'), // Build: dist/core/execution-engine/mcp-code-api/templates
-      path.join(
-        __dirname,
-        '../../../src/core/execution-engine/mcp-code-api/templates'
-      ), // Test from dist
-      path.join(
-        process.cwd(),
-        'src/core/execution-engine/mcp-code-api/templates'
-      ), // Development
+      path.join(__dirname, 'templates'), // Build: dist/core/execution-engine/mcp-code-api/templates (when imported from core)
+      path.join(__dirname, '../core/execution-engine/mcp-code-api/templates'), // From dist/cli bundle
+      path.join(__dirname, '../../core/execution-engine/mcp-code-api/templates'), // From dist/ root
+      path.join(process.cwd(), 'dist/core/execution-engine/mcp-code-api/templates'), // Built in project root
+      path.join(process.cwd(), 'src/core/execution-engine/mcp-code-api/templates'), // Development
+      path.join(process.cwd(), 'node_modules/code-assistant-claude/dist/core/execution-engine/mcp-code-api/templates'), // npm install
     ];
 
     let tsTemplateContent: string | null = null;
