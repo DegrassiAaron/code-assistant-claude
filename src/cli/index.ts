@@ -63,6 +63,8 @@ program
   .option('--list', 'List current configuration')
   .option('--set <key=value>', 'Set configuration value')
   .option('--get <key>', 'Get configuration value')
+  .option('--local', 'Use local configuration (.claude/)')
+  .option('--global', 'Use global configuration (~/.claude/)')
   .action(configCommand);
 
 // Reset command - Reset to vanilla state

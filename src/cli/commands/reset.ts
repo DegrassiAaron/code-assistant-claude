@@ -19,11 +19,7 @@ export async function resetCommand(
   console.log(chalk.yellow('\n⚠️  Reset to Vanilla State\n'));
 
   // Determine scope
-  const scope = options.local
-    ? 'local'
-    : options.global
-      ? 'global'
-      : 'both';
+  const scope = options.local ? 'local' : options.global ? 'global' : 'both';
 
   const scopeDesc =
     scope === 'local'
@@ -71,10 +67,7 @@ export async function resetCommand(
       if (scope === 'local' || scope === 'both') {
         try {
           await fs.access(localClaudeDir);
-          const backupPath = path.join(
-            backupDir,
-            `local-${timestamp}.backup`
-          );
+          const backupPath = path.join(backupDir, `local-${timestamp}.backup`);
           await fs.cp(localClaudeDir, backupPath, { recursive: true });
           console.log(chalk.gray(`\n  ✓ Backup: ${backupPath}`));
         } catch {
@@ -84,10 +77,7 @@ export async function resetCommand(
 
       if (scope === 'global' || scope === 'both') {
         try {
-          const backupPath = path.join(
-            backupDir,
-            `global-${timestamp}.backup`
-          );
+          const backupPath = path.join(backupDir, `global-${timestamp}.backup`);
           await fs.cp(globalClaudeDir, backupPath, { recursive: true });
           console.log(chalk.gray(`  ✓ Backup: ${backupPath}`));
         } catch {
@@ -173,7 +163,9 @@ export async function resetCommand(
       );
     }
 
-    console.log(chalk.cyan('To reconfigure, run: code-assistant-claude init\n'));
+    console.log(
+      chalk.cyan('To reconfigure, run: code-assistant-claude init\n')
+    );
   } catch (error) {
     spinner.fail('Reset failed');
     console.error(
