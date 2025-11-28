@@ -6,6 +6,7 @@ import { CodeAPIGenerator } from './generator';
 import { MCPCodeRuntime } from './runtime';
 import { ToolIndexer } from '../discovery/tool-indexer';
 import { RelevanceScorer } from '../discovery/relevance-scorer';
+import { debug } from '../../utils/debug-display';
 import {
   MCPToolSchema,
   CodeWrapper,
@@ -98,6 +99,13 @@ export class MCPOrchestrator {
         `[MCPOrchestrator] Found ${discoveredTools.length} relevant tools`
       );
 
+      // Debug: Show discovered tools
+      if (debug.isEnabled()) {
+        debug.info(`Discovered ${discoveredTools.length} relevant tools`, {
+          tools: discoveredTools.map((t) => ({ name: t.name, score: t.relevanceScore })),
+        });
+      }
+
       // Phase 2: Generate code wrapper (TypeScript or Python)
       console.log('[MCPOrchestrator] Phase 2: Code Generation');
       const schemas = discoveredTools.map((t) => t.schema);
@@ -107,12 +115,35 @@ export class MCPOrchestrator {
         `[MCPOrchestrator] Generated ${language} code (${codeWrapper.estimatedTokens} tokens)`
       );
 
+      // Debug: Show code generation
+      if (debug.isEnabled()) {
+        const traditional = 150000;
+        debug.codegen(language, codeWrapper.estimatedTokens, traditional);
+      }
+
       // Phase 3: Execute in sandbox
       console.log('[MCPOrchestrator] Phase 3: Sandbox Execution');
+
+      // Debug: Show sandbox execution
+      if (debug.isEnabled()) {
+        debug.phase(3, 'Sandbox Execution', 'Running generated code in isolated environment');
+      }
+
+      const startExec = Date.now();
       const executionResult = await this.runtime.execute(codeWrapper, {
         userIntent,
         tools: discoveredTools.map((t) => t.name),
       });
+      const execDuration = Date.now() - startExec;
+
+      // Debug: Show execution result
+      if (debug.isEnabled()) {
+        debug.sandboxDone(
+          executionResult.success,
+          execDuration,
+          executionResult.metrics.memoryUsed
+        );
+      }
 
       // Phase 4: Process result (summary + PII tokenization)
       console.log('[MCPOrchestrator] Phase 4: Result Processing');

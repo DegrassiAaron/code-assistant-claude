@@ -110,6 +110,45 @@ Output:
 💡 Token Reduction: 98.8% vs traditional MCP
 ```
 
+### Debug Mode - See Framework in Action
+
+**Watch the framework work in real-time**:
+
+```bash
+# Enable debug mode to see internal operations
+DEBUG=true code-assistant-claude mcp-execute "read and analyze data"
+```
+
+**Debug Output Shows**:
+```
+╔════════════════════════════════════════════════════════╗
+║ Code-Assistant-Claude Debug Mode ACTIVE       ║
+╚════════════════════════════════════════════════════════╝
+
+ℹ️  Discovered 2 relevant tools
+   tools: [{"name":"filesystem_read","score":0.9}, {"name":"data_transform","score":0.7}]
+
+┌─ CODE GENERATED
+├─ typescript wrapper
+├─ Tokens: 520
+├─ Traditional: 150,000
+├─ Savings: 99.7% 🎉
+└─ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 0.3%
+
+└─ SANDBOX RESULT
+  ├─ ✅ SUCCESS
+  ├─ Duration: 156ms
+  └─ Memory: 42M
+
+╔════════════════════════════════════════════════════════╗
+║         SESSION SUMMARY                           ║
+║ Duration: 0m 2s                             ║
+║ Total Tokens: 520                           ║
+╚════════════════════════════════════════════════════════╝
+```
+
+**See**: [Debug Mode Guide](./docs/guides/debug-mode.md) for complete documentation
+
 ### Debug & Verbose Modes
 
 **See exactly what's happening under the hood**:

@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import ora from 'ora';
 import chalk from 'chalk';
 import { ExecutionOrchestrator } from '../../core/execution-engine/orchestrator';
+import { debug } from '../../core/utils/debug-display';
 import path from 'path';
 
 interface ExecuteOptions {
@@ -34,8 +35,23 @@ export async function mcpExecuteCommand(
   intent: string,
   options: ExecuteOptions
 ): Promise<void> {
+  // Enable debug mode if DEBUG env var or --debug flag is set
+  const debugEnabled = process.env.DEBUG === 'true' || process.env.DEBUG === '1';
+  if (debugEnabled) {
+    debug.enable(true); // Verbose mode
+  }
+
   console.log(chalk.blue.bold('\n🔧 MCP Code Execution\n'));
   console.log(chalk.gray(`Intent: ${intent}\n`));
+
+  if (debugEnabled) {
+    debug.info('Debug mode enabled', {
+      intent,
+      language: options.language || 'typescript',
+      timeout: options.timeout || 30000,
+      maxTools: options.maxTools || 5,
+    });
+  }
 
   const spinner = ora('Initializing execution engine...').start();
 
@@ -145,6 +161,11 @@ export async function mcpExecuteCommand(
 
       // Cleanup
       await orchestrator.shutdown();
+
+      // Debug: Show session summary
+      if (debugEnabled) {
+        debug.disable();
+      }
     } else {
       spinner.fail('Execution failed');
 
@@ -158,6 +179,12 @@ export async function mcpExecuteCommand(
 
       // Cleanup on error too
       await orchestrator.shutdown();
+
+      // Debug: Show session summary even on error
+      if (debugEnabled) {
+        debug.disable();
+      }
+
       process.exit(1);
     }
   } catch (error) {
@@ -167,6 +194,11 @@ export async function mcpExecuteCommand(
       chalk.red('\n❌ Execution failed:'),
       error instanceof Error ? error.message : 'Unknown error'
     );
+
+    // Debug: Show session summary on exception
+    if (debugEnabled) {
+      debug.disable();
+    }
 
     process.exit(1);
   }
